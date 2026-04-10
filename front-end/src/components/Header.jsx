@@ -2,14 +2,14 @@ import React from "react";
 
 const Header = () => {
   return (
-    <div className="shadow-md">
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-8 py-2">
+    <header className="shadow-md">
+      <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-2">
         <img
           className="h-11"
           src="./src/assets/VivaPortugal!.png"
           alt="Logo Viva Portugal"
         />
-        <div className="flex items-center rounded-full border border-gray-300 py-2 pr-4 pl-6 shadow-md">
+        <div className="hidden items-center rounded-full border border-gray-300 py-2 pr-4 pl-6 shadow-md lg:flex">
           <p className="border-r border-r-gray-300 pr-4">Experiência</p>
           <p className="border-r border-r-gray-300 px-4">Data</p>
           <p className="px-4">Participantes</p>
@@ -58,10 +58,10 @@ const Header = () => {
               clipRule="evenodd"
             />
           </svg>
-          <p>Hudson Peres</p>
+          <p className="max-w-20 truncate sm:max-w-32">Hudson Peres</p>
         </div>
       </div>
-    </div>
+    </header>
   );
 };
 
