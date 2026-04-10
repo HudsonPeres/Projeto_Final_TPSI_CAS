@@ -1,24 +1,19 @@
 import Header from "./components/Header";
 import { Item } from "./components/Item";
+import { Home } from "./pages/Home";
+import { Login } from "./pages/Login";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 function App() {
   return (
-    <>
+    <BrowserRouter>
       <Header />
 
-      <section>
-        <div className="mx-auto grid max-w-7xl grid-cols-[repeat(auto-fit,minmax(225px,1fr))] gap-8 p-8">
-          <Item />
-          <Item />
-          <Item />
-          <Item />
-          <Item />
-          <Item />
-          <Item />
-          <Item />
-        </div>
-      </section>
-    </>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/login" element={<Login />} />
+      </Routes>
+    </BrowserRouter>
   );
 }
 export default App;
