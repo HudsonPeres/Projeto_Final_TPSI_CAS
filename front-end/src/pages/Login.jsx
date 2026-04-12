@@ -23,7 +23,7 @@ export const Login = () => {
           </button>
         </form>
         <p>
-          Ainda nao em conte?{" "}
+          Ainda não tem conta?{" "}
           <Link to="/register" className="font-semibold underline">
             Registe-se aqui
           </Link>
