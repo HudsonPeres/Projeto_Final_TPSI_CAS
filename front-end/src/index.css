@@ -1,7 +1,9 @@
 @import "tailwindcss";
 
 @theme {
-  --color-primary-400: #ff3f33;
+  --color-primary-400: #e53935;
+  --color-secondary-400: #43a047;
+  --color-accent-400: #4a90e2;
   --font-VivaPortugal:
     Airbnb Cereal VF, Circular, -apple-system, BlinkMacSystemFont, Roboto,
     Helvetica Neue, sans-serif;
