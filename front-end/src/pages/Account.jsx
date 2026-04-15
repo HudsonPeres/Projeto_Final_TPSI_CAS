@@ -1,6 +1,7 @@
 import React from "react";
 import { Link, useParams } from "react-router-dom";
 import AccProfile from "../components/AccProfile";
+import AccPlaces from "../components/AccPlaces";
 
 export const Account = () => {
   const { subpage } = useParams();
@@ -8,7 +9,7 @@ export const Account = () => {
   const buttonClass = (button) => {
     let finalClass =
       "bg-primary-400 hover:bg-secondary-400 cursor-pointer rounded-full px-4 py-2 text-white transition";
-    if (button === subpage) finalClass += "bg-secondary-400 text-white";
+    if (button === subpage) finalClass += " bg-secondary-400 text-white";
     return finalClass;
   };
 
@@ -27,6 +28,7 @@ export const Account = () => {
           </Link>
         </div>
         {subpage === "profile" && <AccProfile />}
+        {subpage === "places" && <AccPlaces />}
       </div>
     </section>
   );
