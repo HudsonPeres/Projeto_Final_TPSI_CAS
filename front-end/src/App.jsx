@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Header from "./components/Header";
 import { Item } from "./components/Item";
 import { Home } from "./pages/Home";
@@ -8,9 +8,20 @@ import axios from "axios";
 import Register from "./pages/Register";
 
 axios.defaults.baseURL = import.meta.env.VITE_AXIOS_BASE_URL;
+axios.defaults.withCredentials = true;
 
 function App() {
   const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    const axiosGet = async () => {
+      const { data } = await axios.get("/users/profile");
+
+      setUser(data);
+    };
+
+    axiosGet();
+  }, []);
 
   return (
     <BrowserRouter>
