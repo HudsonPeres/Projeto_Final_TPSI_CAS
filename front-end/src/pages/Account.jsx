@@ -1,10 +1,12 @@
 import React from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, Navigate, useParams } from "react-router-dom";
 import AccProfile from "../components/AccProfile";
 import AccPlaces from "../components/AccPlaces";
+import { useUserContext } from "../contexts/UserContext";
 
 export const Account = () => {
   const { subpage } = useParams();
+  const { user, ready } = useUserContext;
 
   const buttonClass = (button) => {
     let finalClass =
@@ -12,6 +14,8 @@ export const Account = () => {
     if (button === subpage) finalClass += " bg-secondary-400 text-white";
     return finalClass;
   };
+
+  if (!user && ready) <Navigate to="/login" />;
 
   return (
     <section className="p-8">
