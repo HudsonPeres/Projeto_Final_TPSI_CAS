@@ -8,6 +8,69 @@ import { resolve } from "url";
 
 const router = Router();
 
+router.get("/", async (req, res) => {
+  connectDB();
+  try {
+    const placeDocs = await Place.find();
+    res.json(placeDocs);
+  } catch (error) {
+    res.status(500).json("Erro ao encontrar as acomodações");
+  }
+});
+
+router.get("/:id", async (req, res) => {
+  connectDB();
+
+  const { id: _id } = req.params;
+
+  try {
+    const placeDoc = await Place.findOne({ _id });
+    res.json(placeDoc);
+  } catch (error) {
+    res.status(500).json("Erro ao encontrar a acomodação");
+  }
+});
+
+router.put("/:id", async (req, res) => {
+  connectDB();
+
+  const { id: _id } = req.params;
+  const {
+    title,
+    address,
+    photos,
+    description,
+    extras,
+    perks,
+    price,
+    checkin,
+    checkout,
+    guests,
+  } = req.body;
+
+  try {
+    const updatedPlaceDoc = await Place.findOneAndUpdate(
+      { _id },
+      {
+        title,
+        address,
+        photos,
+        description,
+        extras,
+        perks,
+        price,
+        checkin,
+        checkout,
+        guests,
+      },
+    );
+
+    res.json(updatedPlaceDoc);
+  } catch (error) {
+    res.status(500).json("Erro ao atualizar");
+  }
+});
+
 router.post("/", async (req, res) => {
   connectDB();
   const {

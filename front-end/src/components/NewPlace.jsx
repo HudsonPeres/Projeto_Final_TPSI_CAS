@@ -1,11 +1,12 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Perks from "./Perks";
 import axios from "axios";
-import { Navigate } from "react-router-dom";
+import { Navigate, useParams } from "react-router-dom";
 import { useUserContext } from "../contexts/UserContext.jsx";
 import PhotoUploader from "./PhotoUploader.jsx";
 
 const NewPlace = () => {
+  const { id } = useParams();
   const { user } = useUserContext();
   const [title, setTitle] = useState("");
   const [address, setAddress] = useState("");
@@ -20,6 +21,27 @@ const NewPlace = () => {
   const [redirect, setRedirect] = useState(false);
   const [photolink, setPhotolink] = useState("");
 
+  useEffect(() => {
+    if (id) {
+      const axiosGet = async () => {
+        const { data } = await axios.get(`/places/${id}`);
+
+        console.log(data);
+        setTitle(data.title);
+        setAddress(data.address);
+        setPhotos(data.photos);
+        setPerks(data.perks);
+        setDescription(data.description);
+        setExtras(data.extras);
+        setPrice(data.price);
+        setCheckin(data.checkin);
+        setCheckout(data.checkout);
+        setGuests(data.guests);
+      };
+      axiosGet();
+    }
+  }, []);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -27,31 +49,53 @@ const NewPlace = () => {
       title &&
       address &&
       description &&
-      //photos.length > 0 &&
+      photos.length > 0 &&
       price &&
       checkin &&
       checkout &&
       guests
     ) {
-      try {
-        const newPlace = await axios.post("/places", {
-          owner: user._id,
-          title,
-          address,
-          photos,
-          description,
-          extras,
-          perks,
-          price,
-          checkin,
-          checkout,
-          guests,
-        });
-        alert("Adicionado com sucesso");
+      if (id) {
+        try {
+          const modifiedPlace = await axios.put(`/places/${id}`, {
+            title,
+            address,
+            photos,
+            description,
+            extras,
+            perks,
+            price,
+            checkin,
+            checkout,
+            guests,
+          });
+          alert("Modificado com sucesso");
+          setRedirect(true);
+        } catch (error) {
+          console.error(JSON.stringify(error));
+          alert("Erro ao tentar atualizar");
+        }
+      } else {
+        try {
+          const newPlace = await axios.post("/places", {
+            owner: user._id,
+            title,
+            address,
+            photos,
+            description,
+            extras,
+            perks,
+            price,
+            checkin,
+            checkout,
+            guests,
+          });
+          alert("Adicionado com sucesso");
+        } catch (error) {
+          console.error(JSON.stringify(error));
+          alert("Erro ao tentar criar");
+        }
         setRedirect(true);
-      } catch (error) {
-        console.error(JSON.stringify(error));
-        alert("Erro ao tentar criar");
       }
     } else {
       alert("Preencha todas as informações necessárias antes de enviar");
