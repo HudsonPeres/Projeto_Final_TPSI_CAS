@@ -5,15 +5,35 @@ const PhotoUploader = ({ photolink, setPhotolink, setPhotos, photos }) => {
   const uploadByLink = async (e) => {
     e.preventDefault();
     if (photolink) {
-      const { data } = await axios.post("/places/upload/link", {
-        link: photolink,
-      });
-      console.log("Resposta do backend:", data);
-      const { filename } = data;
+      try {
+        const { data } = await axios.post("/places/upload/link", {
+          link: photolink,
+        });
+        console.log("Resposta do backend:", data);
+        const { filename } = data;
 
-      setPhotos((prevValue) => [...prevValue, filename]);
+        setPhotos((prevValue) => [...prevValue, filename]);
+      } catch (error) {
+        alert("Erro ao realizar upload por link", JSON.stringify(error));
+      }
     } else {
       alert("Não existe nenhum link a ser enviado");
+    }
+  };
+
+  const uploadPhoto = async (e) => {
+    const { files } = e.target;
+    const formData = new FormData();
+    const filesArray = [...files];
+    filesArray.forEach((file) => formData.append("files", file));
+
+    try {
+      const { data: urlArray } = await axios.post("/places/upload", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      setPhotos((prevValue) => [...prevValue, ...urlArray]);
+    } catch (error) {
+      alert("Erro ao realizar upload", JSON.stringify(error));
     }
   };
 
@@ -41,7 +61,7 @@ const PhotoUploader = ({ photolink, setPhotolink, setPhotos, photos }) => {
         {photos.map((photo) => (
           <img
             className="aspect-square rounded-2xl object-cover"
-            src={`${axios.defaults.baseURL}/tmp/${photo}`}
+            src={photo}
             alt="Imagens do lugar"
             key={photo}
           />
@@ -51,7 +71,13 @@ const PhotoUploader = ({ photolink, setPhotolink, setPhotos, photos }) => {
           htmlFor="file"
           className="flex aspect-square cursor-pointer flex-col items-center justify-center rounded-2xl border border-gray-700 text-gray-700 hover:bg-gray-100"
         >
-          <input type="file" id="file" className="hidden" />
+          <input
+            type="file"
+            id="file"
+            className="hidden"
+            multiple
+            onChange={uploadPhoto}
+          />
           <svg
             xmlns="http://www.w3.org/2000/svg"
             viewBox="0 0 24 24"
