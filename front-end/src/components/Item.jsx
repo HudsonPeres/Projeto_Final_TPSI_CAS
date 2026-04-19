@@ -1,8 +1,9 @@
 import React from "react";
+import { Link } from "react-router-dom";
 
 export const Item = ({ place }) => {
   return (
-    <a href="/" className="flex max-w-xs flex-col gap-3">
+    <Link to={`/place/${place._id}`} className="flex max-w-xs flex-col gap-3">
       <img
         src={place.photos[0]}
         alt="colheita de azeitonas"
@@ -15,6 +16,6 @@ export const Item = ({ place }) => {
       <p>
         <span className="font-semibold">{place.price} €</span> por experiência
       </p>
-    </a>
+    </Link>
   );
 };
