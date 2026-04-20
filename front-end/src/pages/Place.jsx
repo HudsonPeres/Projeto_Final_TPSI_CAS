@@ -1,10 +1,17 @@
 import axios from "axios";
 import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
+import { useUserContext } from "../contexts/UserContext";
+import Perk from "../components/Perk";
 
 const Place = () => {
   const { id } = useParams();
+  const { user } = useUserContext();
   const [place, setPlace] = useState(null);
+  const [overlay, setOverlay] = useState(false);
+  const [checkin, setCheckin] = useState(false);
+  const [checkout, setCheckout] = useState("");
+  const [guests, setGuests] = useState("");
 
   useEffect(() => {
     if (id) {
@@ -18,13 +25,30 @@ const Place = () => {
     }
   }, [id]);
 
+  useEffect(() => {
+    overlay
+      ? document.body.classList.add("overflow-hidden")
+      : document.body.classList.remove("overflow-hidden");
+  }, [overlay]);
+
+  const handleBooking = (e) => {
+    e.preventDefault();
+
+    if (checkin && checkout && guests) {
+      console.log("reservado");
+    } else {
+      alert("preencha todas as informações para fazer a reserva");
+    }
+  };
+
   if (!place) return <></>;
 
   return (
     <section>
-      <div className="mx-auto flex grid max-w-7xl flex-col gap-8 p-8">
-        <div>
-          <div className="text-3xl font-bold">{place.title}</div>
+      <div className="mx-auto flex grid max-w-7xl flex-col gap-4 p-4 sm:gap-6 sm:p-8">
+        {/* titulos */}
+        <div className="flex flex-col sm:gap-1">
+          <div className="text-2xl font-bold sm:text-3xl">{place.title}</div>
 
           <div className="flex items-center gap-1">
             <svg
@@ -48,26 +72,160 @@ const Place = () => {
             </svg>
             <p>{place.address}</p>
           </div>
-          <div className="grid aspect-[3/2] grid-cols-[2fr_1fr] grid-rows-2 gap-4 overflow-hidden rounded-2xl">
-            {place.photos.map((photo) => (
+        </div>
+
+        {/* grade */}
+        <div className="relative grid aspect-[3/2] gap-4 overflow-hidden rounded-2xl sm:grid-cols-[2fr_1fr] sm:grid-rows-2">
+          {place.photos
+            .filter((photo, index) => index < 3)
+            .map((photo, index) => (
               <img
-                className="row-span-2 aspect-square h-full w-full object-cover"
-                src={place.photos[0]}
+                className={`${index === 0 ? "row-span-2 h-full" : ""} aspect-square w-full cursor-pointer object-cover transition hover:opacity-75`}
+                src={photo}
                 alt="imagem do local"
+                onClick={() => setOverlay(true)}
               />
             ))}
-
-            <img
-              className="aspect-square w-full object-cover"
-              src={place.photos[1]}
-              alt="imagem do local"
-            />
-            <img
-              className="aspect-square w-full object-cover"
-              src={place.photos[2]}
-              alt="imagem do local"
-            />
+          <div
+            className="absolute right-2 bottom-2 flex cursor-pointer gap-2 rounded-2xl border border-black bg-white px-4 py-2 transition hover:scale-105"
+            onClick={() => setOverlay(true)}
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              strokeWidth={1.5}
+              stroke="currentColor"
+              className="size-6"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M13.5 16.875h3.375m0 0h3.375m-3.375 0V13.5m0 3.375v3.375M6 10.5h2.25a2.25 2.25 0 0 0 2.25-2.25V6a2.25 2.25 0 0 0-2.25-2.25H6A2.25 2.25 0 0 0 3.75 6v2.25A2.25 2.25 0 0 0 6 10.5Zm0 9.75h2.25A2.25 2.25 0 0 0 10.5 18v-2.25a2.25 2.25 0 0 0-2.25-2.25H6a2.25 2.25 0 0 0-2.25 2.25V18A2.25 2.25 0 0 0 6 20.25Zm9.75-9.75H18a2.25 2.25 0 0 0 2.25-2.25V6A2.25 2.25 0 0 0 18 3.75h-2.25A2.25 2.25 0 0 0 13.5 6v2.25a2.25 2.25 0 0 0 2.25 2.25Z"
+              />
+            </svg>
+            <p>Mostrar mais imagens</p>
           </div>
+        </div>
+
+        {/* colunas */}
+        <div className="grid grid-cols-1 md:grid-cols-2">
+          <div className="gap order-2 flex flex-col gap-5 p-4 md:order-0">
+            <div>
+              <p className="text-2xl font-bold">Descrição</p>
+              <p>{place.description}</p>
+            </div>
+          </div>
+
+          <form className="order-1 flex flex-col gap-4 self-center justify-self-center rounded-2xl border border-gray-300 px-4 py-3 text-2xl sm:px-8 sm:py-4 md:order-0">
+            <p className="text-center text-2xl font-bold">
+              Preço: {place.price} €{" "}
+            </p>
+            {/* checkin e checkout */}
+            <div className="flex flex-col sm:flex-row">
+              <div className="rounded-tl-2xl rounded-tr-2xl border border-gray-300 px-4 py-2 sm:rounded-tr-none sm:rounded-bl-2xl">
+                <p className="font-bold">Checkin</p>
+                <input
+                  className="w-full sm:w-auto"
+                  type="date"
+                  value={checkin}
+                  onChange={(e) => setCheckin(e.target.value)}
+                />
+              </div>
+
+              <div className="rounded-br-2xl rounded-bl-2xl border border-t-0 border-gray-300 px-4 py-2 sm:rounded-tr-2xl sm:rounded-bl-none sm:border-t sm:border-l-0">
+                <p className="font-bold">Checkout</p>
+                <input
+                  className="w-full sm:w-auto"
+                  type="date"
+                  value={checkout}
+                  onChange={(e) => setCheckout(e.target.value)}
+                />
+              </div>
+            </div>
+            {/* participantes */}
+            <div className="flex flex-col rounded-2xl border border-gray-300 px-4 py-2">
+              <p className="font-bold">Nº de Participantes</p>
+              <input
+                className="rounded-2xl border border-gray-300 px-4 py-2"
+                placeholder="1"
+                type="number"
+                value={guests}
+                onChange={(e) => setGuests(e.target.value)}
+              />
+              {user ? (
+                <button
+                  className="bg-primary-400 w-full cursor-pointer rounded-full border border-gray-300 px-4 py-2 text-center font-bold text-white"
+                  onClick={handleBooking}
+                >
+                  Reservar
+                </button>
+              ) : (
+                <Link
+                  to="/login"
+                  className="bg-primary-400 w-full cursor-pointer rounded-full border border-gray-300 px-4 py-2 text-center font-bold text-white"
+                >
+                  Faça Login para reservar
+                </Link>
+              )}
+            </div>
+          </form>
+        </div>
+
+        <div className="gap flex flex-col gap-5 p-4">
+          <p className="text-2xl font-bold">Horários e restrições</p>
+          <div>
+            <p>
+              <strong>Checkin:</strong> {place.checkin}
+            </p>
+            <p>
+              <strong>Checkout:</strong> {place.checkout}
+            </p>
+            <p>
+              <strong>Nº de participantes:</strong> {place.guests}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-5 p-4">
+          <p className="text-2xl font-bold">Comodidades</p>
+          <div className="flex flex-col gap-2">
+            {place.perks.map((perk) => (
+              <div className="flex gap-2" key={perk}>
+                <Perk perk={perk} />
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* extras */}
+
+        <div className="gap-2 rounded-2xl bg-gray-100 p-4">
+          <p className="text-2xl font-bold">Informações Extras</p>
+          <p>{place.extras}</p>
+        </div>
+
+        {/* overlay */}
+        <div
+          className={`${overlay ? "flex" : "hidden"} fixed inset-0 items-start overflow-y-auto bg-black text-white`}
+        >
+          <div className="mx-auto flex max-w-7xl flex-col gap-8 p-8">
+            <div className="grid gap-4 sm:grid-cols-2">
+              {place.photos.map((photo, index) => (
+                <img
+                  className={`aspect-square w-full object-cover`}
+                  src={photo}
+                  alt="imagem do local"
+                />
+              ))}
+            </div>
+          </div>
+          <button
+            className="absolute top-2 right-2 aspect-square w-8 rounded-full bg-white font-bold text-black hover:scale-105"
+            onClick={() => setOverlay(false)}
+          >
+            X
+          </button>
         </div>
       </div>
     </section>
