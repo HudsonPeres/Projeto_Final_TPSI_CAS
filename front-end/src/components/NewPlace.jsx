@@ -5,6 +5,7 @@ import { Navigate, useParams } from "react-router-dom";
 import { useUserContext } from "../contexts/UserContext.jsx";
 import PhotoUploader from "./PhotoUploader.jsx";
 import ProgressButton from "./ProgressButton.jsx";
+import AvailabilityCalendar from "./AvailabilityCalendar";
 
 const NewPlace = () => {
   const { id } = useParams();
@@ -24,7 +25,8 @@ const NewPlace = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
-
+  const [availableDates, setAvailableDates] = useState([]);
+  const [bookingType, setBookingType] = useState("single");
   useEffect(() => {
     if (id) {
       const axiosGet = async () => {
@@ -41,6 +43,8 @@ const NewPlace = () => {
         setCheckin(data.checkin);
         setCheckout(data.checkout);
         setGuests(data.guests);
+        setAvailableDates(data.availableDates || []);
+        setBookingType(data.bookingType || "single");
       };
       axiosGet();
     }
@@ -78,6 +82,8 @@ const NewPlace = () => {
               checkin,
               checkout,
               guests,
+              availableDates,
+              bookingType,
             },
             {
               onUploadProgress: (progressEvent) => {
@@ -103,6 +109,8 @@ const NewPlace = () => {
               checkin,
               checkout,
               guests,
+              availableDates,
+              bookingType,
             },
             {
               onUploadProgress: (progressEvent) => {
@@ -241,6 +249,35 @@ const NewPlace = () => {
           </div>
         </div>
       </div>
+      <div className="flex flex-col gap-2">
+        <label className="text-xl font-bold">Tipo de reserva</label>
+        <div className="flex gap-4">
+          <label className="flex cursor-pointer items-center gap-2 rounded-xl border border-gray-300 px-4 py-2">
+            <input
+              type="radio"
+              name="bookingType"
+              value="single"
+              checked={bookingType === "single"}
+              onChange={() => setBookingType("single")}
+            />
+            <span>Um dia (experiência pontual)</span>
+          </label>
+          <label className="flex cursor-pointer items-center gap-2 rounded-xl border border-gray-300 px-4 py-2">
+            <input
+              type="radio"
+              name="bookingType"
+              value="multi"
+              checked={bookingType === "multi"}
+              onChange={() => setBookingType("multi")}
+            />
+            <span>Vários dias consecutivos</span>
+          </label>
+        </div>
+      </div>
+      <AvailabilityCalendar
+        selectedDates={availableDates}
+        setSelectedDates={setAvailableDates}
+      />
       <ProgressButton
         text="Salvar Informações"
         onClick={handleSubmit}

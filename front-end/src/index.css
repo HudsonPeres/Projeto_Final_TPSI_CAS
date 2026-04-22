@@ -68,7 +68,7 @@ body a {
 }
 
 .body-dark button {
-  color: white; /* mantém botões legíveis */
+  color: white;
 }
 
 .body-dark .bg-gray-100 {
@@ -86,4 +86,102 @@ body a {
 a.bg-primary-400,
 a.bg-secondary-400 {
   color: white !important;
+}
+
+.rdrDaySelected .rdrDayNumber span {
+  background-color: #43a047 !important;
+  color: white !important;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  margin: 0 auto;
+}
+
+.rdrDay:hover .rdrDayNumber span {
+  background-color: #e0e0e0;
+  border-radius: 50%;
+}
+
+.body-dark .rdrCalendarWrapper {
+  background-color: #2d2d2d;
+  color: #f0f0f0;
+}
+
+.body-dark .rdrMonthAndYearPickers,
+.body-dark .rdrMonthPicker select,
+.body-dark .rdrYearPicker select {
+  background-color: #2d2d2d;
+  color: #f0f0f0;
+}
+
+.body-dark .rdrDayNumber span {
+  color: #f0f0f0;
+}
+
+.body-dark .rdrDayPassive .rdrDayNumber span {
+  color: #aaa;
+}
+
+.body-dark .rdrDayToday .rdrDayNumber span:after {
+  background: #43a047;
+}
+
+.body-dark .rdrDateRangeWrapper,
+.body-dark .rdrCalendarWrapper {
+  background-color: #2d2d2d;
+  border-color: #444;
+}
+
+.selected-date {
+  background-color: #43a047 !important;
+  color: white !important;
+  border-radius: 50%;
+}
+
+.body-dark .react-calendar {
+  background-color: #2d2d2d;
+  color: #f0f0f0;
+  border-color: #444;
+}
+
+.body-dark .react-calendar__navigation button {
+  color: #f0f0f0;
+}
+
+.body-dark .react-calendar__month-view__weekdays {
+  color: #ccc;
+}
+
+.body-dark .react-calendar__tile {
+  background-color: #2d2d2d;
+  color: #f0f0f0;
+}
+
+.body-dark .react-calendar__tile:enabled:hover {
+  background-color: #444;
+}
+
+.body-dark .react-calendar__tile--now {
+  background-color: #555;
+}
+
+.body-dark .selected-date {
+  background-color: #43a047 !important;
+  color: white !important;
+}
+
+.body-dark .bg-green-100 {
+  background-color: #1e4620 !important;
+}
+.body-dark .text-green-800 {
+  color: #a5d6a7 !important;
+}
+.body-dark button.text-red-500 {
+  color: #ff8a80 !important;
+}
+.body-dark button.text-red-500:hover {
+  color: #ff5252 !important;
 }

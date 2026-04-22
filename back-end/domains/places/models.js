@@ -13,6 +13,8 @@ const placeSchema = new Schema({
   checkout: String,
   guests: Number,
   isActive: { type: Boolean, default: true },
+  availableDates: [{ type: Date }],
+  isMultiDay: { type: Boolean, default: true },
 });
 
 export default model("Places", placeSchema);
