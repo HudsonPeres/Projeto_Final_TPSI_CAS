@@ -1,24 +1,49 @@
 import axios from "axios";
 import React, { useEffect, useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, Navigate } from "react-router-dom";
 import { useUserContext } from "../contexts/UserContext";
 import Perk from "../components/Perk";
+import Booking from "../components/Booking";
 
 const Place = () => {
   const { id } = useParams();
   const { user } = useUserContext();
   const [place, setPlace] = useState(null);
   const [overlay, setOverlay] = useState(false);
-  const [checkin, setCheckin] = useState(false);
+  const [checkin, setCheckin] = useState("");
   const [checkout, setCheckout] = useState("");
   const [guests, setGuests] = useState("");
+  const [booking, setBooking] = useState(null);
+  const [redirect, setRedirect] = useState(false);
+
+  const numberofDays = (date1, date2) => {
+    const dateCheckin = new Date(date1);
+    const dateCheckout = new Date(date2);
+    return (
+      (dateCheckout.getTime() - dateCheckin.getTime()) / (1000 * 60 * 60 * 24)
+    );
+  };
+
+  useEffect(() => {
+    if (place) {
+      const axiosGet = async () => {
+        const { data } = await axios.get("/bookings/owner");
+        setBooking(
+          data.filter((booking) => {
+            return booking.place._id === place._id;
+          })[0],
+        );
+      };
+
+      axiosGet();
+    }
+  }, [place]);
 
   useEffect(() => {
     if (id) {
       const axiosGet = async () => {
         const { data } = await axios.get(`/places/${id}`);
 
-        console.log(data);
         setPlace(data);
       };
       axiosGet();
@@ -31,15 +56,31 @@ const Place = () => {
       : document.body.classList.remove("overflow-hidden");
   }, [overlay]);
 
-  const handleBooking = (e) => {
+  const handleBooking = async (e) => {
     e.preventDefault();
 
     if (checkin && checkout && guests) {
-      console.log("reservado");
+      const nights = numberofDays(checkin, checkout);
+      const objBooking = {
+        place: id,
+        user: user._id,
+        price: place.price,
+        total: place.price * nights,
+        checkin,
+        checkout,
+        guests,
+        nights,
+      };
+
+      const { data } = await axios.post("/bookings", objBooking);
+      alert("reservado com sucesso");
+      setRedirect(true);
     } else {
       alert("preencha todas as informações para fazer a reserva");
     }
   };
+
+  if (redirect) return <Navigate to="/account/bookings" />;
 
   if (!place) return <></>;
 
@@ -74,12 +115,16 @@ const Place = () => {
           </div>
         </div>
 
+        {/* mostra se tem ou não reserva */}
+        {booking ? <Booking booking={booking} place={true} /> : ""}
+
         {/* grade */}
         <div className="relative grid aspect-[3/2] gap-4 overflow-hidden rounded-2xl sm:grid-cols-[2fr_1fr] sm:grid-rows-2">
           {place.photos
             .filter((photo, index) => index < 3)
             .map((photo, index) => (
               <img
+                key={photo}
                 className={`${index === 0 ? "row-span-2 h-full" : ""} aspect-square w-full cursor-pointer object-cover transition hover:opacity-75`}
                 src={photo}
                 alt="imagem do local"
@@ -109,67 +154,70 @@ const Place = () => {
         </div>
 
         {/* colunas */}
-        <div className="grid grid-cols-1 md:grid-cols-2">
+        <div className={`${booking ? "" : "grid-cols-1 md:grid-cols-2"} grid`}>
           <div className="gap order-2 flex flex-col gap-5 p-4 md:order-0">
             <div>
               <p className="text-2xl font-bold">Descrição</p>
               <p>{place.description}</p>
             </div>
           </div>
+          {booking ? (
+            ""
+          ) : (
+            <form className="order-1 flex flex-col gap-4 self-center justify-self-center rounded-2xl border border-gray-300 px-4 py-3 text-2xl sm:px-8 sm:py-4 md:order-0">
+              <p className="text-center text-2xl font-bold">
+                Preço: {place.price} €{" "}
+              </p>
+              {/* checkin e checkout */}
+              <div className="flex flex-col sm:flex-row">
+                <div className="rounded-tl-2xl rounded-tr-2xl border border-gray-300 px-4 py-2 sm:rounded-tr-none sm:rounded-bl-2xl">
+                  <p className="font-bold">Checkin</p>
+                  <input
+                    className="w-full sm:w-auto"
+                    type="date"
+                    value={checkin}
+                    onChange={(e) => setCheckin(e.target.value)}
+                  />
+                </div>
 
-          <form className="order-1 flex flex-col gap-4 self-center justify-self-center rounded-2xl border border-gray-300 px-4 py-3 text-2xl sm:px-8 sm:py-4 md:order-0">
-            <p className="text-center text-2xl font-bold">
-              Preço: {place.price} €{" "}
-            </p>
-            {/* checkin e checkout */}
-            <div className="flex flex-col sm:flex-row">
-              <div className="rounded-tl-2xl rounded-tr-2xl border border-gray-300 px-4 py-2 sm:rounded-tr-none sm:rounded-bl-2xl">
-                <p className="font-bold">Checkin</p>
-                <input
-                  className="w-full sm:w-auto"
-                  type="date"
-                  value={checkin}
-                  onChange={(e) => setCheckin(e.target.value)}
-                />
+                <div className="rounded-br-2xl rounded-bl-2xl border border-t-0 border-gray-300 px-4 py-2 sm:rounded-tr-2xl sm:rounded-bl-none sm:border-t sm:border-l-0">
+                  <p className="font-bold">Checkout</p>
+                  <input
+                    className="w-full sm:w-auto"
+                    type="date"
+                    value={checkout}
+                    onChange={(e) => setCheckout(e.target.value)}
+                  />
+                </div>
               </div>
-
-              <div className="rounded-br-2xl rounded-bl-2xl border border-t-0 border-gray-300 px-4 py-2 sm:rounded-tr-2xl sm:rounded-bl-none sm:border-t sm:border-l-0">
-                <p className="font-bold">Checkout</p>
+              {/* participantes */}
+              <div className="flex flex-col rounded-2xl border border-gray-300 px-4 py-2">
+                <p className="font-bold">Nº de Participantes</p>
                 <input
-                  className="w-full sm:w-auto"
-                  type="date"
-                  value={checkout}
-                  onChange={(e) => setCheckout(e.target.value)}
+                  className="rounded-2xl border border-gray-300 px-4 py-2"
+                  placeholder="1"
+                  type="number"
+                  value={guests}
+                  onChange={(e) => setGuests(e.target.value)}
                 />
+                {user ? (
+                  <button
+                    className="bg-primary-400 w-full cursor-pointer rounded-full border border-gray-300 px-4 py-2 text-center font-bold text-white"
+                    onClick={handleBooking}
+                  >
+                    Reservar
+                  </button>
+                ) : (
+                  <Link
+                    to="/login"
+                    className="bg-primary-400 w-full cursor-pointer rounded-full border border-gray-300 px-4 py-2 text-center font-bold text-white"
+                  >
+                    Faça Login para reservar
+                  </Link>
+                )}
               </div>
-            </div>
-            {/* participantes */}
-            <div className="flex flex-col rounded-2xl border border-gray-300 px-4 py-2">
-              <p className="font-bold">Nº de Participantes</p>
-              <input
-                className="rounded-2xl border border-gray-300 px-4 py-2"
-                placeholder="1"
-                type="number"
-                value={guests}
-                onChange={(e) => setGuests(e.target.value)}
-              />
-              {user ? (
-                <button
-                  className="bg-primary-400 w-full cursor-pointer rounded-full border border-gray-300 px-4 py-2 text-center font-bold text-white"
-                  onClick={handleBooking}
-                >
-                  Reservar
-                </button>
-              ) : (
-                <Link
-                  to="/login"
-                  className="bg-primary-400 w-full cursor-pointer rounded-full border border-gray-300 px-4 py-2 text-center font-bold text-white"
-                >
-                  Faça Login para reservar
-                </Link>
-              )}
-            </div>
-          </form>
+            </form>
+          )}
         </div>
 
         <div className="gap flex flex-col gap-5 p-4">
@@ -213,6 +261,7 @@ const Place = () => {
             <div className="grid gap-4 sm:grid-cols-2">
               {place.photos.map((photo, index) => (
                 <img
+                  key={photo}
                   className={`aspect-square w-full object-cover`}
                   src={photo}
                   alt="imagem do local"
