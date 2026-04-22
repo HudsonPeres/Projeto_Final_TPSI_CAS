@@ -8,3 +8,82 @@
     Airbnb Cereal VF, Circular, -apple-system, BlinkMacSystemFont, Roboto,
     Helvetica Neue, sans-serif;
 }
+
+#switch {
+  background-color: transparent;
+}
+#switch-image {
+  transition: all 0.5s ease;
+}
+#switch-image.dark-rotate {
+  transform: rotate(180deg);
+}
+#switch-image:hover {
+  transform: rotate(20deg);
+}
+#switch-image.dark-rotate:hover {
+  transform: rotate(160deg);
+}
+
+/* Temas */
+body {
+  background-color: #fefefe;
+  color: black;
+  transition: all 0.5s ease;
+}
+body a {
+  color: #1b1b1b;
+}
+.body-dark {
+  background-color: #1a1a1a;
+  color: white;
+}
+.body-dark a {
+  color: #eeeeee;
+}
+
+.body-dark,
+.body-dark p,
+.body-dark h1,
+.body-dark h2,
+.body-dark h3,
+.body-dark h4,
+.body-dark label,
+.body-dark span,
+.body-dark div:not([class*="bg-"]):not([class*="border"]) {
+  color: #f0f0f0;
+}
+
+.body-dark input,
+.body-dark textarea,
+.body-dark select {
+  background-color: #2d2d2d;
+  color: #f0f0f0;
+  border-color: #555;
+}
+
+.body-dark input::placeholder,
+.body-dark textarea::placeholder {
+  color: #aaa;
+}
+
+.body-dark button {
+  color: white; /* mantém botões legíveis */
+}
+
+.body-dark .bg-gray-100 {
+  background-color: #2a2a2a;
+}
+
+.body-dark .border-gray-300 {
+  border-color: #444;
+}
+
+.body-dark .text-gray-600 {
+  color: #ccc;
+}
+
+a.bg-primary-400,
+a.bg-secondary-400 {
+  color: white !important;
+}

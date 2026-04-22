@@ -10,7 +10,7 @@ const AccPlaces = () => {
 
   useEffect(() => {
     const axiosGet = async () => {
-      const { data } = await axios.get("/places");
+      const { data } = await axios.get("/places/owner");
       setPlaces(data);
     };
 
@@ -20,7 +20,7 @@ const AccPlaces = () => {
   return (
     <div className="flex w-full max-w-7xl flex-col items-center">
       {action !== "new" ? (
-        <div className="gap8 flex flex-col items-center">
+        <div className="flex flex-col items-center gap-8">
           <Link
             to="/account/places/new"
             className="bg-primary-400 hover:bg-accent-400 flex cursor-pointer gap-2 rounded-full px-4 py-2 text-white transition"

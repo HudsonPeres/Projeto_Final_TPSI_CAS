@@ -18,6 +18,18 @@ router.get("/", async (req, res) => {
   }
 });
 
+router.get("/owner", async (req, res) => {
+  connectDB();
+  try {
+    const { _id: owner } = await JWTVerify(req);
+    const placeDocs = await Place.find({ owner });
+    res.json(placeDocs);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json("Erro ao encontrar lugares do usuário");
+  }
+});
+
 router.get("/:id", async (req, res) => {
   connectDB();
 

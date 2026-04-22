@@ -7,7 +7,7 @@ import AccBookings from "../components/AccBookings";
 
 export const Account = () => {
   const { subpage } = useParams();
-  const { user, ready } = useUserContext;
+  const { user, ready } = useUserContext();
 
   const buttonClass = (button) => {
     let finalClass =
@@ -29,7 +29,7 @@ export const Account = () => {
             Reservas
           </Link>
           <Link to="/account/places" className={buttonClass("places")}>
-            Lugares
+            Meus Anúncios
           </Link>
         </div>
         {subpage === "profile" && <AccProfile />}

@@ -7,25 +7,31 @@ import Register from "./pages/Register";
 import { Account } from "./pages/Account";
 import { UserContextProvider } from "./contexts/UserContext";
 import Place from "./pages/Place";
+import { ThemeProvider } from "./contexts/ThemeContext";
 
 axios.defaults.baseURL = import.meta.env.VITE_AXIOS_BASE_URL;
 axios.defaults.withCredentials = true;
 
 function App() {
   return (
-    <UserContextProvider>
-      <BrowserRouter>
-        <Header />
+    <ThemeProvider>
+      <UserContextProvider>
+        <BrowserRouter>
+          <Header />
 
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/account/:subpage/:action?/:id?" element={<Account />} />
-          <Route path="/place/:id" element={<Place />} />
-        </Routes>
-      </BrowserRouter>
-    </UserContextProvider>
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route
+              path="/account/:subpage/:action?/:id?"
+              element={<Account />}
+            />
+            <Route path="/place/:id" element={<Place />} />
+          </Routes>
+        </BrowserRouter>
+      </UserContextProvider>
+    </ThemeProvider>
   );
 }
 export default App;
