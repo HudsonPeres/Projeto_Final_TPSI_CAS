@@ -12,6 +12,7 @@ const placeSchema = new Schema({
   checkin: String,
   checkout: String,
   guests: Number,
+  isActive: { type: Boolean, default: true },
 });
 
 export default model("Places", placeSchema);

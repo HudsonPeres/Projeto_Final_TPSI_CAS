@@ -5,13 +5,15 @@ import { connectDB } from "../../config/db.js";
 import { __dirname } from "../../server.js";
 import { sendtoS3, downloadImage, uploadImage } from "./controller.js";
 import { resolve } from "url";
+import { isAdmin } from "../../utils/adminMiddleware.js";
+import DeletedPlace from "./deletedModel.js";
 
 const router = Router();
 
 router.get("/", async (req, res) => {
   connectDB();
   try {
-    const placeDocs = await Place.find();
+    const placeDocs = await Place.find({ isActive: true });
     res.json(placeDocs);
   } catch (error) {
     res.status(500).json("Erro ao encontrar as acomodações");
@@ -166,6 +168,66 @@ router.post("/upload", uploadImage().array("files", 10), async (req, res) => {
   const path = `${__dirname}/tmp/`;
 
   res.json(fileURLArrayResolved);
+});
+
+/* Listar todos os lugares (somente admin) */
+router.get("/admin/all", isAdmin, async (req, res) => {
+  connectDB();
+  try {
+    const places = await Place.find().populate("owner", "name email");
+    res.json(places);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Erro ao buscar lugares" });
+  }
+});
+
+/* Deletar qualquer lugar (somente admin) */
+router.delete("/admin/:id", isAdmin, async (req, res) => {
+  connectDB();
+  const { id } = req.params;
+  const { reason } = req.body;
+  try {
+    const place = await Place.findById(id);
+    if (!place)
+      return res.status(404).json({ message: "Lugar não encontrado" });
+
+    const admin = req.user;
+
+    // Salva no histórico de exclusão
+    await DeletedPlace.create({
+      originalId: place._id,
+      data: place.toObject(),
+      deletedBy: admin._id,
+      reason: reason || "Removido por administrador",
+    });
+
+    await Place.deleteOne({ _id: id });
+    res.json({ message: "Lugar removido e registrado em auditoria" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Erro ao deletar lugar" });
+  }
+});
+
+// Pausar/Ativar anúncio (soemnte admin)
+router.patch("/admin/:id/toggle", isAdmin, async (req, res) => {
+  connectDB();
+  const { id } = req.params;
+  try {
+    const place = await Place.findById(id);
+    if (!place)
+      return res.status(404).json({ message: "Lugar não encontrado" });
+    place.isActive = !place.isActive;
+    await place.save();
+    res.json({
+      message: `Lugar ${place.isActive ? "ativado" : "pausado"}`,
+      isActive: place.isActive,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Erro ao alterar status" });
+  }
 });
 
 export default router;

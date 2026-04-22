@@ -41,8 +41,7 @@ router.post("/", async (req, res) => {
     });
 
     const { _id } = newUserDoc;
-    const newUserObj = { name, email, _id };
-
+    const newUserObj = { name, email, _id, role: newUserDoc.role };
     try {
       const token = await JWTSign(newUserObj);
 
@@ -69,7 +68,7 @@ router.post("/login", async (req, res) => {
       const { name, _id } = userDoc;
 
       if (passwordCorrect) {
-        const newUserObj = { name, email, _id };
+        const newUserObj = { name, email, _id, role: userDoc.role };
         try {
           const token = jwt.sign(newUserObj, JWT_SECRET_KEY);
           res.cookie("token", token).json(newUserObj);

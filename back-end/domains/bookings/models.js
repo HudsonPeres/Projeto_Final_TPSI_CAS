@@ -9,6 +9,11 @@ const bookingSchema = new Schema({
   checkout: String,
   guests: Number,
   nights: Number,
+  status: {
+    type: String,
+    default: "confirmed",
+    enum: ["confirmed", "cancelled"],
+  },
 });
 
 export default model("booking", bookingSchema);

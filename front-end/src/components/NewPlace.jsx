@@ -4,6 +4,7 @@ import axios from "axios";
 import { Navigate, useParams } from "react-router-dom";
 import { useUserContext } from "../contexts/UserContext.jsx";
 import PhotoUploader from "./PhotoUploader.jsx";
+import ProgressButton from "./ProgressButton.jsx";
 
 const NewPlace = () => {
   const { id } = useParams();
@@ -20,6 +21,9 @@ const NewPlace = () => {
   const [guests, setGuests] = useState("");
   const [redirect, setRedirect] = useState(false);
   const [photolink, setPhotolink] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
 
   useEffect(() => {
     if (id) {
@@ -55,47 +59,70 @@ const NewPlace = () => {
       checkout &&
       guests
     ) {
-      if (id) {
-        try {
-          const modifiedPlace = await axios.put(`/places/${id}`, {
-            title,
-            address,
-            photos,
-            description,
-            extras,
-            perks,
-            price,
-            checkin,
-            checkout,
-            guests,
-          });
-          alert("Modificado com sucesso");
+      setIsLoading(true);
+      setIsSuccess(false);
+      setUploadProgress(0);
+
+      try {
+        if (id) {
+          await axios.put(
+            `/places/${id}`,
+            {
+              title,
+              address,
+              photos,
+              description,
+              extras,
+              perks,
+              price,
+              checkin,
+              checkout,
+              guests,
+            },
+            {
+              onUploadProgress: (progressEvent) => {
+                const percent = Math.round(
+                  (progressEvent.loaded * 100) / progressEvent.total,
+                );
+                setUploadProgress(percent);
+              },
+            },
+          );
+        } else {
+          await axios.post(
+            "/places",
+            {
+              owner: user._id,
+              title,
+              address,
+              photos,
+              description,
+              extras,
+              perks,
+              price,
+              checkin,
+              checkout,
+              guests,
+            },
+            {
+              onUploadProgress: (progressEvent) => {
+                const percent = Math.round(
+                  (progressEvent.loaded * 100) / progressEvent.total,
+                );
+                setUploadProgress(percent);
+              },
+            },
+          );
+        }
+        setIsSuccess(true);
+        setTimeout(() => {
           setRedirect(true);
-        } catch (error) {
-          console.error(JSON.stringify(error));
-          alert("Erro ao tentar atualizar");
-        }
-      } else {
-        try {
-          const newPlace = await axios.post("/places", {
-            owner: user._id,
-            title,
-            address,
-            photos,
-            description,
-            extras,
-            perks,
-            price,
-            checkin,
-            checkout,
-            guests,
-          });
-          alert("Adicionado com sucesso");
-        } catch (error) {
-          console.error(JSON.stringify(error));
-          alert("Erro ao tentar criar");
-        }
-        setRedirect(true);
+        }, 1000);
+      } catch (error) {
+        console.error(JSON.stringify(error));
+        alert("Erro ao tentar salvar");
+        setIsLoading(false);
+        setUploadProgress(0);
       }
     } else {
       alert("Preencha todas as informações necessárias antes de enviar");
@@ -214,9 +241,13 @@ const NewPlace = () => {
           </div>
         </div>
       </div>
-      <button className="bg-primary-400 hover:bg-accent-400 cursor-pointer gap-2 rounded-full px-4 py-2 text-white transition">
-        Salvar Informações
-      </button>
+      <ProgressButton
+        text="Salvar Informações"
+        onClick={handleSubmit}
+        isLoading={isLoading}
+        isSuccess={isSuccess}
+        progress={uploadProgress}
+      />
     </form>
   );
 };
