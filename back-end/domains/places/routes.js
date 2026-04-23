@@ -7,6 +7,7 @@ import { sendtoS3, downloadImage, uploadImage } from "./controller.js";
 import { resolve } from "url";
 import { isAdmin } from "../../utils/adminMiddleware.js";
 import DeletedPlace from "./deletedModel.js";
+import Booking from "../bookings/models.js";
 
 const router = Router();
 
@@ -60,6 +61,8 @@ router.put("/:id", async (req, res) => {
     checkin,
     checkout,
     guests,
+    availableDates,
+    isMultiDay,
   } = req.body;
 
   try {
@@ -76,7 +79,10 @@ router.put("/:id", async (req, res) => {
         checkin,
         checkout,
         guests,
+        availableDates,
+        isMultiDay,
       },
+      { new: true },
     );
 
     res.json(updatedPlaceDoc);
@@ -98,6 +104,8 @@ router.post("/", async (req, res) => {
     checkin,
     checkout,
     guests,
+    availableDates,
+    isMultiDay,
   } = req.body;
 
   try {
@@ -114,6 +122,8 @@ router.post("/", async (req, res) => {
       checkin,
       checkout,
       guests,
+      availableDates,
+      isMultiDay,
     });
 
     res.json(newPlaceDoc);
@@ -228,6 +238,27 @@ router.patch("/admin/:id/toggle", isAdmin, async (req, res) => {
     console.error(error);
     res.status(500).json({ message: "Erro ao alterar status" });
   }
+});
+
+router.get("/:id/availability", async (req, res) => {
+  const { id } = req.params;
+  const place = await Place.findById(id);
+  if (!place) return res.status(404).json({ message: "Lugar não encontrado" });
+  const bookings = await Booking.find({ place: id, status: "confirmed" });
+  const bookedDates = [];
+  bookings.forEach((b) => {
+    let d = new Date(b.checkin);
+    while (d <= new Date(b.checkout)) {
+      bookedDates.push(d.toISOString().split("T")[0]);
+      d.setDate(d.getDate() + 1);
+    }
+  });
+  res.json({
+    availableDates: place.availableDates.map(
+      (d) => d.toISOString().split("T")[0],
+    ),
+    bookedDates: [...new Set(bookedDates)],
+  });
 });
 
 export default router;

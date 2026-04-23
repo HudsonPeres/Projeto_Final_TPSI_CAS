@@ -25,8 +25,10 @@ const AvailabilityCalendar = ({ selectedDates, setSelectedDates }) => {
     );
   };
 
-  const formatDate = (date) => date.toLocaleDateString("pt-PT");
-
+  const formatDate = (date) => {
+    const dateObj = date instanceof Date ? date : new Date(date);
+    return dateObj.toLocaleDateString("pt-PT");
+  };
   return (
     <div className="flex flex-col gap-4">
       <label className="text-2xl font-bold">

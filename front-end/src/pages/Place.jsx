@@ -4,6 +4,7 @@ import { useParams, Link, Navigate } from "react-router-dom";
 import { useUserContext } from "../contexts/UserContext";
 import Perk from "../components/Perk";
 import Booking from "../components/Booking";
+import BookingCalendar from "../components/BookingCalendar";
 
 const Place = () => {
   const { id } = useParams();
@@ -58,7 +59,6 @@ const Place = () => {
 
   const handleBooking = async (e) => {
     e.preventDefault();
-
     if (checkin && checkout && guests) {
       const nights = numberofDays(checkin, checkout);
       const objBooking = {
@@ -71,12 +71,24 @@ const Place = () => {
         guests,
         nights,
       };
-
-      const { data } = await axios.post("/bookings", objBooking);
-      alert("reservado com sucesso");
-      setRedirect(true);
+      try {
+        await axios.post("/bookings", objBooking);
+        alert("Reservado com sucesso");
+        setRedirect(true);
+      } catch (error) {
+        if (error.response) {
+          const { status, data } = error.response;
+          if (status === 400)
+            alert(data.message || "Número de participantes excede o limite.");
+          else if (status === 409)
+            alert(data.message || "Data não disponível ou já reservada.");
+          else alert("Erro ao reservar. Tente novamente.");
+        } else {
+          alert("Erro de conexão com o servidor.");
+        }
+      }
     } else {
-      alert("preencha todas as informações para fazer a reserva");
+      alert("Preencha todas as informações para fazer a reserva");
     }
   };
 
@@ -169,27 +181,15 @@ const Place = () => {
                 Preço: {place.price} €{" "}
               </p>
               {/* checkin e checkout */}
-              <div className="flex flex-col sm:flex-row">
-                <div className="rounded-tl-2xl rounded-tr-2xl border border-gray-300 px-4 py-2 sm:rounded-tr-none sm:rounded-bl-2xl">
-                  <p className="font-bold">Checkin</p>
-                  <input
-                    className="w-full sm:w-auto"
-                    type="date"
-                    value={checkin}
-                    onChange={(e) => setCheckin(e.target.value)}
-                  />
-                </div>
-
-                <div className="rounded-br-2xl rounded-bl-2xl border border-t-0 border-gray-300 px-4 py-2 sm:rounded-tr-2xl sm:rounded-bl-none sm:border-t sm:border-l-0">
-                  <p className="font-bold">Checkout</p>
-                  <input
-                    className="w-full sm:w-auto"
-                    type="date"
-                    value={checkout}
-                    onChange={(e) => setCheckout(e.target.value)}
-                  />
-                </div>
-              </div>
+              <BookingCalendar
+                placeId={id}
+                onDateChange={(range) => {
+                  setCheckin(
+                    range.startDate?.toISOString().split("T")[0] || "",
+                  );
+                  setCheckout(range.endDate?.toISOString().split("T")[0] || "");
+                }}
+              />
               {/* participantes */}
               <div className="flex flex-col rounded-2xl border border-gray-300 px-4 py-2">
                 <p className="font-bold">Nº de Participantes</p>

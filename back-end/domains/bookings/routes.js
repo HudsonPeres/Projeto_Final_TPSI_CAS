@@ -34,6 +34,73 @@ router.post("/", async (req, res) => {
     req.body;
 
   try {
+    // 1. Buscar o lugar
+    const placeDoc = await Place.findById(place);
+    if (!placeDoc)
+      return res.status(404).json({ message: "Lugar não encontrado" });
+
+    // 2. Validar número de participantes
+    if (guests > placeDoc.guests) {
+      return res
+        .status(400)
+        .json({ message: "Limite de participantes acima do permitido" });
+    }
+
+    const startDate = new Date(checkin);
+    const endDate = new Date(checkout);
+
+    // 3. Verificar se todas as datas estão dentro de availableDates (se o array existir e não for vazio)
+    if (placeDoc.availableDates && placeDoc.availableDates.length > 0) {
+      let allAvailable = true;
+      let current = new Date(startDate);
+      while (current <= endDate) {
+        const dateStr = current.toISOString().split("T")[0];
+        const isAvailable = placeDoc.availableDates.some((d) => {
+          const dStr =
+            d instanceof Date
+              ? d.toISOString().split("T")[0]
+              : new Date(d).toISOString().split("T")[0];
+          return dStr === dateStr;
+        });
+        if (!isAvailable) {
+          allAvailable = false;
+          break;
+        }
+        current.setDate(current.getDate() + 1);
+      }
+      if (!allAvailable)
+        return res.status(409).json({ message: "Data não disponível" });
+    }
+
+    // 4. Verificar conflito com outras reservas confirmadas
+    const checkinMs = startDate.getTime();
+    const checkoutMs = endDate.getTime();
+
+    const conflictingBooking = await Booking.findOne({
+      place,
+      status: "confirmed",
+      $expr: {
+        $and: [
+          {
+            $lt: [
+              { $dateFromString: { dateString: "$checkin" } },
+              new Date(checkoutMs),
+            ],
+          },
+          {
+            $gt: [
+              { $dateFromString: { dateString: "$checkout" } },
+              new Date(checkinMs),
+            ],
+          },
+        ],
+      },
+    });
+    if (conflictingBooking) {
+      return res.status(409).json({ message: "Data já reservada" });
+    }
+
+    // 5. Criar a reserva
     const newBookingDoc = await Booking.create({
       place,
       user,
@@ -43,12 +110,13 @@ router.post("/", async (req, res) => {
       checkout,
       guests,
       nights,
+      status: "confirmed",
     });
 
     res.json(newBookingDoc);
   } catch (error) {
-    console.error(error);
-    res.status(500).json("Erro ao criar a reserva ");
+    console.error("Erro ao criar reserva:", error);
+    res.status(500).json("Erro ao criar a reserva");
   }
 });
 
@@ -68,8 +136,7 @@ router.get("/admin/all", isAdmin, async (req, res) => {
 router.delete("/admin/:id", isAdmin, async (req, res) => {
   connectDB();
   const { id } = req.params;
-  const { reason } = req.body; // motivo opcional
-
+  const reason = req.body?.reason || "Removida por administrador";
   try {
     const booking = await Booking.findById(id);
     if (!booking) return res.status(404).json("Reserva não encontrada");

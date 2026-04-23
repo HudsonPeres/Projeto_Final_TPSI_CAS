@@ -44,7 +44,8 @@ const NewPlace = () => {
         setCheckout(data.checkout);
         setGuests(data.guests);
         setAvailableDates(data.availableDates || []);
-        setBookingType(data.bookingType || "single");
+        setBookingType(data.isMultiDay === true ? "multi" : "single");
+        setAvailableDates((data.availableDates || []).map((d) => new Date(d)));
       };
       axiosGet();
     }
@@ -67,6 +68,8 @@ const NewPlace = () => {
       setIsSuccess(false);
       setUploadProgress(0);
 
+      const isMultiDay = bookingType === "multi";
+
       try {
         if (id) {
           await axios.put(
@@ -83,7 +86,7 @@ const NewPlace = () => {
               checkout,
               guests,
               availableDates,
-              bookingType,
+              isMultiDay,
             },
             {
               onUploadProgress: (progressEvent) => {
@@ -110,7 +113,7 @@ const NewPlace = () => {
               checkout,
               guests,
               availableDates,
-              bookingType,
+              isMultiDay,
             },
             {
               onUploadProgress: (progressEvent) => {
