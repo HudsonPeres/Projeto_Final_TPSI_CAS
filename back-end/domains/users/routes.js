@@ -23,9 +23,49 @@ router.get("/", async (req, res) => {
 });
 
 router.get("/profile", async (req, res) => {
-  const userInfo = await JWTVerify(req);
+  try {
+    const userInfo = await JWTVerify(req);
+    const user = await Users.findById(userInfo._id).select("-password");
+    if (!user)
+      return res.status(404).json({ message: "Utilizador não encontrado" });
+    res.json(user);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Erro ao buscar perfil" });
+  }
+});
 
-  res.json(userInfo);
+router.put("/profile", async (req, res) => {
+  connectDB();
+  try {
+    const userInfo = await JWTVerify(req);
+    const { name, address, phone, phoneCode, birthDate } = req.body;
+    const updatedUser = await Users.findByIdAndUpdate(
+      userInfo._id,
+      { name, address, phone, phoneCode, birthDate },
+      { new: true },
+    ).select("-password");
+    res.json(updatedUser);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Erro ao atualizar perfil" });
+  }
+});
+
+// POST /users/profile/request-email-change – mock (será implementado depois)
+router.post("/profile/request-email-change", async (req, res) => {
+  res.json({
+    message:
+      "Funcionalidade em desenvolvimento. Será enviado um email para confirmar a alteração.",
+  });
+});
+
+// POST /users/profile/request-password-change – mock
+router.post("/profile/request-password-change", async (req, res) => {
+  res.json({
+    message:
+      "Funcionalidade em desenvolvimento. Será enviado um email para redefinir a palavra-passe.",
+  });
 });
 
 router.post("/", async (req, res) => {
@@ -94,7 +134,6 @@ router.post("/logout", (req, res) => {
 });
 
 //superadmin
-// GET /users/all - listar todos os usuários (apenas superadmin)
 router.get("/all", isSuperAdmin, async (req, res) => {
   connectDB();
   try {
@@ -105,7 +144,6 @@ router.get("/all", isSuperAdmin, async (req, res) => {
   }
 });
 
-// PUT /users/:id/role - atualizar papel de um usuário (apenas superadmin)
 router.put("/:id/role", isSuperAdmin, async (req, res) => {
   connectDB();
   const { id } = req.params;
@@ -124,6 +162,23 @@ router.put("/:id/role", isSuperAdmin, async (req, res) => {
   } catch (error) {
     res.status(500).json("Erro ao atualizar papel");
   }
+});
+
+//esqueceu da pass
+router.post("/forgot-password", async (req, res) => {
+  const { email } = req.body;
+  // TODO: Verificar se email existe, gerar token, salvar no banco (ex: uma coleção PasswordReset)
+  res.json({
+    message: "Se o email existir, enviaremos um código de recuperação.",
+  });
+});
+
+router.post("/reset-password", async (req, res) => {
+  const { email, token, newPassword } = req.body;
+  // TODO: Validar token, atualizar senha
+  res.json({
+    message: "Funcionalidade em desenvolvimento. Senha não alterada.",
+  });
 });
 
 export default router;

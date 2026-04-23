@@ -55,6 +55,12 @@ export const Login = () => {
           </button>
         </form>
         <p>
+          Esqueceu da senha?{" "}
+          <Link to="/forgot-password" className="font-semibold underline">
+            Recupere aqui
+          </Link>
+        </p>
+        <p>
           Ainda não tem conta?{" "}
           <Link to="/register" className="font-semibold underline">
             Registe-se aqui

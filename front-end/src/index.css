@@ -185,3 +185,42 @@ a.bg-secondary-400 {
 .body-dark button.text-red-500:hover {
   color: #ff5252 !important;
 }
+
+/* ===== Modo escuro para o perfil e componentes semelhantes ===== */
+.body-dark .bg-white {
+  background-color: #1e1e1e;
+}
+.body-dark .bg-gray-100 {
+  background-color: #0f0f0f;
+}
+.body-dark .bg-gray-50 {
+  background-color: #1a1a1a;
+}
+.body-dark .border-gray-200 {
+  border-color: #333;
+}
+.body-dark .text-gray-700,
+.body-dark label {
+  color: #e0e0e0;
+}
+.body-dark .text-gray-800 {
+  color: #f0f0f0;
+}
+.body-dark .text-gray-500,
+.body-dark .text-sm.text-gray-500 {
+  color: #aaa;
+}
+.body-dark input,
+.body-dark select,
+.body-dark textarea {
+  background-color: #2a2a2a;
+  border-color: #444;
+  color: #eee;
+}
+.body-dark input:disabled {
+  background-color: #333;
+  color: #bbb;
+}
+.body-dark .shadow-sm {
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+}

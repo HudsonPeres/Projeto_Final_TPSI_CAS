@@ -11,6 +11,7 @@ import { ThemeProvider } from "./contexts/ThemeContext";
 import PlaceBookingsManager from "./components/PlaceBookingsManager";
 import UserManager from "./components/UserManager";
 import AuditPanel from "./components/AuditPanel";
+import ForgotPassword from "./components/ForgotPassword";
 
 axios.defaults.baseURL = import.meta.env.VITE_AXIOS_BASE_URL;
 axios.defaults.withCredentials = true;
@@ -36,6 +37,7 @@ function App() {
               path="/account/places/:placeId/bookings"
               element={<PlaceBookingsManager />}
             />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
           </Routes>
         </BrowserRouter>
       </UserContextProvider>
