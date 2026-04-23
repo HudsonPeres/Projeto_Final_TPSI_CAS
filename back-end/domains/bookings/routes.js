@@ -6,6 +6,7 @@ import Place from "../places/models.js";
 import User from "../users/model.js";
 import { isAdmin } from "../../utils/adminMiddleware.js";
 import DeletedBooking from "./deletedModel.js";
+import { isSuperAdmin } from "../../utils/adminMiddleware.js";
 
 const router = Router();
 
@@ -184,6 +185,114 @@ router.patch("/admin/:id/reactivate", isAdmin, async (req, res) => {
     res.json({ message: "Reserva reativada", status: booking.status });
   } catch (error) {
     res.status(500).json("Erro ao reativar reserva");
+  }
+});
+
+router.get("/place/:placeId/owner", async (req, res) => {
+  connectDB();
+  const { placeId } = req.params;
+  try {
+    const { _id: userId } = await JWTVerify(req);
+    const place = await Place.findById(placeId);
+    if (!place)
+      return res.status(404).json({ message: "Anúncio não encontrado" });
+    if (place.owner.toString() !== userId.toString()) {
+      return res
+        .status(403)
+        .json({ message: "Acesso negado. Você não é o dono deste anúncio." });
+    }
+    const bookings = await Booking.find({ place: placeId }).populate(
+      "user",
+      "name email",
+    );
+    res.json(bookings);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json("Erro ao buscar reservas");
+  }
+});
+
+router.patch("/:id/cancel/owner", async (req, res) => {
+  connectDB();
+  const { id } = req.params;
+  try {
+    const { _id: userId } = await JWTVerify(req);
+    const booking = await Booking.findById(id).populate("place");
+    if (!booking)
+      return res.status(404).json({ message: "Reserva não encontrada" });
+    if (booking.place.owner.toString() !== userId.toString()) {
+      return res.status(403).json({ message: "Não autorizado" });
+    }
+    booking.status = "cancelled";
+    await booking.save();
+    res.json({ message: "Reserva cancelada com sucesso", booking });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json("Erro ao cancelar reserva");
+  }
+});
+
+router.delete("/:id/delete/owner", async (req, res) => {
+  connectDB();
+  const { id } = req.params;
+  const { reason } = req.body;
+  try {
+    const { _id: userId } = await JWTVerify(req);
+    const booking = await Booking.findById(id).populate("place");
+    if (!booking)
+      return res.status(404).json({ message: "Reserva não encontrada" });
+    if (booking.place.owner.toString() !== userId.toString()) {
+      return res.status(403).json({ message: "Não autorizado" });
+    }
+    if (booking.status !== "cancelled") {
+      return res
+        .status(400)
+        .json({ message: "Apenas reservas canceladas podem ser apagadas" });
+    }
+
+    // Obter nome do anunciante
+    const ownerUser = await User.findById(userId);
+    const ownerName = ownerUser?.name || "Anunciante desconhecido";
+
+    // Registrar na coleção de auditoria (deletedbookings)
+    await DeletedBooking.create({
+      originalId: booking._id,
+      data: booking.toObject(),
+      deletedBy: userId,
+      reason: reason || `Apagado pelo anunciante: ${ownerName}`,
+    });
+
+    await Booking.deleteOne({ _id: id });
+    res.json({
+      message: "Reserva apagada permanentemente e registrada em auditoria",
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json("Erro ao apagar reserva");
+  }
+});
+
+router.get("/deleted/all", isSuperAdmin, async (req, res) => {
+  connectDB();
+  try {
+    const deleted = await DeletedBooking.find().populate(
+      "deletedBy",
+      "name email",
+    );
+    res.json(deleted);
+  } catch (error) {
+    res.status(500).json("Erro ao buscar reservas deletadas");
+  }
+});
+
+router.delete("/deleted/:id", isSuperAdmin, async (req, res) => {
+  connectDB();
+  const { id } = req.params;
+  try {
+    await DeletedBooking.findByIdAndDelete(id);
+    res.json({ message: "Registro apagado permanentemente" });
+  } catch (error) {
+    res.status(500).json("Erro ao apagar registro");
   }
 });
 

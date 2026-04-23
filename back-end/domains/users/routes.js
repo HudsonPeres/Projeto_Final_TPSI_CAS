@@ -5,6 +5,7 @@ import Users from "./model.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { JWTSign, JWTVerify } from "../../utils/jwt.js";
+import { isSuperAdmin } from "../../utils/adminMiddleware.js";
 
 const router = Router();
 const bcryptSalt = bcrypt.genSaltSync();
@@ -90,6 +91,39 @@ router.post("/login", async (req, res) => {
 
 router.post("/logout", (req, res) => {
   res.clearCookie("token").json("Sessão Encerrada com sucesso");
+});
+
+//superadmin
+// GET /users/all - listar todos os usuários (apenas superadmin)
+router.get("/all", isSuperAdmin, async (req, res) => {
+  connectDB();
+  try {
+    const users = await Users.find().select("-password");
+    res.json(users);
+  } catch (error) {
+    res.status(500).json("Erro ao buscar usuários");
+  }
+});
+
+// PUT /users/:id/role - atualizar papel de um usuário (apenas superadmin)
+router.put("/:id/role", isSuperAdmin, async (req, res) => {
+  connectDB();
+  const { id } = req.params;
+  const { role } = req.body;
+  if (!["user", "admin", "support", "superadmin"].includes(role)) {
+    return res.status(400).json({ message: "Papel inválido" });
+  }
+  try {
+    const user = await Users.findByIdAndUpdate(
+      id,
+      { role },
+      { new: true },
+    ).select("-password");
+    if (!user) return res.status(404).json("Usuário não encontrado");
+    res.json(user);
+  } catch (error) {
+    res.status(500).json("Erro ao atualizar papel");
+  }
 });
 
 export default router;

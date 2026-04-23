@@ -8,6 +8,7 @@ import { resolve } from "url";
 import { isAdmin } from "../../utils/adminMiddleware.js";
 import DeletedPlace from "./deletedModel.js";
 import Booking from "../bookings/models.js";
+import { isSuperAdmin } from "../../utils/adminMiddleware.js";
 
 const router = Router();
 
@@ -259,6 +260,33 @@ router.get("/:id/availability", async (req, res) => {
     ),
     bookedDates: [...new Set(bookedDates)],
   });
+});
+
+//superadmin
+// GET /places/deleted/all - listar todos os anúncios deletados (apenas superadmin)
+router.get("/deleted/all", isSuperAdmin, async (req, res) => {
+  connectDB();
+  try {
+    const deleted = await DeletedPlace.find().populate(
+      "deletedBy",
+      "name email",
+    );
+    res.json(deleted);
+  } catch (error) {
+    res.status(500).json("Erro ao buscar registros deletados");
+  }
+});
+
+// DELETE /places/deleted/:id - apagar permanentemente um registro de auditoria (apenas superadmin)
+router.delete("/deleted/:id", isSuperAdmin, async (req, res) => {
+  connectDB();
+  const { id } = req.params;
+  try {
+    await DeletedPlace.findByIdAndDelete(id);
+    res.json({ message: "Registro apagado permanentemente" });
+  } catch (error) {
+    res.status(500).json("Erro ao apagar registro");
+  }
 });
 
 export default router;

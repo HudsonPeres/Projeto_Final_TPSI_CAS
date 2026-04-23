@@ -5,6 +5,8 @@ import AccPlaces from "../components/AccPlaces";
 import { useUserContext } from "../contexts/UserContext";
 import AccBookings from "../components/AccBookings";
 import AdminPanel from "../components/AdminPanel";
+import AuditPanel from "../components/AuditPanel";
+import UserManager from "../components/UserManager";
 
 export const Account = () => {
   const { subpage } = useParams();
@@ -32,16 +34,30 @@ export const Account = () => {
           <Link to="/account/places" className={buttonClass("places")}>
             Meus Anúncios
           </Link>
-          {user?.role === "admin" && (
+
+          {(user?.role === "admin" || user?.role === "superadmin") && (
             <Link to="/account/admin" className={buttonClass("admin")}>
               Painel Admin
             </Link>
+          )}
+
+          {user?.role === "superadmin" && (
+            <>
+              <Link to="/account/users" className={buttonClass("users")}>
+                Usuários
+              </Link>
+              <Link to="/account/audit" className={buttonClass("audit")}>
+                Auditoria
+              </Link>
+            </>
           )}
         </div>
         {subpage === "profile" && <AccProfile />}
         {subpage === "places" && <AccPlaces />}
         {subpage === "bookings" && <AccBookings />}
         {subpage === "admin" && <AdminPanel />}
+        {subpage === "users" && <UserManager />}
+        {subpage === "audit" && <AuditPanel />}
       </div>
     </section>
   );
