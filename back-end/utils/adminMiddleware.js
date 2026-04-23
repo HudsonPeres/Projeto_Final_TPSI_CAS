@@ -35,3 +35,28 @@ export const isSuperAdmin = async (req, res, next) => {
     });
   }
 };
+
+export const isSupport = async (req, res, next) => {
+  try {
+    const user = await JWTVerify(req);
+    if (
+      !user ||
+      (user.role !== "support" &&
+        user.role !== "admin" &&
+        user.role !== "superadmin")
+    ) {
+      return res
+        .status(403)
+        .json({
+          message: "Acesso negado. Suporte ou administrador necessário.",
+        });
+    }
+    req.user = user;
+    next();
+  } catch (error) {
+    console.error("Middleware isSupport:", error);
+    res
+      .status(500)
+      .json({ message: "Erro ao verificar permissões de suporte" });
+  }
+};

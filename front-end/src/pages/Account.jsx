@@ -7,6 +7,7 @@ import AccBookings from "../components/AccBookings";
 import AdminPanel from "../components/AdminPanel";
 import AuditPanel from "../components/AuditPanel";
 import UserManager from "../components/UserManager";
+import SupportPanel from "../components/SupportPanel";
 
 export const Account = () => {
   const { subpage } = useParams();
@@ -51,6 +52,11 @@ export const Account = () => {
               </Link>
             </>
           )}
+          {user?.role === "support" && (
+            <Link to="/account/support" className={buttonClass("support")}>
+              Painel Suporte
+            </Link>
+          )}
         </div>
         {subpage === "profile" && <AccProfile />}
         {subpage === "places" && <AccPlaces />}
@@ -58,6 +64,7 @@ export const Account = () => {
         {subpage === "admin" && <AdminPanel />}
         {subpage === "users" && <UserManager />}
         {subpage === "audit" && <AuditPanel />}
+        {subpage === "support" && <SupportPanel />}
       </div>
     </section>
   );

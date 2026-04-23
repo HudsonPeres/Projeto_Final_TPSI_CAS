@@ -62,7 +62,7 @@ export const AccProfile = () => {
         "/users/profile/request-password-change",
       );
       alert(data.message);
-    } catch (error) {
+    } catch (erro) {
       alert("Erro ao solicitar alteração de palavra-passe.");
     }
   };

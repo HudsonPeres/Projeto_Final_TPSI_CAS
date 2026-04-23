@@ -7,6 +7,7 @@ import User from "../users/model.js";
 import { isAdmin } from "../../utils/adminMiddleware.js";
 import DeletedBooking from "./deletedModel.js";
 import { isSuperAdmin } from "../../utils/adminMiddleware.js";
+import { isSupport } from "../../utils/adminMiddleware.js";
 
 const router = Router();
 
@@ -293,6 +294,18 @@ router.delete("/deleted/:id", isSuperAdmin, async (req, res) => {
     res.json({ message: "Registro apagado permanentemente" });
   } catch (error) {
     res.status(500).json("Erro ao apagar registro");
+  }
+});
+
+router.get("/support/all", isSupport, async (req, res) => {
+  connectDB();
+  try {
+    const bookings = await Booking.find()
+      .populate("place", "title photos")
+      .populate("user", "name email");
+    res.json(bookings);
+  } catch (error) {
+    res.status(500).json({ message: "Erro ao buscar reservas" });
   }
 });
 
