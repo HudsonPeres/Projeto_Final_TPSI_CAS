@@ -5,26 +5,51 @@ import { useUserContext } from "../contexts/UserContext";
 
 export const Login = () => {
   const { user, setUser } = useUserContext();
+  const [step, setStep] = useState("form"); // "form" ou "verify"
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [otp, setOtp] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState("");
   const [redirect, setRedirect] = useState(false);
 
-  const handleSubmit = async (e) => {
+  const handleRequestOtp = async (e) => {
     e.preventDefault();
+    setLoading(true);
+    setMessage("");
+    try {
+      await axios.post("/auth/request-otp", { email, type: "login" });
+      setMessage(
+        `Código enviado para ${email}. Verifique a sua caixa de entrada.`,
+      );
+      setStep("verify");
+    } catch (error) {
+      setMessage(error.response?.data?.message || "Erro ao solicitar código.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    if (email && password) {
-      try {
-        const { data: userDoc } = await axios.post("/users/login", {
-          email,
-          password,
-        });
-        setUser(userDoc);
-        setRedirect(true);
-      } catch (error) {
-        alert(`Erro ao logar: ${error.response.data}`);
-      }
-    } else {
-      alert("Preencha o email e a senha");
+  const handleVerifyOtp = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setMessage("");
+    try {
+      const { data } = await axios.post("/auth/verify-otp", {
+        email,
+        otp,
+        type: "login",
+        password,
+      });
+      setUser(data);
+      setRedirect(true);
+    } catch (error) {
+      setMessage(
+        error.response?.data?.message ||
+          "Código inválido ou credenciais erradas.",
+      );
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -33,27 +58,77 @@ export const Login = () => {
   return (
     <section className="flex items-center">
       <div className="mx-auto flex w-full max-w-96 flex-col items-center gap-4 p-8">
-        <h1 className="text-3xl font-bold">Faça seu Login </h1>
+        <h1 className="text-3xl font-bold">Faça seu Login</h1>
 
-        <form className="flex w-full flex-col gap-2" onSubmit={handleSubmit}>
-          <input
-            type="email"
-            className="w-full rounded-full border border-gray-300 px-4 py-2"
-            placeholder="Digite seu email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-          <input
-            type="password"
-            className="w-full rounded-full border border-gray-300 px-4 py-2"
-            placeholder="Digite sua senha"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
-          <button className="bg-primary-400 w-full cursor-pointer rounded-full border border-gray-300 px-4 py-2 font-bold text-white">
-            Login
-          </button>
-        </form>
+        {step === "form" && (
+          <form
+            className="flex w-full flex-col gap-2"
+            onSubmit={handleRequestOtp}
+          >
+            <input
+              type="email"
+              className="w-full rounded-full border border-gray-300 px-4 py-2"
+              placeholder="Digite seu email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+            <input
+              type="password"
+              className="w-full rounded-full border border-gray-300 px-4 py-2"
+              placeholder="Digite sua senha"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+            <button
+              type="submit"
+              disabled={loading}
+              className="bg-primary-400 w-full cursor-pointer rounded-full border border-gray-300 px-4 py-2 font-bold text-white transition"
+            >
+              {loading ? "A enviar..." : "Continuar"}
+            </button>
+          </form>
+        )}
+
+        {step === "verify" && (
+          <form
+            className="flex w-full flex-col gap-2"
+            onSubmit={handleVerifyOtp}
+          >
+            <p className="text-center text-sm text-gray-600">
+              Enviámos um código de 6 dígitos para <strong>{email}</strong>.
+            </p>
+            <input
+              type="text"
+              className="w-full rounded-full border border-gray-300 px-4 py-2 text-center text-2xl tracking-widest"
+              placeholder="Código"
+              value={otp}
+              onChange={(e) => setOtp(e.target.value)}
+              maxLength={6}
+              required
+            />
+            <button
+              type="submit"
+              disabled={loading}
+              className="bg-primary-400 w-full cursor-pointer rounded-full border border-gray-300 px-4 py-2 font-bold text-white transition"
+            >
+              {loading ? "A verificar..." : "Entrar"}
+            </button>
+            <button
+              type="button"
+              onClick={() => setStep("form")}
+              className="text-sm text-gray-500 underline"
+            >
+              Voltar
+            </button>
+          </form>
+        )}
+
+        {message && (
+          <p className="text-center text-sm text-red-500">{message}</p>
+        )}
+
         <p>
           Esqueceu da senha?{" "}
           <Link to="/forgot-password" className="font-semibold underline">

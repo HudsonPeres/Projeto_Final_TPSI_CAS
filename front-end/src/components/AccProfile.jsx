@@ -95,7 +95,6 @@ export const AccProfile = () => {
 
   return (
     <div className="mx-auto flex w-full max-w-4xl flex-col gap-6 rounded-2xl bg-gray-100 p-6">
-      {/* HEADER */}
       <div>
         <h2 className="text-2xl font-bold text-gray-800">Meu Perfil</h2>
         <p className="text-sm text-gray-500">
@@ -103,12 +102,10 @@ export const AccProfile = () => {
         </p>
       </div>
 
-      {/* FORM CARD */}
       <form
         onSubmit={handleSubmit}
         className="flex flex-col gap-6 rounded-2xl bg-white p-6 shadow-sm"
       >
-        {/* NOME */}
         <div className="flex flex-col gap-1">
           <label className="font-semibold text-gray-700">Nome completo</label>
           <input
@@ -120,7 +117,6 @@ export const AccProfile = () => {
           />
         </div>
 
-        {/* EMAIL */}
         <div className="flex flex-col gap-1">
           <label className="font-semibold text-gray-700">Email</label>
           <input
@@ -130,11 +126,10 @@ export const AccProfile = () => {
             className="rounded-xl border border-gray-200 bg-gray-100 px-4 py-2 text-gray-500"
           />
           <p className="text-sm text-gray-500">
-            O email não pode ser alterado directamente.
+            Para alterar o email desça até: Segurança - Alterar email.
           </p>
         </div>
 
-        {/* ENDEREÇO */}
         <div className="flex flex-col gap-1">
           <label className="font-semibold text-gray-700">
             Endereço completo
@@ -148,7 +143,6 @@ export const AccProfile = () => {
           />
         </div>
 
-        {/* TELEFONE */}
         <div className="flex gap-2">
           <div className="flex w-1/3 flex-col gap-1">
             <label className="font-semibold text-gray-700">Código</label>
@@ -175,7 +169,6 @@ export const AccProfile = () => {
           </div>
         </div>
 
-        {/* DATA */}
         <div className="flex flex-col gap-1">
           <label className="font-semibold text-gray-700">
             Data de nascimento
@@ -189,7 +182,6 @@ export const AccProfile = () => {
           />
         </div>
 
-        {/* BOTÃO */}
         <button
           type="submit"
           disabled={loading}
@@ -199,19 +191,18 @@ export const AccProfile = () => {
         </button>
       </form>
 
-      {/* SEGURANÇA */}
       <div className="flex flex-col gap-3 rounded-2xl bg-white p-4 shadow-sm">
         <p className="text-lg font-semibold text-gray-800">Segurança</p>
         <div className="flex gap-4">
           <button
             onClick={requestEmailChange}
-            className="rounded-full border border-gray-200 bg-white px-4 py-2 text-gray-700 transition hover:bg-gray-50"
+            className="bg-primary-400 hover:bg-secondary-400 rounded-full border border-gray-200 px-4 py-2 text-white transition"
           >
             Alterar email
           </button>
           <button
             onClick={requestPasswordChange}
-            className="rounded-full border border-gray-200 bg-white px-4 py-2 text-gray-700 transition hover:bg-gray-50"
+            className="bg-primary-400 hover:bg-secondary-400 rounded-full border border-gray-200 px-4 py-2 text-white transition"
           >
             Alterar palavra-passe
           </button>
