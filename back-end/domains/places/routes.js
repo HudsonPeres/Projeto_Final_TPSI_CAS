@@ -35,6 +35,27 @@ router.get("/owner", async (req, res) => {
   }
 });
 
+router.get("/search", async (req, res) => {
+  connectDB();
+  const { q } = req.query;
+  if (!q || q.trim() === "") {
+    return res.status(400).json({ message: "Parâmetro de busca ausente" });
+  }
+
+  try {
+    const searchTerm = q.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const regex = new RegExp(searchTerm, "i");
+    const places = await Place.find({
+      isActive: true,
+      $or: [{ title: regex }, { description: regex }, { address: regex }],
+    }).limit(6);
+    res.json(places);
+  } catch (error) {
+    console.error("Erro na busca:", error);
+    res.status(500).json({ message: "Erro interno na busca" });
+  }
+});
+
 router.get("/:id", async (req, res) => {
   connectDB();
 
