@@ -13,8 +13,19 @@ const ChatBot = () => {
   const { user } = useUserContext();
   const location = useLocation();
 
-  const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY);
-  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+  // Inicialização segura da API
+  const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+  if (!apiKey) console.warn("Chave API do Gemini não configurada no .env");
+  const genAI = apiKey ? new GoogleGenerativeAI(apiKey) : null;
+  const model = genAI
+    ? genAI.getGenerativeModel({
+        model: "gemini-2.5-flash-lite",
+        generationConfig: {
+          maxOutputTokens: 150, // limita tamanho da resposta
+          temperature: 0.7, // reduz criatividade excessiva
+        },
+      })
+    : null;
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -43,6 +54,17 @@ const ChatBot = () => {
 
   const sendMessage = async () => {
     if (!input.trim()) return;
+    if (!model) {
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "bot",
+          content: "Assistente indisponível: chave API em falta.",
+        },
+      ]);
+      return;
+    }
+
     const userMsg = { role: "user", content: input };
     setMessages((prev) => [...prev, userMsg]);
     setInput("");
@@ -50,20 +72,25 @@ const ChatBot = () => {
 
     try {
       const context = getContextPrompt();
-      const fullPrompt = `Contexto: ${context}\n\nUtilizador: ${input}\nMarIA:`;
+      const fullPrompt = `Contexto: ${context}\n\nInstrução: Responde de forma breve, direta, com frases curtas. Limita a resposta a no máximo 3 frases.\n\nUtilizador: ${input}\nMarIA:`;
       const result = await model.generateContent(fullPrompt);
       const response = await result.response;
-      const botMsg = { role: "bot", content: response.text() };
-      setMessages((prev) => [...prev, botMsg]);
+      let botMsgContent = response.text();
+
+      // Corte manual extra (segurança)
+      if (botMsgContent.length > 300) {
+        botMsgContent = botMsgContent.substring(0, 300) + "...";
+      }
+      setMessages((prev) => [...prev, { role: "bot", content: botMsgContent }]);
     } catch (error) {
       console.error("Erro Gemini:", error);
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "bot",
-          content: "Desculpa, estou com problemas técnicos. Tenta novamente.",
-        },
-      ]);
+      let errorMessage =
+        "Desculpa, estou com problemas técnicos. Tenta novamente.";
+      if (error.message?.includes("429")) {
+        errorMessage =
+          "Limite de uso da IA atingido. Tente novamente dentro de alguns minutos.";
+      }
+      setMessages((prev) => [...prev, { role: "bot", content: errorMessage }]);
     }
     setLoading(false);
   };
@@ -77,9 +104,9 @@ const ChatBot = () => {
         <img src={mariaIcon} alt="MarIA" className="h-10 w-10 rounded-full" />
       </button>
 
-      {/* Caixa de chat – sem classes dark, fundo branco com borda suave */}
       {isOpen && (
         <div className="fixed right-6 bottom-24 z-50 flex h-[500px] w-[350px] flex-col rounded-2xl border border-gray-200 bg-white shadow-xl">
+          {/* Cabeçalho */}
           <div className="bg-secondary-400 flex items-center justify-between rounded-t-2xl px-4 py-3 text-white">
             <div className="flex items-center gap-2">
               <img
@@ -97,8 +124,8 @@ const ChatBot = () => {
             </button>
           </div>
 
-          {/* Área de mensagens – fundo cinza muito suave (igual ao perfil) */}
-          <div className="flex-1 overflow-y-auto bg-gray-100 p-4">
+          {/* Área de mensagens */}
+          <div className="flex-1 overflow-y-auto bg-gray-50 p-4">
             {messages.length === 0 && (
               <div className="text-center text-gray-500">
                 <p>Olá! Sou a MarIA.</p>
@@ -131,6 +158,7 @@ const ChatBot = () => {
             <div ref={messagesEndRef} />
           </div>
 
+          {/* Input */}
           <div className="border-t border-gray-200 p-3">
             <div className="flex gap-2">
               <input

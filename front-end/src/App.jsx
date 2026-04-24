@@ -12,7 +12,7 @@ import PlaceBookingsManager from "./components/PlaceBookingsManager";
 import UserManager from "./components/UserManager";
 import AuditPanel from "./components/AuditPanel";
 import ForgotPassword from "./pages/ForgotPassword";
-import ChatBot from "./components/ChatBot";
+import ChatBot from "./components/ChatBot.jsx";
 
 axios.defaults.baseURL = import.meta.env.VITE_AXIOS_BASE_URL;
 axios.defaults.withCredentials = true;
