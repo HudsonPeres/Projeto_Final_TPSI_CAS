@@ -6,7 +6,13 @@ const tokenSchema = new Schema({
   token: { type: String, required: true },
   type: {
     type: String,
-    enum: ["register", "login", "change_email", "change_password"],
+    enum: [
+      "register",
+      "login",
+      "change_email",
+      "change_password",
+      "reset_password",
+    ],
     required: true,
   },
   expiresAt: { type: Date, required: true },

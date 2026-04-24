@@ -38,6 +38,10 @@ export const sendTokenEmail = async (to, type, token) => {
       subject = "Alteração de palavra-passe";
       text = `O código para redefinir a sua palavra-passe é: ${token}. Válido por 10 minutos.`;
       break;
+    case "reset_password":
+      subject = "Recuperação de palavra-passe";
+      text = `O código para redefinir a sua palavra-passe é: ${token}. Válido por 10 minutos.`;
+      break;
     default:
       subject = "Código de verificação";
       text = `O seu código é: ${token}. Válido por 10 minutos.`;

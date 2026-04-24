@@ -5,7 +5,7 @@ import { useUserContext } from "../contexts/UserContext";
 
 const Register = () => {
   const { setUser } = useUserContext();
-  const [step, setStep] = useState("form"); // "form" ou "verify"
+  const [step, setStep] = useState("form");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -13,9 +13,32 @@ const Register = () => {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [redirect, setRedirect] = useState(false);
+  const [passwordValid, setPasswordValid] = useState(false);
+  const [passwordTouched, setPasswordTouched] = useState(false);
+
+  const validatePassword = (pwd) => {
+    const hasUpper = /[A-Z]/.test(pwd);
+    const hasSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(pwd);
+    const hasNumber = /[0-9]/.test(pwd);
+    return hasUpper && hasSpecial && hasNumber;
+  };
+
+  const handlePasswordChange = (e) => {
+    const newPwd = e.target.value;
+    setPassword(newPwd);
+    setPasswordValid(validatePassword(newPwd));
+    setPasswordTouched(true);
+  };
 
   const handleRequestOtp = async (e) => {
     e.preventDefault();
+
+    // Validação local antes de enviar requisição
+    if (!passwordValid) {
+      setMessage("A senha não atende os requisitos mínimos.");
+      return;
+    }
+
     setLoading(true);
     setMessage("");
     try {
@@ -87,13 +110,22 @@ const Register = () => {
               className="w-full rounded-full border border-gray-300 px-4 py-2"
               placeholder="Digite sua senha"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={handlePasswordChange}
               required
             />
+            <p className="text-xs text-gray-500">
+              A senha deve conter pelo menos uma letra maiúscula, um caractere
+              especial e um número.
+            </p>
+            {passwordTouched && !passwordValid && (
+              <p className="text-xs text-red-500">
+                A senha não atende os requisitos.
+              </p>
+            )}
             <button
               type="submit"
-              disabled={loading}
-              className="bg-primary-400 w-full cursor-pointer rounded-full border border-gray-300 px-4 py-2 font-bold text-white transition"
+              disabled={loading || (step === "form" && !passwordValid)}
+              className="bg-primary-400 w-full cursor-pointer rounded-full border border-gray-300 px-4 py-2 font-bold text-white transition disabled:opacity-50"
             >
               {loading ? "A enviar..." : "Registar"}
             </button>

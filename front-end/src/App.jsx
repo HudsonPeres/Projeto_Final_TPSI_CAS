@@ -11,7 +11,7 @@ import { ThemeProvider } from "./contexts/ThemeContext";
 import PlaceBookingsManager from "./components/PlaceBookingsManager";
 import UserManager from "./components/UserManager";
 import AuditPanel from "./components/AuditPanel";
-import ForgotPassword from "./components/ForgotPassword";
+import ForgotPassword from "./pages/ForgotPassword";
 
 axios.defaults.baseURL = import.meta.env.VITE_AXIOS_BASE_URL;
 axios.defaults.withCredentials = true;
