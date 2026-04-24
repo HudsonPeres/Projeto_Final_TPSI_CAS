@@ -7,6 +7,7 @@ import Token from "../tokens/model.js";
 import { generateOTP } from "../../utils/otp.js";
 import { sendTokenEmail } from "../../utils/emailService.js";
 import { validatePassword } from "../../utils/passwordValidator.js";
+import { JWTVerify } from "../../utils/jwt.js";
 
 const router = Router();
 const bcryptSalt = bcrypt.genSaltSync();
@@ -20,12 +21,36 @@ router.post("/request-otp", async (req, res) => {
     return res.status(400).json({ message: "Email e tipo são obrigatórios" });
   }
 
+  if (type === "change_email" || type === "change_password") {
+    let userInfo;
+    try {
+      userInfo = await JWTVerify(req);
+    } catch (err) {
+      return res.status(401).json({ message: "Utilizador não autenticado." });
+    }
+
+    if (email !== userInfo.email) {
+      return res.status(403).json({
+        message: "Email não corresponde ao utilizador autenticado.",
+      });
+    }
+  }
+
   if (type === "register") {
     const existingUser = await Users.findOne({ email });
     if (existingUser) {
       return res
         .status(400)
         .json({ message: "Email já registado. Faça login." });
+    }
+  }
+
+  if (type === "login") {
+    const user = await Users.findOne({ email });
+    if (!user) {
+      return res.status(404).json({
+        message: "Utilizador não encontrado. Registe-se primeiro.",
+      });
     }
   }
 
@@ -85,6 +110,52 @@ router.post("/verify-otp", async (req, res) => {
 
   tokenDoc.used = true;
   await tokenDoc.save();
+
+  if (type === "change_password") {
+    const { newPassword } = req.body;
+    if (!newPassword)
+      return res
+        .status(400)
+        .json({ message: "Nova palavra-passe obrigatória." });
+
+    const { validatePassword } =
+      await import("../../utils/passwordValidator.js");
+    const { isValid, message } = validatePassword(newPassword);
+    if (!isValid) return res.status(400).json({ message });
+
+    const user = await Users.findOne({ email });
+    if (!user)
+      return res.status(404).json({ message: "Utilizador não encontrado." });
+
+    const bcryptSalt = bcrypt.genSaltSync();
+    user.password = bcrypt.hashSync(newPassword, bcryptSalt);
+    await user.save();
+
+    return res.json({ message: "Palavra-passe alterada com sucesso." });
+  }
+
+  if (type === "change_email") {
+    const { newEmail } = req.body;
+    if (!newEmail)
+      return res.status(400).json({ message: "Novo email obrigatório." });
+    // Verificar se novo email já existe
+    const existing = await Users.findOne({ email: newEmail });
+    if (existing)
+      return res.status(409).json({ message: "Este email já está registado." });
+
+    const user = await Users.findOne({ email });
+    if (!user)
+      return res.status(404).json({ message: "Utilizador não encontrado." });
+
+    user.email = newEmail;
+    await user.save();
+
+    const token = jwt.sign(
+      { name: user.name, email: user.email, _id: user._id, role: user.role },
+      process.env.JWT_SECRET_KEY,
+    );
+    res.cookie("token", token).json({ message: "Email alterado com sucesso." });
+  }
 
   if (type === "register") {
     if (!name || !password) {
