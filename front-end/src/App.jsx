@@ -12,6 +12,7 @@ import PlaceBookingsManager from "./components/PlaceBookingsManager";
 import UserManager from "./components/UserManager";
 import AuditPanel from "./components/AuditPanel";
 import ForgotPassword from "./pages/ForgotPassword";
+import ChatBot from "./components/ChatBot";
 
 axios.defaults.baseURL = import.meta.env.VITE_AXIOS_BASE_URL;
 axios.defaults.withCredentials = true;
@@ -39,6 +40,7 @@ function App() {
             />
             <Route path="/forgot-password" element={<ForgotPassword />} />
           </Routes>
+          <ChatBot />
         </BrowserRouter>
       </UserContextProvider>
     </ThemeProvider>
