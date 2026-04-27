@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { Navigate } from "react-router-dom";
 import { useUserContext } from "../contexts/UserContext";
+import StarRating from "../components/StarRating";
 
 export const AccProfile = () => {
   const { user, setUser } = useUserContext();
@@ -16,13 +17,21 @@ export const AccProfile = () => {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
 
-  // --- Novos Estados ---
-  const [emailStep, setEmailStep] = useState("idle"); // idle, verify
+  // Estado para as avaliações
+  const [ratings, setRatings] = useState({
+    avgHost: 0,
+    avgGuest: 0,
+    totalHost: 0,
+    totalGuest: 0,
+  });
+
+  // Estados para alteração de email/password (já existentes)
+  const [emailStep, setEmailStep] = useState("idle");
   const [emailOtp, setEmailOtp] = useState("");
   const [newEmail, setNewEmail] = useState("");
   const [emailMessage, setEmailMessage] = useState("");
 
-  const [pwStep, setPwStep] = useState("idle"); // idle, verify
+  const [pwStep, setPwStep] = useState("idle");
   const [pwOtp, setPwOtp] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [pwMessage, setPwMessage] = useState("");
@@ -37,6 +46,19 @@ export const AccProfile = () => {
         birthDate: user.birthDate ? user.birthDate.split("T")[0] : "",
       });
     }
+  }, [user]);
+
+  // Buscar avaliações do utilizador
+  useEffect(() => {
+    const fetchRatings = async () => {
+      try {
+        const { data } = await axios.get(`/reviews/user/${user._id}`);
+        setRatings(data);
+      } catch (err) {
+        console.error("Erro ao carregar avaliações:", err);
+      }
+    };
+    if (user) fetchRatings();
   }, [user]);
 
   const handleChange = (e) => {
@@ -165,6 +187,7 @@ export const AccProfile = () => {
 
   return (
     <div className="mx-auto flex w-full max-w-4xl flex-col gap-6 rounded-2xl bg-gray-100 p-6">
+      {/* HEADER */}
       <div>
         <h2 className="text-2xl font-bold text-gray-800">Meu Perfil</h2>
         <p className="text-sm text-gray-500">
@@ -172,6 +195,34 @@ export const AccProfile = () => {
         </p>
       </div>
 
+      {/* AVALIAÇÕES */}
+      <div className="rounded-2xl bg-white p-4 shadow-sm">
+        <p className="mb-2 text-lg font-semibold text-gray-800">
+          Suas avaliações
+        </p>
+        <div className="flex flex-wrap gap-4">
+          <div>
+            <span className="font-semibold">Anfitrião:</span>{" "}
+            <StarRating value={Math.round(ratings.avgHost)} readonly size={5} />
+            <span className="ml-1 text-sm text-gray-500">
+              ({ratings.totalHost} avaliações)
+            </span>
+          </div>
+          <div>
+            <span className="font-semibold">Hóspede:</span>{" "}
+            <StarRating
+              value={Math.round(ratings.avgGuest)}
+              readonly
+              size={5}
+            />
+            <span className="ml-1 text-sm text-gray-500">
+              ({ratings.totalGuest} avaliações)
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* FORMULÁRIO DE PERFIL */}
       <form
         onSubmit={handleSubmit}
         className="flex flex-col gap-6 rounded-2xl bg-white p-6 shadow-sm"
@@ -261,10 +312,10 @@ export const AccProfile = () => {
         </button>
       </form>
 
+      {/* SEGURANÇA */}
       <div className="flex flex-col gap-3 rounded-2xl bg-white p-4 shadow-sm">
         <p className="text-lg font-semibold text-gray-800">Segurança</p>
 
-        {/* Alterar email */}
         <div className="flex flex-col gap-2 border-b border-gray-200 pb-4">
           {emailStep === "idle" && (
             <button
@@ -314,7 +365,6 @@ export const AccProfile = () => {
           )}
         </div>
 
-        {/* Alterar palavra-passe */}
         <div className="flex flex-col gap-2 pt-2">
           {pwStep === "idle" && (
             <button
@@ -369,11 +419,13 @@ export const AccProfile = () => {
         </div>
       </div>
 
+      {/* ROLE */}
       <div className="text-sm text-gray-500">
         Seu perfil é:{" "}
         <strong className="text-primary-400">{getRoleLabel()}</strong>
       </div>
 
+      {/* LOGOUT */}
       <button
         onClick={logout}
         className="bg-primary-400 hover:bg-secondary-400 w-full rounded-full px-4 py-2 text-white transition"

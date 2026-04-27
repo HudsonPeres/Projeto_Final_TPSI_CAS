@@ -5,6 +5,7 @@ import { useUserContext } from "../contexts/UserContext";
 import Perk from "../components/Perk";
 import Booking from "../components/Booking";
 import BookingCalendar from "../components/BookingCalendar";
+import StarRating from "../components/StarRating";
 
 const Place = () => {
   const { id } = useParams();
@@ -17,6 +18,15 @@ const Place = () => {
   const [guests, setGuests] = useState("");
   const [booking, setBooking] = useState(null);
   const [redirect, setRedirect] = useState(false);
+
+  // Estado para avaliações da experiência
+  const [placeRatings, setPlaceRatings] = useState({
+    avg: 0,
+    total: 0,
+    reviews: [],
+  });
+  // Estado para avaliações do anfitrião
+  const [hostRatings, setHostRatings] = useState({ avgHost: 0, totalHost: 0 });
 
   const numberofDays = (date1, date2) => {
     const dateCheckin = new Date(date1);
@@ -36,7 +46,6 @@ const Place = () => {
           })[0],
         );
       };
-
       axiosGet();
     }
   }, [place]);
@@ -50,6 +59,36 @@ const Place = () => {
       axiosGet();
     }
   }, [id]);
+
+  // Buscar avaliações da experiência
+  useEffect(() => {
+    const fetchPlaceRatings = async () => {
+      try {
+        const { data } = await axios.get(`/reviews/place/${id}`);
+        setPlaceRatings(data);
+      } catch (err) {
+        console.error("Erro ao carregar avaliações do lugar:", err);
+      }
+    };
+    if (id) fetchPlaceRatings();
+  }, [id]);
+
+  // Buscar avaliações do anfitrião
+  useEffect(() => {
+    if (place?.owner?._id) {
+      axios
+        .get(`/reviews/user/${place.owner._id}`)
+        .then(({ data }) => {
+          setHostRatings({
+            avgHost: data.avgHost,
+            totalHost: data.totalHost,
+          });
+        })
+        .catch((err) =>
+          console.error("Erro ao carregar avaliações do host:", err),
+        );
+    }
+  }, [place]);
 
   useEffect(() => {
     overlay
@@ -145,6 +184,18 @@ const Place = () => {
             </svg>
             <p>{place.address}</p>
           </div>
+
+          {/* Exibição da média da experiência */}
+          <div className="mt-1 flex items-center gap-2">
+            <StarRating
+              value={Math.round(placeRatings.avg)}
+              readonly
+              size={5}
+            />
+            <span className="text-sm text-gray-600">
+              ({placeRatings.total} avaliações)
+            </span>
+          </div>
         </div>
 
         {/* mostra se tem ou não reserva */}
@@ -198,33 +249,29 @@ const Place = () => {
                 </p>
               </div>
               <div className="mt-3 flex items-center justify-between">
-                <p className="text-sm">Nível do host</p>
-                <div className="flex gap-1">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <svg
-                      key={star}
-                      className="size-5 text-yellow-500"
-                      fill="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path d="M11.48 3.499a.562.562 0 0 1 1.04 0l2.125 5.111a.563.563 0 0 0 .475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 0 0-.182.557l1.285 5.385a.562.562 0 0 1-.84.61l-4.725-2.885a.562.562 0 0 0-.586 0L6.982 20.54a.562.562 0 0 1-.84-.61l1.285-5.386a.562.562 0 0 0-.182-.557l-4.204-3.602a.562.562 0 0 1 .321-.988l5.518-.442a.563.563 0 0 0 .475-.345L11.48 3.5Z" />
-                    </svg>
-                  ))}
+                <p className="text-sm">Nível do Anfitrião</p>
+                <div className="flex items-center gap-2">
+                  <StarRating
+                    value={Math.round(hostRatings.avgHost)}
+                    readonly
+                    size={5}
+                  />
+                  <span className="text-xs text-gray-500">
+                    ({hostRatings.totalHost} avaliações)
+                  </span>
                 </div>
               </div>
               <div className="mt-2 flex items-center justify-between">
                 <p className="text-sm">Classificação da experiência</p>
-                <div className="flex gap-1">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <svg
-                      key={star}
-                      className="size-5 text-yellow-500"
-                      fill="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path d="M11.48 3.499a.562.562 0 0 1 1.04 0l2.125 5.111a.563.563 0 0 0 .475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 0 0-.182.557l1.285 5.385a.562.562 0 0 1-.84.61l-4.725-2.885a.562.562 0 0 0-.586 0L6.982 20.54a.562.562 0 0 1-.84-.61l1.285-5.386a.562.562 0 0 0-.182-.557l-4.204-3.602a.562.562 0 0 1 .321-.988l5.518-.442a.563.563 0 0 0 .475-.345L11.48 3.5Z" />
-                    </svg>
-                  ))}
+                <div className="flex items-center gap-2">
+                  <StarRating
+                    value={Math.round(placeRatings.avg)}
+                    readonly
+                    size={5}
+                  />
+                  <span className="text-xs text-gray-500">
+                    ({placeRatings.total} avaliações)
+                  </span>
                 </div>
               </div>
               {user && user._id !== place.owner?._id && (
@@ -242,6 +289,28 @@ const Place = () => {
               <p className="text-2xl font-bold">Descrição</p>
               <p className="mt-2">{place.description}</p>
             </div>
+
+            {/* Comentários dos hóspedes */}
+            {placeRatings.reviews.length > 0 && (
+              <div className="mt-8">
+                <h3 className="text-xl font-bold">Comentários dos hóspedes</h3>
+                {placeRatings.reviews.map((review) => (
+                  <div key={review._id} className="mt-4 rounded-lg border p-4">
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold">
+                        {review.reviewer?.name}
+                      </span>
+                      <StarRating
+                        value={review.ratingExperience}
+                        readonly
+                        size={4}
+                      />
+                    </div>
+                    <p className="mt-2 text-gray-700">{review.comment}</p>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Coluna direita (1/3 da largura) – Formulário de reserva */}
