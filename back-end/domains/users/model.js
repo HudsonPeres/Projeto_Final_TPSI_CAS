@@ -14,6 +14,7 @@ const userSchema = new mongoose.Schema({
   phone: { type: String, default: "" },
   phoneCode: { type: String, default: "+351" },
   birthDate: { type: Date, default: null },
+  googleId: { type: String, default: null },
 });
 
 export default mongoose.model("Users", userSchema);

@@ -8,10 +8,13 @@ import { generateOTP } from "../../utils/otp.js";
 import { sendTokenEmail } from "../../utils/emailService.js";
 import { validatePassword } from "../../utils/passwordValidator.js";
 import { JWTVerify } from "../../utils/jwt.js";
+import passport from "./google.js";
 
 const router = Router();
 const bcryptSalt = bcrypt.genSaltSync();
 const { JWT_SECRET_KEY } = process.env;
+
+// ==================== Rotas OTP existentes ====================
 
 router.post("/request-otp", async (req, res) => {
   connectDB();
@@ -51,15 +54,6 @@ router.post("/request-otp", async (req, res) => {
       return res.status(404).json({
         message: "Utilizador não encontrado. Registe-se primeiro.",
       });
-    }
-  }
-
-  if (type === "login") {
-    const user = await Users.findOne({ email });
-    if (!user) {
-      return res
-        .status(404)
-        .json({ message: "Utilizador não encontrado. Registe-se primeiro." });
     }
   }
 
@@ -211,7 +205,6 @@ router.post("/forgot-password", async (req, res) => {
 
   const user = await Users.findOne({ email });
   if (!user) {
-    // Por segurança, retornamos a mesma mensagem mesmo que o email não exista
     return res.status(404).json({
       message: "Se o email existir, enviaremos um código de recuperação.",
     });
@@ -280,5 +273,33 @@ router.post("/reset-password", async (req, res) => {
     message: "Palavra-passe alterada com sucesso. Já pode fazer login.",
   });
 });
+
+//  aut  Google
+router.get(
+  "/google",
+  passport.authenticate("google", { scope: ["profile", "email"] }),
+);
+
+// Callback  Google
+router.get(
+  "/google/callback",
+  passport.authenticate("google", { failureRedirect: "/login" }),
+  async (req, res) => {
+    try {
+      const { _id, name, email, role } = req.user;
+      const token = jwt.sign(
+        { _id, name, email, role },
+        process.env.JWT_SECRET_KEY,
+      );
+      res.cookie("token", token, { httpOnly: true, sameSite: "lax" });
+      // Redireciona para o frontend (página inicial)
+      const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
+      res.redirect(frontendUrl);
+    } catch (error) {
+      console.error("Erro no callback Google:", error);
+      res.redirect("/login");
+    }
+  },
+);
 
 export default router;
