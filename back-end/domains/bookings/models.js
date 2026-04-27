@@ -14,6 +14,7 @@ const bookingSchema = new Schema({
     default: "confirmed",
     enum: ["confirmed", "cancelled"],
   },
+  bookingCode: { type: String, unique: true, required: true },
 });
 
 export default model("booking", bookingSchema);

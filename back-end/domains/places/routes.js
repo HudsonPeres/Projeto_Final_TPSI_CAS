@@ -58,11 +58,12 @@ router.get("/search", async (req, res) => {
 
 router.get("/:id", async (req, res) => {
   connectDB();
-
   const { id: _id } = req.params;
-
   try {
-    const placeDoc = await Place.findOne({ _id });
+    const placeDoc = await Place.findOne({ _id }).populate(
+      "owner",
+      "name email",
+    );
     res.json(placeDoc);
   } catch (error) {
     res.status(500).json("Erro ao encontrar a acomodação");

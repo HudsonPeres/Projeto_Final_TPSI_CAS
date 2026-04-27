@@ -8,6 +8,8 @@ import { isAdmin } from "../../utils/adminMiddleware.js";
 import DeletedBooking from "./deletedModel.js";
 import { isSuperAdmin } from "../../utils/adminMiddleware.js";
 import { isSupport } from "../../utils/adminMiddleware.js";
+import { Conversation, Message } from "../chat/models.js";
+import { generateBookingCode } from "../../utils/bookingCode.js";
 
 const router = Router();
 
@@ -102,6 +104,7 @@ router.post("/", async (req, res) => {
       return res.status(409).json({ message: "Data já reservada" });
     }
 
+    const bookingCode = generateBookingCode();
     // 5. Criar a reserva
     const newBookingDoc = await Booking.create({
       place,
@@ -113,7 +116,55 @@ router.post("/", async (req, res) => {
       guests,
       nights,
       status: "confirmed",
+      bookingCode,
     });
+
+    // 6. Enviar mensagem automática de sistema (com código da reserva)
+    try {
+      const placeInfo = await Place.findById(place);
+      if (placeInfo && placeInfo.owner) {
+        const guestId = user;
+        const hostId = placeInfo.owner;
+
+        // Verificar se já existe conversa entre os dois utilizadores
+        let conversation = await Conversation.findOne({
+          participants: { $all: [guestId, hostId], $size: 2 },
+          place: place,
+        });
+        if (!conversation) {
+          conversation = await Conversation.create({
+            participants: [guestId, hostId],
+            place: place,
+          });
+        }
+
+        // Formatar datas para português
+        const startFormatted = new Date(checkin).toLocaleDateString("pt-PT");
+        const endFormatted = new Date(checkout).toLocaleDateString("pt-PT");
+
+        const systemMessage =
+          `📅 **Reserva confirmada!**\n\n` +
+          `**Código da reserva:** \`${bookingCode}\`\n` +
+          `**Experiência:** ${placeInfo.title}\n` +
+          `**Datas:** ${startFormatted} a ${endFormatted}\n` +
+          `**Participantes:** ${guests}\n` +
+          `**Preço total:** €${total}\n\n` +
+          `Guarde este código para futuras referências. Qualquer dúvida, responda a esta mensagem.`;
+
+        await Message.create({
+          conversation: conversation._id,
+          sender: null,
+          text: systemMessage,
+          isSystem: true,
+          read: false,
+        });
+      }
+    } catch (chatError) {
+      console.error(
+        "Erro ao enviar mensagem automática de reserva:",
+        chatError,
+      );
+    }
 
     res.json(newBookingDoc);
   } catch (error) {

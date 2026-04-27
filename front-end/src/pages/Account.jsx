@@ -8,6 +8,7 @@ import AdminPanel from "../components/AdminPanel";
 import AuditPanel from "../components/AuditPanel";
 import UserManager from "../components/UserManager";
 import SupportPanel from "../components/SupportPanel";
+import Inbox from "../components/Inbox";
 
 export const Account = () => {
   const { subpage } = useParams();
@@ -34,6 +35,10 @@ export const Account = () => {
           </Link>
           <Link to="/account/places" className={buttonClass("places")}>
             Meus Anúncios
+          </Link>
+
+          <Link to="/account/inbox" className={buttonClass("inbox")}>
+            Mensagens
           </Link>
 
           {(user?.role === "admin" || user?.role === "superadmin") && (
@@ -65,6 +70,7 @@ export const Account = () => {
         {subpage === "users" && <UserManager />}
         {subpage === "audit" && <AuditPanel />}
         {subpage === "support" && <SupportPanel />}
+        {subpage === "inbox" && <Inbox />}
       </div>
     </section>
   );

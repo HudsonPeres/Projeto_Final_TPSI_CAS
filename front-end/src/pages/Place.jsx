@@ -1,6 +1,6 @@
 import axios from "axios";
 import React, { useEffect, useState } from "react";
-import { useParams, Link, Navigate } from "react-router-dom";
+import { useParams, Link, Navigate, useNavigate } from "react-router-dom";
 import { useUserContext } from "../contexts/UserContext";
 import Perk from "../components/Perk";
 import Booking from "../components/Booking";
@@ -9,6 +9,7 @@ import BookingCalendar from "../components/BookingCalendar";
 const Place = () => {
   const { id } = useParams();
   const { user } = useUserContext();
+  const navigate = useNavigate();
   const [place, setPlace] = useState(null);
   const [overlay, setOverlay] = useState(false);
   const [checkin, setCheckin] = useState("");
@@ -44,7 +45,6 @@ const Place = () => {
     if (id) {
       const axiosGet = async () => {
         const { data } = await axios.get(`/places/${id}`);
-
         setPlace(data);
       };
       axiosGet();
@@ -92,8 +92,28 @@ const Place = () => {
     }
   };
 
-  if (redirect) return <Navigate to="/account/bookings" />;
+  const handleContactHost = async () => {
+    if (!user) {
+      navigate("/login");
+      return;
+    }
+    if (user._id === place.owner?._id) {
+      alert("Você é o anfitrião deste anúncio.");
+      return;
+    }
+    try {
+      const { data } = await axios.post("/chat/conversations/start", {
+        otherUserId: place.owner._id,
+        placeId: place._id,
+      });
+      navigate(`/account/inbox?conversation=${data._id}`);
+    } catch (error) {
+      console.error(error);
+      alert("Erro ao iniciar conversa. Tente novamente.");
+    }
+  };
 
+  if (redirect) return <Navigate to="/account/bookings" />;
   if (!place) return <></>;
 
   return (
@@ -166,57 +186,109 @@ const Place = () => {
         </div>
 
         {/* colunas */}
-        <div className={`${booking ? "" : "grid-cols-1 md:grid-cols-2"} grid`}>
-          <div className="gap order-2 flex flex-col gap-5 p-4 md:order-0">
-            <div>
+        <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
+          {/* Coluna esquerda (2/3 da largura) */}
+          <div className="md:col-span-2">
+            {/* Card do Host */}
+            <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+              <div>
+                <p className="text-sm">Experiência proporcionada por</p>
+                <p className="text-xl font-bold">
+                  {place.owner?.name || "Anfitrião"}
+                </p>
+              </div>
+              <div className="mt-3 flex items-center justify-between">
+                <p className="text-sm">Nível do host</p>
+                <div className="flex gap-1">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <svg
+                      key={star}
+                      className="size-5 text-yellow-500"
+                      fill="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path d="M11.48 3.499a.562.562 0 0 1 1.04 0l2.125 5.111a.563.563 0 0 0 .475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 0 0-.182.557l1.285 5.385a.562.562 0 0 1-.84.61l-4.725-2.885a.562.562 0 0 0-.586 0L6.982 20.54a.562.562 0 0 1-.84-.61l1.285-5.386a.562.562 0 0 0-.182-.557l-4.204-3.602a.562.562 0 0 1 .321-.988l5.518-.442a.563.563 0 0 0 .475-.345L11.48 3.5Z" />
+                    </svg>
+                  ))}
+                </div>
+              </div>
+              <div className="mt-2 flex items-center justify-between">
+                <p className="text-sm">Classificação da experiência</p>
+                <div className="flex gap-1">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <svg
+                      key={star}
+                      className="size-5 text-yellow-500"
+                      fill="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path d="M11.48 3.499a.562.562 0 0 1 1.04 0l2.125 5.111a.563.563 0 0 0 .475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 0 0-.182.557l1.285 5.385a.562.562 0 0 1-.84.61l-4.725-2.885a.562.562 0 0 0-.586 0L6.982 20.54a.562.562 0 0 1-.84-.61l1.285-5.386a.562.562 0 0 0-.182-.557l-4.204-3.602a.562.562 0 0 1 .321-.988l5.518-.442a.563.563 0 0 0 .475-.345L11.48 3.5Z" />
+                    </svg>
+                  ))}
+                </div>
+              </div>
+              {user && user._id !== place.owner?._id && (
+                <button
+                  onClick={handleContactHost}
+                  className="bg-primary-400 hover:bg-secondary-400 mt-4 w-full rounded-full py-2 text-white transition"
+                >
+                  Dúvidas? Me contacte
+                </button>
+              )}
+            </div>
+
+            {/* Descrição */}
+            <div className="mt-6">
               <p className="text-2xl font-bold">Descrição</p>
-              <p>{place.description}</p>
+              <p className="mt-2">{place.description}</p>
             </div>
           </div>
-          {booking ? (
-            ""
-          ) : (
-            <form className="order-1 flex flex-col gap-4 self-center justify-self-center rounded-2xl border border-gray-300 px-4 py-3 text-2xl sm:px-8 sm:py-4 md:order-0">
-              <p className="text-center text-2xl font-bold">
-                Preço: {place.price} €{" "}
-              </p>
-              {/* checkin e checkout */}
-              <BookingCalendar
-                placeId={id}
-                onDateChange={(range) => {
-                  setCheckin(
-                    range.startDate?.toISOString().split("T")[0] || "",
-                  );
-                  setCheckout(range.endDate?.toISOString().split("T")[0] || "");
-                }}
-              />
-              {/* participantes */}
-              <div className="flex flex-col rounded-2xl border border-gray-300 px-4 py-2">
-                <p className="font-bold">Nº de Participantes</p>
-                <input
-                  className="rounded-2xl border border-gray-300 px-4 py-2"
-                  placeholder="1"
-                  type="number"
-                  value={guests}
-                  onChange={(e) => setGuests(e.target.value)}
+
+          {/* Coluna direita (1/3 da largura) – Formulário de reserva */}
+          {!booking && (
+            <div className="md:col-span-1">
+              <form className="order-1 flex flex-col gap-4 self-center justify-self-center rounded-2xl border border-gray-300 px-4 py-3 text-2xl sm:px-8 sm:py-4 md:order-0">
+                <p className="text-center text-2xl font-bold">
+                  Preço: {place.price} €
+                </p>
+                <BookingCalendar
+                  placeId={id}
+                  onDateChange={(range) => {
+                    setCheckin(
+                      range.startDate?.toISOString().split("T")[0] || "",
+                    );
+                    setCheckout(
+                      range.endDate?.toISOString().split("T")[0] || "",
+                    );
+                  }}
                 />
-                {user ? (
-                  <button
-                    className="bg-primary-400 w-full cursor-pointer rounded-full border border-gray-300 px-4 py-2 text-center font-bold text-white"
-                    onClick={handleBooking}
-                  >
-                    Reservar
-                  </button>
-                ) : (
-                  <Link
-                    to="/login"
-                    className="bg-primary-400 w-full cursor-pointer rounded-full border border-gray-300 px-4 py-2 text-center font-bold text-white"
-                  >
-                    Faça Login para reservar
-                  </Link>
-                )}
-              </div>
-            </form>
+                <div className="flex flex-col rounded-2xl border border-gray-300 px-4 py-2">
+                  <p className="font-bold">Nº de Participantes</p>
+                  <input
+                    className="rounded-2xl border border-gray-300 px-4 py-2"
+                    placeholder="1"
+                    type="number"
+                    value={guests}
+                    onChange={(e) => setGuests(e.target.value)}
+                  />
+                  {user ? (
+                    <button
+                      onClick={handleBooking}
+                      className="bg-primary-400 hover:bg-secondary-400 mt-2 w-full cursor-pointer rounded-full px-4 py-2 text-center font-bold text-white"
+                    >
+                      Reservar
+                    </button>
+                  ) : (
+                    <Link
+                      to="/login"
+                      className="bg-primary-400 hover:bg-secondary-400 mt-2 w-full cursor-pointer rounded-full px-4 py-2 text-center font-bold text-white"
+                    >
+                      Faça Login para reservar
+                    </Link>
+                  )}
+                </div>
+              </form>
+            </div>
           )}
         </div>
 
@@ -247,7 +319,6 @@ const Place = () => {
         </div>
 
         {/* extras */}
-
         <div className="gap-2 rounded-2xl bg-gray-100 p-4">
           <p className="text-2xl font-bold">Informações Extras</p>
           <p>{place.extras}</p>
@@ -259,10 +330,10 @@ const Place = () => {
         >
           <div className="mx-auto flex max-w-7xl flex-col gap-8 p-8">
             <div className="grid gap-4 sm:grid-cols-2">
-              {place.photos.map((photo, index) => (
+              {place.photos.map((photo) => (
                 <img
                   key={photo}
-                  className={`aspect-square w-full object-cover`}
+                  className="aspect-square w-full object-cover"
                   src={photo}
                   alt="imagem do local"
                 />

@@ -4,6 +4,7 @@ import PlaceRoutes from "../domains/places/routes.js";
 import BookingRoutes from "../domains/bookings/routes.js";
 import demandRoutes from "../domains/demands/routes.js";
 import authRoutes from "../domains/auth/routes.js";
+import chatRoutes from "../domains/chat/routes.js";
 
 const router = Router();
 
@@ -12,5 +13,6 @@ router.use("/places", PlaceRoutes);
 router.use("/bookings", BookingRoutes);
 router.use("/demands", demandRoutes);
 router.use("/auth", authRoutes);
+router.use("/chat", chatRoutes);
 
 export default router;
