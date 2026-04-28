@@ -186,7 +186,7 @@ export const AccProfile = () => {
   if (!user) return <></>;
 
   return (
-    <div className="mx-auto flex w-full max-w-4xl flex-col gap-6 rounded-2xl bg-gray-100 p-6">
+    <div className="mx-auto flex w-full max-w-4xl flex-col gap-4 rounded-2xl bg-gray-100 p-4 sm:gap-6 sm:p-6">
       {/* HEADER */}
       <div>
         <h2 className="text-2xl font-bold text-gray-800">Meu Perfil</h2>
@@ -198,7 +198,7 @@ export const AccProfile = () => {
       {/* AVALIAÇÕES */}
       <div className="rounded-2xl bg-white p-4 shadow-sm">
         <p className="mb-2 text-lg font-semibold text-gray-800">
-          Suas avaliações
+          Suas Avaliações
         </p>
         <div className="flex flex-wrap gap-4">
           <div>

@@ -43,4 +43,33 @@ router.put("/:id/resolve", async (req, res) => {
   }
 });
 
+// POST /demands – criar uma nova demanda (utilizador autenticado)
+router.post("/", async (req, res) => {
+  connectDB();
+  try {
+    const userInfo = await JWTVerify(req);
+    const { subject, message, relatedPlace, relatedBooking } = req.body;
+
+    if (!subject || !message) {
+      return res
+        .status(400)
+        .json({ message: "Assunto e mensagem são obrigatórios" });
+    }
+
+    const demand = await Demand.create({
+      user: userInfo._id,
+      subject,
+      message,
+      relatedPlace: relatedPlace || null,
+      relatedBooking: relatedBooking || null,
+      status: "open",
+    });
+
+    res.status(201).json(demand);
+  } catch (error) {
+    console.error("Erro ao criar demanda:", error);
+    res.status(500).json({ message: "Erro ao criar pedido de ajuda" });
+  }
+});
+
 export default router;

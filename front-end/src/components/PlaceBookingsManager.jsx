@@ -54,66 +54,101 @@ const PlaceBookingsManager = () => {
     }
   };
 
-  if (loading) return <p>Carregando...</p>;
+  if (loading) return <p className="text-center">Carregando...</p>;
 
   return (
-    <div className="p-4">
-      <h2 className="mb-4 text-2xl font-bold">Reservas deste anúncio</h2>
-      {bookings.length === 0 && <p>Nenhuma reserva encontrada.</p>}
-      <table className="min-w-full border">
-        <thead>
-          <tr className="bg-gray-100">
-            <th className="p-2">Usuário</th>
-            <th className="p-2">Check-in</th>
-            <th className="p-2">Check-out</th>
-            <th className="p-2">Participantes</th>
-            <th className="p-2">Total</th>
-            <th className="p-2">Status</th>
-            <th className="p-2">Ações</th>
-          </tr>
-        </thead>
-        <tbody>
-          {bookings.map((booking) => (
-            <tr key={booking._id} className="border-t">
-              <td className="p-2">
-                {booking.user?.name || booking.user?.email}
-              </td>
-              <td className="p-2">
-                {new Date(booking.checkin).toLocaleDateString()}
-              </td>
-              <td className="p-2">
-                {new Date(booking.checkout).toLocaleDateString()}
-              </td>
-              <td className="p-2">{booking.guests}</td>
-              <td className="p-2">€{booking.total}</td>
-              <td className="p-2">
-                <span
-                  className={`rounded-full px-2 py-1 text-xs ${booking.status === "confirmed" ? "bg-green-200 text-green-800" : "bg-red-200 text-red-800"}`}
-                >
-                  {booking.status === "confirmed" ? "Confirmada" : "Cancelada"}
-                </span>
-              </td>
-              <td className="space-x-2 p-2">
-                {booking.status === "confirmed" ? (
-                  <button
-                    onClick={() => cancelBooking(booking._id)}
-                    className="rounded bg-yellow-500 px-3 py-1 text-white hover:bg-yellow-600"
-                  >
-                    Cancelar
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => deleteBooking(booking._id)}
-                    className="rounded bg-red-500 px-3 py-1 text-white hover:bg-red-600"
-                  >
-                    Apagar
-                  </button>
-                )}
-              </td>
+    <div className="mx-auto w-full max-w-7xl p-4">
+      <h2 className="mb-4 text-2xl font-bold text-black dark:text-white">
+        Reservas deste anúncio
+      </h2>
+      <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white shadow">
+        <table className="min-w-full divide-y divide-gray-200">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
+                Usuário
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
+                Check-in
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
+                Check-out
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
+                Participantes
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
+                Total
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
+                Status
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase">
+                Ações
+              </th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody className="divide-y divide-gray-200 bg-white dark:divide-gray-700">
+            {bookings.length === 0 ? (
+              <tr>
+                <td colSpan="7" className="px-6 py-4 text-center text-gray-500">
+                  Nenhuma reserva encontrada.
+                </td>
+              </tr>
+            ) : (
+              bookings.map((booking) => (
+                <tr key={booking._id}>
+                  <td className="px-6 py-4 text-sm whitespace-nowrap text-gray-900 dark:text-white">
+                    {booking.user?.name || booking.user?.email}
+                  </td>
+                  <td className="px-6 py-4 text-sm whitespace-nowrap text-gray-500">
+                    {new Date(booking.checkin).toLocaleDateString()}
+                  </td>
+                  <td className="px-6 py-4 text-sm whitespace-nowrap text-gray-500">
+                    {new Date(booking.checkout).toLocaleDateString()}
+                  </td>
+                  <td className="px-6 py-4 text-sm whitespace-nowrap text-gray-500">
+                    {booking.guests}
+                  </td>
+                  <td className="px-6 py-4 text-sm whitespace-nowrap text-gray-500">
+                    €{booking.total}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span
+                      className={`inline-flex rounded-full px-2 text-xs leading-5 font-semibold ${
+                        booking.status === "confirmed"
+                          ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+                          : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
+                      }`}
+                    >
+                      {booking.status === "confirmed"
+                        ? "Confirmada"
+                        : "Cancelada"}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 text-sm font-medium whitespace-nowrap">
+                    {booking.status === "confirmed" ? (
+                      <button
+                        onClick={() => cancelBooking(booking._id)}
+                        className="rounded-md bg-yellow-500 px-3 py-1 text-white transition hover:bg-yellow-600"
+                      >
+                        Cancelar
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => deleteBooking(booking._id)}
+                        className="rounded-md bg-red-500 px-3 py-1 text-white transition hover:bg-red-600"
+                      >
+                        Apagar
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 };
