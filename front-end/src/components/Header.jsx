@@ -1,25 +1,30 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import logo from "/src/assets/VivaPortugal!.png";
 import { useUserContext } from "../contexts/UserContext";
 import DarkModeToggle from "./DarkModeToggle";
+import SearchModal from "./SearchModal";
 
 const Header = () => {
   const { user } = useUserContext();
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+
   return (
     <header className="shadow-md">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-2">
+        {/* Logo */}
         <Link to="/">
           <img className="h-11" src={logo} alt="Logo Viva Portugal" />
         </Link>
 
-        <Link
-          to="/"
-          className="hidden items-center rounded-full border border-gray-300 py-2 pr-4 pl-6 shadow-md lg:flex"
+        {/* Barra de pesquisa "falsa" (apenas para desktop) */}
+        <button
+          onClick={() => setIsSearchOpen(true)}
+          className="hidden items-center gap-2 rounded-full border border-gray-300 py-2 pr-4 pl-6 shadow-md transition hover:shadow-lg lg:flex"
         >
-          <p className="border-r border-r-gray-300 pr-4">Experiência</p>
-          <p className="border-r border-r-gray-300 px-4">Data</p>
-          <p className="px-4">Participantes</p>
+          <p className="border-r border-r-gray-300 pr-4 text-gray-600">
+            Pesquisar...
+          </p>
           <div className="bg-primary-400 rounded-full p-2 text-white">
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -36,14 +41,37 @@ const Header = () => {
               />
             </svg>
           </div>
-        </Link>
+        </button>
 
+        {/* Botão de pesquisa apenas para mobile */}
+        <button
+          onClick={() => setIsSearchOpen(true)}
+          className="rounded-full p-2 text-gray-600 hover:bg-gray-100 lg:hidden"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            strokeWidth={1.5}
+            stroke="currentColor"
+            className="size-6"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"
+            />
+          </svg>
+        </button>
+
+        {/* Modo escuro + avatar */}
         <div className="flex items-center gap-4">
           <DarkModeToggle />
           <Link
             to={user ? "/account/profile" : "/login"}
             className="flex items-center gap-2 rounded-full border border-gray-300 py-2 pr-4 pl-6 shadow-md"
           >
+            {/* ícones do utilizador */}
             <svg
               xmlns="http://www.w3.org/2000/svg"
               viewBox="0 0 24 24"
@@ -74,6 +102,12 @@ const Header = () => {
           </Link>
         </div>
       </div>
+
+      {/* Modal de pesquisa */}
+      <SearchModal
+        isOpen={isSearchOpen}
+        onClose={() => setIsSearchOpen(false)}
+      />
     </header>
   );
 };

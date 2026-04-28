@@ -15,8 +15,31 @@ const router = Router();
 
 router.get("/", async (req, res) => {
   connectDB();
+  const { minPrice, maxPrice, location, minGuests, maxGuests } = req.query;
+
   try {
-    const placeDocs = await Place.find({ isActive: true });
+    let filter = { isActive: true };
+
+    // Filtro de preço
+    if (minPrice || maxPrice) {
+      filter.price = {};
+      if (minPrice) filter.price.$gte = Number(minPrice);
+      if (maxPrice) filter.price.$lte = Number(maxPrice);
+    }
+
+    // Filtro de participantes
+    if (minGuests || maxGuests) {
+      filter.guests = {};
+      if (minGuests) filter.guests.$gte = Number(minGuests);
+      if (maxGuests) filter.guests.$lte = Number(maxGuests);
+    }
+
+    // Filtro de localidade (pesquisa case‑insensitive no endereço)
+    if (location && location.trim()) {
+      filter.address = { $regex: location.trim(), $options: "i" };
+    }
+
+    const placeDocs = await Place.find(filter);
     res.json(placeDocs);
   } catch (error) {
     res.status(500).json("Erro ao encontrar as acomodações");
