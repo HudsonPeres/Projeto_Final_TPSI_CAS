@@ -27,14 +27,14 @@ router.get("/", async (req, res) => {
       if (maxPrice) filter.price.$lte = Number(maxPrice);
     }
 
-    // Filtro de participantes
+    // Filtro de nº de participantes
     if (minGuests || maxGuests) {
       filter.guests = {};
       if (minGuests) filter.guests.$gte = Number(minGuests);
       if (maxGuests) filter.guests.$lte = Number(maxGuests);
     }
 
-    // Filtro de localidade (pesquisa case‑insensitive no endereço)
+    // Filtro de localidade
     if (location && location.trim()) {
       filter.address = { $regex: location.trim(), $options: "i" };
     }
@@ -42,6 +42,7 @@ router.get("/", async (req, res) => {
     const placeDocs = await Place.find(filter);
     res.json(placeDocs);
   } catch (error) {
+    console.error("Erro ao listar anúncios:", error);
     res.status(500).json("Erro ao encontrar as acomodações");
   }
 });
@@ -227,7 +228,7 @@ router.post("/upload", uploadImage().array("files", 10), async (req, res) => {
   res.json(fileURLArrayResolved);
 });
 
-/* Listar todos os lugares (somente admin) */
+// Listar todos os lugares (somente admin)
 router.get("/admin/all", isAdmin, async (req, res) => {
   connectDB();
   try {
@@ -239,7 +240,7 @@ router.get("/admin/all", isAdmin, async (req, res) => {
   }
 });
 
-/* Deletar qualquer lugar (somente admin) */
+// Deletar qualquer lugar (somente admin)
 router.delete("/admin/:id", isAdmin, async (req, res) => {
   connectDB();
   const { id } = req.params;
@@ -267,7 +268,7 @@ router.delete("/admin/:id", isAdmin, async (req, res) => {
   }
 });
 
-// Pausar/Ativar anúncio (soemnte admin)
+// Pausar/Ativar anúncio (somente admin)
 router.patch("/admin/:id/toggle", isAdmin, async (req, res) => {
   connectDB();
   const { id } = req.params;
@@ -309,7 +310,7 @@ router.get("/:id/availability", async (req, res) => {
 });
 
 //superadmin
-// GET /places/deleted/all - listar todos os anúncios deletados (apenas superadmin)
+//listar os anúncios deletados (só o superadmin q vê)
 router.get("/deleted/all", isSuperAdmin, async (req, res) => {
   connectDB();
   try {
@@ -323,7 +324,7 @@ router.get("/deleted/all", isSuperAdmin, async (req, res) => {
   }
 });
 
-// DELETE /places/deleted/:id - apagar permanentemente um registro de auditoria (apenas superadmin)
+//apagar permanentemente um registro de auditoria (só o superadmin)
 router.delete("/deleted/:id", isSuperAdmin, async (req, res) => {
   connectDB();
   const { id } = req.params;
