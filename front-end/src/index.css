@@ -224,3 +224,22 @@ a.bg-secondary-400 {
 .body-dark .shadow-sm {
   box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
 }
+
+.body-dark .bg-gray-200 {
+  background-color: #111111;
+}
+.body-dark .border-gray-200 {
+  border-color: #333;
+}
+.body-dark .text-gray-800 {
+  color: #f0f0f0;
+}
+.body-dark .text-gray-500 {
+  color: #aaa;
+}
+.body-dark footer a {
+  color: #bbb;
+}
+.body-dark footer a:hover {
+  color: white;
+}
