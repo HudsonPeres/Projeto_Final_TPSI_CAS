@@ -8,9 +8,7 @@ const Booking = ({ booking, place = false }) => {
       to={`/place/${booking.place._id}`}
       className={`flex items-center gap-4 rounded-2xl bg-gray-100 p-6 ${place ? "cursor-auto" : ""}`}
     >
-      {place ? (
-        ""
-      ) : (
+      {!place && (
         <img
           className="aspect-square max-w-56 rounded-2xl object-center"
           src={booking.place.photos[0]}
@@ -20,8 +18,7 @@ const Booking = ({ booking, place = false }) => {
       <div className="flex flex-col gap-2">
         {place ? (
           <p className="text-2xl font-medium">
-            {" "}
-            Você já tem uma reserva para esta experiência:"
+            Você já tem uma reserva para esta experiência:
           </p>
         ) : (
           <p className="text-2xl font-medium">{booking.place.title}</p>
@@ -29,15 +26,21 @@ const Booking = ({ booking, place = false }) => {
 
         <div>
           <p>
+            <span className="font-semibold">Código da reserva:</span>{" "}
+            {booking.bookingCode}
+          </p>
+          <p>
             <span className="font-semibold">Checkin: </span>{" "}
-            {new Date(booking.checkin).toLocaleDateString("PT-pt")}
+            {new Date(booking.checkin).toLocaleDateString("PT-pt")} às{" "}
+            {booking.place.checkin}
           </p>
           <p>
             <span className="font-semibold">Checkout:</span>{" "}
-            {new Date(booking.checkout).toLocaleDateString("PT-pt")}
+            {new Date(booking.checkout).toLocaleDateString("PT-pt")} às{" "}
+            {booking.place.checkout}
           </p>
           <p>
-            <span className="font-semibold">Noites:</span> {booking.guests}
+            <span className="font-semibold">Noites:</span> {booking.nights}
           </p>
           <p>
             <span className="font-semibold">Participantes:</span>{" "}

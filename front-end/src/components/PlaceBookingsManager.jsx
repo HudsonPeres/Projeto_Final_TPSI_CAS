@@ -96,7 +96,7 @@ const PlaceBookingsManager = () => {
 
   return (
     <div className="mx-auto w-full max-w-7xl p-4">
-      <h2 className="mb-4 text-2xl font-bold text-black dark:text-white">
+      <h2 className="mb-4 text-2xl font-bold text-black">
         Reservas deste anúncio
       </h2>
       <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white shadow">
@@ -136,7 +136,7 @@ const PlaceBookingsManager = () => {
             ) : (
               bookings.map((booking) => (
                 <tr key={booking._id}>
-                  <td className="px-6 py-4 text-sm whitespace-nowrap text-gray-900 dark:text-white">
+                  <td className="px-6 py-4 text-sm whitespace-nowrap">
                     {booking.user?.name || booking.user?.email}
                   </td>
                   <td className="px-6 py-4 text-sm whitespace-nowrap text-gray-500">
@@ -170,7 +170,7 @@ const PlaceBookingsManager = () => {
                       <div className="flex flex-wrap gap-2">
                         <button
                           onClick={() => cancelBooking(booking._id)}
-                          className="rounded-md bg-yellow-500 px-3 py-1 text-white transition hover:bg-yellow-600"
+                          className="bg-primary-400 rounded-md px-3 py-1 text-white transition hover:bg-yellow-600"
                         >
                           Cancelar
                         </button>
@@ -203,7 +203,7 @@ const PlaceBookingsManager = () => {
       {/* Modal para avaliar o hóspede */}
       {showGuestReviewForm && selectedBookingForGuestReview && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl dark:bg-gray-800">
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
             <h3 className="mb-4 text-xl font-bold">Avaliar Hóspede</h3>
             <p className="mb-2">
               <strong>Hóspede:</strong>{" "}

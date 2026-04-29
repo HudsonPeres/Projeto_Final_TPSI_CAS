@@ -55,6 +55,16 @@ router.post("/", async (req, res) => {
     const startDate = new Date(checkin);
     const endDate = new Date(checkout);
 
+    // 2.5. Validar tipo de reserva (um dia vs vários dias)
+    if (!placeDoc.isMultiDay) {
+      if (checkin !== checkout) {
+        return res.status(400).json({
+          message:
+            "Esta experiência só permite reserva de um dia por vez. As datas de check-in e check-out devem ser iguais.",
+        });
+      }
+    }
+
     // 3. Verificar se todas as datas estão dentro de availableDates (se o array existir e não for vazio)
     if (placeDoc.availableDates && placeDoc.availableDates.length > 0) {
       let allAvailable = true;
@@ -106,17 +116,28 @@ router.post("/", async (req, res) => {
       return res.status(409).json({ message: "Data já reservada" });
     }
 
+    // 4.5. Calcular noites e total corretamente (ignorar dados do frontend)
+    let calculatedNights;
+    if (placeDoc.isMultiDay) {
+      const diffDays = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24));
+      calculatedNights = Math.max(1, diffDays);
+    } else {
+      calculatedNights = 1; // experiência de um dia tem 1 noite
+    }
+    const calculatedTotal = placeDoc.price * calculatedNights;
+
     const bookingCode = generateBookingCode();
+
     // 5. Criar a reserva
     const newBookingDoc = await Booking.create({
       place,
       user,
-      price,
-      total,
+      price: placeDoc.price,
+      total: calculatedTotal,
       checkin,
       checkout,
       guests,
-      nights,
+      nights: calculatedNights,
       status: "confirmed",
       bookingCode,
     });
@@ -128,19 +149,21 @@ router.post("/", async (req, res) => {
         const guestId = user;
         const hostId = placeInfo.owner;
 
-        // Verificar se já existe conversa entre os dois utilizadores
+        // Procurar conversa existente
         let conversation = await Conversation.findOne({
           participants: { $all: [guestId, hostId], $size: 2 },
           place: place,
         });
+
         if (!conversation) {
+          console.log("Criando nova conversa entre", guestId, hostId);
           conversation = await Conversation.create({
             participants: [guestId, hostId],
             place: place,
           });
         }
 
-        // Formatar datas para português
+        // Formatar datas
         const startFormatted = new Date(checkin).toLocaleDateString("pt-PT");
         const endFormatted = new Date(checkout).toLocaleDateString("pt-PT");
 
@@ -168,7 +191,7 @@ router.post("/", async (req, res) => {
       );
     }
 
-    // 7. Enviar email com PDF de confirmação (NOVO)
+    // 7. Enviar email com PDF de confirmação
     try {
       const guest = await User.findById(user);
       if (guest && guest.email) {
@@ -198,7 +221,6 @@ router.post("/", async (req, res) => {
       }
     } catch (emailError) {
       console.error("Erro ao enviar email com PDF:", emailError);
-      // Não falha a reserva por causa do email
     }
 
     res.json(newBookingDoc);
@@ -229,9 +251,8 @@ router.delete("/admin/:id", isAdmin, async (req, res) => {
     const booking = await Booking.findById(id);
     if (!booking) return res.status(404).json("Reserva não encontrada");
 
-    const admin = req.user; // definido pelo middleware isAdmin
+    const admin = req.user;
 
-    // Salva no histórico de exclusão
     await DeletedBooking.create({
       originalId: booking._id,
       data: booking.toObject(),
@@ -337,11 +358,9 @@ router.delete("/:id/delete/owner", async (req, res) => {
         .json({ message: "Apenas reservas canceladas podem ser apagadas" });
     }
 
-    // Obter nome do anunciante
     const ownerUser = await User.findById(userId);
     const ownerName = ownerUser?.name || "Anunciante desconhecido";
 
-    // Registrar na coleção de auditoria (deletedbookings)
     await DeletedBooking.create({
       originalId: booking._id,
       data: booking.toObject(),

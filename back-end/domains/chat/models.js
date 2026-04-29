@@ -1,7 +1,7 @@
 import { model, Schema } from "mongoose";
 
 const conversationSchema = new Schema({
-  participants: [{ type: Schema.Types.ObjectId, ref: "User" }],
+  participants: [{ type: Schema.Types.ObjectId, ref: "Users" }], // ← alterado para "Users"
   place: { type: Schema.Types.ObjectId, ref: "Places" },
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },
@@ -13,7 +13,7 @@ const messageSchema = new Schema({
     ref: "Conversation",
     required: true,
   },
-  sender: { type: Schema.Types.ObjectId, ref: "User", default: null },
+  sender: { type: Schema.Types.ObjectId, ref: "Users", default: null }, // ← alterado para "Users"
   text: { type: String, required: true },
   isSystem: { type: Boolean, default: false },
   read: { type: Boolean, default: false },

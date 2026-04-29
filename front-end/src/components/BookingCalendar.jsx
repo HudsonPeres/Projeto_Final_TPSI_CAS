@@ -3,13 +3,12 @@ import React, { useState, useEffect } from "react";
 import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
 
-const BookingCalendar = ({ placeId, onDateChange }) => {
+const BookingCalendar = ({ placeId, onDateChange, isMultiDay = true }) => {
   const [availableDates, setAvailableDates] = useState([]);
   const [bookedDates, setBookedDates] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedDates, setSelectedDates] = useState(null); // armazena a(s) data(s) selecionada(s)
+  const [selectedDates, setSelectedDates] = useState(null);
 
-  // Buscar disponibilidade do lugar
   useEffect(() => {
     if (!placeId) return;
     const fetchAvailability = async () => {
@@ -26,15 +25,12 @@ const BookingCalendar = ({ placeId, onDateChange }) => {
     fetchAvailability();
   }, [placeId]);
 
-  // Lógica para definir as cores dos dias
   const tileClassName = ({ date, view }) => {
     if (view !== "month") return null;
     const dateStr = date.toISOString().split("T")[0];
 
-    // Prioridade: dia selecionado pelo usuário (azul)
     if (selectedDates) {
       if (Array.isArray(selectedDates) && selectedDates.length === 2) {
-        // intervalo
         let start = new Date(selectedDates[0]);
         let end = new Date(selectedDates[1]);
         let current = new Date(date);
@@ -47,16 +43,12 @@ const BookingCalendar = ({ placeId, onDateChange }) => {
       }
     }
 
-    // Dias já reservados (vermelho)
     if (bookedDates.includes(dateStr)) return "booked-date";
-    // Dias disponíveis (verde)
     if (availableDates.includes(dateStr)) return "available-date";
     return null;
   };
 
-  // Manipular a seleção de data(s)
   const handleDateSelect = (value) => {
-    // value pode ser Date (single) ou [Date, Date] (range)
     setSelectedDates(value);
     if (onDateChange) {
       if (Array.isArray(value) && value.length === 2) {
@@ -75,7 +67,7 @@ const BookingCalendar = ({ placeId, onDateChange }) => {
     <div>
       <Calendar
         onChange={handleDateSelect}
-        selectRange={true} // permite selecionar intervalo
+        selectRange={isMultiDay} // ← apenas permite intervalo se multi-dia
         tileClassName={tileClassName}
         minDate={new Date()}
         locale="pt-PT"

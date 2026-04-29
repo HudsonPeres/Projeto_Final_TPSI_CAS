@@ -99,7 +99,7 @@ const Inbox = () => {
 
   return (
     <div className="flex h-[calc(100vh-200px)] w-full max-w-7xl gap-4">
-      {/* Lista de conversas (sidebar) */}
+      {/* Lista de conversas*/}
       <div className="w-1/3 rounded-xl border border-gray-200 bg-white shadow-sm">
         <div className="border-b border-gray-200 p-3 font-semibold">
           Mensagens
@@ -117,12 +117,12 @@ const Inbox = () => {
             <div
               key={conv._id}
               onClick={() => setCurrentConversation(conv)}
-              className={`cursor-pointer border-b border-gray-100 p-3 transition hover:bg-gray-50 dark:hover:bg-gray-700 ${
-                currentConversation?._id === conv._id ? "bg-gray-100" : ""
+              className={`hover:bg-secondary-400 cursor-pointer border-b border-gray-100 p-3 transition ${
+                currentConversation?._id === conv._id ? "bg-secondary-400" : ""
               }`}
             >
               <div className="flex items-center justify-between">
-                <div className="font-medium text-gray-900 dark:text-white">
+                <div className="font-medium text-white">
                   {conv.otherUser?.name || "Utilizador"}
                 </div>
                 {conv.unreadCount > 0 && (
@@ -131,10 +131,10 @@ const Inbox = () => {
                   </span>
                 )}
               </div>
-              <div className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+              <div className="mt-1 text-sm text-white">
                 {conv.place?.title || "Conversa geral"}
               </div>
-              <div className="mt-1 text-xs text-gray-400 dark:text-gray-500">
+              <div className="mt-1 text-xs text-white">
                 {new Date(conv.updatedAt).toLocaleDateString()}
               </div>
             </div>
@@ -151,7 +151,7 @@ const Inbox = () => {
         ) : (
           <>
             <div className="border-b border-gray-200 p-3">
-              <h3 className="font-semibold text-gray-900 dark:text-white">
+              <h3 className="font-semibold text-gray-900">
                 {currentConversation.otherUser?.name || "Utilizador"}
               </h3>
               <p className="text-sm text-gray-500">
@@ -165,7 +165,7 @@ const Inbox = () => {
                   return (
                     <div
                       key={msg._id}
-                      className="my-2 text-center text-sm text-gray-500 italic dark:text-gray-400"
+                      className="my-2 text-center text-sm text-gray-500 italic"
                     >
                       {msg.text}
                     </div>
@@ -182,8 +182,8 @@ const Inbox = () => {
                     <div
                       className={`max-w-[70%] rounded-2xl px-4 py-2 ${
                         isCurrentUser
-                          ? "bg-primary-400 text-white"
-                          : "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-white"
+                          ? "bg-secondary-400 text-white"
+                          : "bg-accent-400 text-gray-800 dark:text-white"
                       }`}
                     >
                       <p className="text-sm">{msg.text}</p>
@@ -212,12 +212,12 @@ const Inbox = () => {
                   onChange={(e) => setNewMessage(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && sendMessage()}
                   placeholder="Escreva a sua mensagem..."
-                  className="focus:ring-primary-400 flex-1 rounded-full border border-gray-300 bg-gray-50 px-4 py-2 focus:ring-2 focus:outline-none dark:text-white"
+                  className="focus:ring-secondary-400 flex-1 rounded-full border border-gray-300 bg-gray-50 px-4 py-2 focus:ring-2 focus:outline-none"
                 />
                 <button
                   onClick={sendMessage}
                   disabled={loading}
-                  className="bg-primary-400 hover:bg-primary-500 rounded-full px-4 py-2 text-white transition disabled:opacity-50"
+                  className="bg-primary-400 hover:bg-secondary-400 rounded-full px-4 py-2 text-white transition disabled:opacity-50"
                 >
                   Enviar
                 </button>
