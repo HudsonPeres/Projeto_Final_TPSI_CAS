@@ -117,7 +117,7 @@ const Inbox = () => {
             <div
               key={conv._id}
               onClick={() => setCurrentConversation(conv)}
-              className={`hover:bg-secondary-400 cursor-pointer border-b border-gray-100 p-3 transition ${
+              className={`hover:bg-secondary-400 cursor-pointer border-b border-gray-100 bg-gray-400 p-3 transition ${
                 currentConversation?._id === conv._id ? "bg-secondary-400" : ""
               }`}
             >

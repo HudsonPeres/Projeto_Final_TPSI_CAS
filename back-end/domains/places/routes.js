@@ -20,21 +20,18 @@ router.get("/", async (req, res) => {
   try {
     let filter = { isActive: true };
 
-    // Filtro de preço
     if (minPrice || maxPrice) {
       filter.price = {};
       if (minPrice) filter.price.$gte = Number(minPrice);
       if (maxPrice) filter.price.$lte = Number(maxPrice);
     }
 
-    // Filtro de nº de participantes
     if (minGuests || maxGuests) {
       filter.guests = {};
       if (minGuests) filter.guests.$gte = Number(minGuests);
       if (maxGuests) filter.guests.$lte = Number(maxGuests);
     }
 
-    // Filtro de localidade
     if (location && location.trim()) {
       filter.address = { $regex: location.trim(), $options: "i" };
     }
@@ -228,7 +225,6 @@ router.post("/upload", uploadImage().array("files", 10), async (req, res) => {
   res.json(fileURLArrayResolved);
 });
 
-// Listar todos os lugares (somente admin)
 router.get("/admin/all", isAdmin, async (req, res) => {
   connectDB();
   try {
@@ -240,11 +236,11 @@ router.get("/admin/all", isAdmin, async (req, res) => {
   }
 });
 
-// Deletar qualquer lugar (somente admin)
+// CORREÇÃO APLICADA AQUI ↓
 router.delete("/admin/:id", isAdmin, async (req, res) => {
   connectDB();
   const { id } = req.params;
-  const { reason } = req.body;
+  const reason = req.body?.reason || "Removido por administrador";
   try {
     const place = await Place.findById(id);
     if (!place)
@@ -252,12 +248,11 @@ router.delete("/admin/:id", isAdmin, async (req, res) => {
 
     const admin = req.user;
 
-    // Salva no histórico de exclusão
     await DeletedPlace.create({
       originalId: place._id,
       data: place.toObject(),
       deletedBy: admin._id,
-      reason: reason || "Removido por administrador",
+      reason: reason,
     });
 
     await Place.deleteOne({ _id: id });
@@ -268,7 +263,6 @@ router.delete("/admin/:id", isAdmin, async (req, res) => {
   }
 });
 
-// Pausar/Ativar anúncio (somente admin)
 router.patch("/admin/:id/toggle", isAdmin, async (req, res) => {
   connectDB();
   const { id } = req.params;
@@ -309,8 +303,6 @@ router.get("/:id/availability", async (req, res) => {
   });
 });
 
-//superadmin
-//listar os anúncios deletados (só o superadmin q vê)
 router.get("/deleted/all", isSuperAdmin, async (req, res) => {
   connectDB();
   try {
@@ -324,7 +316,6 @@ router.get("/deleted/all", isSuperAdmin, async (req, res) => {
   }
 });
 
-//apagar permanentemente um registro de auditoria (só o superadmin)
 router.delete("/deleted/:id", isSuperAdmin, async (req, res) => {
   connectDB();
   const { id } = req.params;
