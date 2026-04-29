@@ -318,7 +318,11 @@ const Place = () => {
             <div className="md:col-span-1">
               <form className="order-1 flex flex-col gap-4 self-center justify-self-center rounded-2xl border border-gray-300 px-4 py-3 text-2xl sm:px-8 sm:py-4 md:order-0">
                 <p className="text-center text-2xl font-bold">
-                  Preço: {place.price} €
+                  Preço: {place.price}{" "}
+                  {place.isMultiDay ? "€ / diária" : "€ / atividade"}
+                </p>
+                <p className="text-center text-sm text-gray-500">
+                  Nº máximo de participantes: {place.guests}
                 </p>
                 <BookingCalendar
                   placeId={id}
@@ -335,7 +339,7 @@ const Place = () => {
                   <p className="font-bold">Nº de Participantes</p>
                   <input
                     className="rounded-2xl border border-gray-300 px-4 py-2"
-                    placeholder="1"
+                    placeholder={`Nº máximo: ${place.guests}`}
                     type="number"
                     value={guests}
                     onChange={(e) => setGuests(e.target.value)}

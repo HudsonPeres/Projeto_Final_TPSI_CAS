@@ -18,7 +18,7 @@ export const Login = () => {
     setLoading(true);
     setMessage("");
     try {
-      await axios.post("/auth/request-otp", { email, type: "login" });
+      await axios.post("/auth/request-otp", { email, password, type: "login" });
       setMessage(
         `Código enviado para ${email}. Verifique a sua caixa de entrada.`,
       );

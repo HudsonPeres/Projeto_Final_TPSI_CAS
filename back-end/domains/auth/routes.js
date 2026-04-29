@@ -14,11 +14,9 @@ const router = Router();
 const bcryptSalt = bcrypt.genSaltSync();
 const { JWT_SECRET_KEY } = process.env;
 
-// ==================== Rotas OTP existentes ====================
-
 router.post("/request-otp", async (req, res) => {
   connectDB();
-  const { email, type } = req.body;
+  const { email, type, password } = req.body;
 
   if (!email || !type) {
     return res.status(400).json({ message: "Email e tipo são obrigatórios" });
@@ -49,11 +47,16 @@ router.post("/request-otp", async (req, res) => {
   }
 
   if (type === "login") {
+    if (!password) {
+      return res.status(400).json({ message: "Password é obrigatória" });
+    }
     const user = await Users.findOne({ email });
     if (!user) {
-      return res.status(404).json({
-        message: "Utilizador não encontrado. Registe-se primeiro.",
-      });
+      return res.status(404).json({ message: "Utilizador não encontrado" });
+    }
+    const passwordCorrect = bcrypt.compareSync(password, user.password);
+    if (!passwordCorrect) {
+      return res.status(401).json({ message: "Senha incorreta" });
     }
   }
 
@@ -79,7 +82,7 @@ router.post("/request-otp", async (req, res) => {
 
 router.post("/verify-otp", async (req, res) => {
   connectDB();
-  const { email, otp, type, password, name } = req.body;
+  const { email, otp, type, name, password, newPassword, newEmail } = req.body;
 
   if (!email || !otp || !type) {
     return res
@@ -106,14 +109,11 @@ router.post("/verify-otp", async (req, res) => {
   await tokenDoc.save();
 
   if (type === "change_password") {
-    const { newPassword } = req.body;
     if (!newPassword)
       return res
         .status(400)
         .json({ message: "Nova palavra-passe obrigatória." });
 
-    const { validatePassword } =
-      await import("../../utils/passwordValidator.js");
     const { isValid, message } = validatePassword(newPassword);
     if (!isValid) return res.status(400).json({ message });
 
@@ -129,7 +129,6 @@ router.post("/verify-otp", async (req, res) => {
   }
 
   if (type === "change_email") {
-    const { newEmail } = req.body;
     if (!newEmail)
       return res.status(400).json({ message: "Novo email obrigatório." });
     // Verificar se novo email já existe
@@ -177,17 +176,10 @@ router.post("/verify-otp", async (req, res) => {
   }
 
   if (type === "login") {
-    if (!password) {
-      return res.status(400).json({ message: "Password é obrigatória" });
-    }
+    // A senha já foi validada no request-otp, não precisa verificar novamente
     const user = await Users.findOne({ email });
     if (!user)
       return res.status(404).json({ message: "Utilizador não encontrado" });
-
-    const passwordCorrect = bcrypt.compareSync(password, user.password);
-    if (!passwordCorrect) {
-      return res.status(401).json({ message: "Palavra-passe incorreta" });
-    }
 
     const { name, _id, role } = user;
     const token = jwt.sign({ name, email, _id, role }, JWT_SECRET_KEY);
@@ -274,16 +266,18 @@ router.post("/reset-password", async (req, res) => {
   });
 });
 
-//  aut  Google
+// ==================== ROTAS GOOGLE ====================
 router.get(
   "/google",
   passport.authenticate("google", { scope: ["profile", "email"] }),
 );
 
-// Callback  Google
 router.get(
   "/google/callback",
-  passport.authenticate("google", { failureRedirect: "/login" }),
+  passport.authenticate("google", {
+    failureRedirect: "/login",
+    session: false,
+  }),
   async (req, res) => {
     try {
       const { _id, name, email, role } = req.user;
@@ -292,7 +286,6 @@ router.get(
         process.env.JWT_SECRET_KEY,
       );
       res.cookie("token", token, { httpOnly: true, sameSite: "lax" });
-      // Redireciona para o frontend (página inicial)
       const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
       res.redirect(frontendUrl);
     } catch (error) {

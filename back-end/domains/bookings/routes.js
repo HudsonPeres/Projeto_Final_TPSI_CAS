@@ -10,6 +10,8 @@ import { isSuperAdmin } from "../../utils/adminMiddleware.js";
 import { isSupport } from "../../utils/adminMiddleware.js";
 import { Conversation, Message } from "../chat/models.js";
 import { generateBookingCode } from "../../utils/bookingCode.js";
+import generateBookingPDF from "../../utils/pdfGenerator.js";
+import { sendEmail } from "../../utils/emailService.js";
 
 const router = Router();
 
@@ -164,6 +166,39 @@ router.post("/", async (req, res) => {
         "Erro ao enviar mensagem automática de reserva:",
         chatError,
       );
+    }
+
+    // 7. Enviar email com PDF de confirmação (NOVO)
+    try {
+      const guest = await User.findById(user);
+      if (guest && guest.email) {
+        const placeInfo = await Place.findById(place);
+        const pdfBuffer = await generateBookingPDF(newBookingDoc, placeInfo);
+        await sendEmail({
+          to: guest.email,
+          subject: `Confirmação de reserva - ${bookingCode}`,
+          html: `
+            <div style="font-family: Arial, sans-serif;">
+              <h2>Reserva confirmada!</h2>
+              <p>Olá <strong>${guest.name}</strong>,</p>
+              <p>A sua reserva para a experiência <strong>${placeInfo.title}</strong> foi confirmada.</p>
+              <p>Em anexo está o comprovativo PDF com os detalhes e o código QR para o check‑in.</p>
+              <p>Qualquer dúvida, contacte o anfitrião através do chat da plataforma.</p>
+              <br/>
+              <p>Equipa Viva Portugal</p>
+            </div>
+          `,
+          attachments: [
+            {
+              filename: `reserva_${bookingCode}.pdf`,
+              content: pdfBuffer,
+            },
+          ],
+        });
+      }
+    } catch (emailError) {
+      console.error("Erro ao enviar email com PDF:", emailError);
+      // Não falha a reserva por causa do email
     }
 
     res.json(newBookingDoc);

@@ -11,9 +11,9 @@ const transporter = nodemailer.createTransport({
 });
 
 /**
- * Envia um email com token OTP
+ * Envia um email com token OTP (texto simples)
  * @param {string} to - email de destino
- * @param {string} type - tipo de token (register, login, change_email, change_password)
+ * @param {string} type - tipo de token (register, login, change_email, change_password, reset_password)
  * @param {string} token - código numérico (ex: "123456")
  * @returns {Promise<void>}
  */
@@ -52,6 +52,27 @@ export const sendTokenEmail = async (to, type, token) => {
     to,
     subject,
     text,
+  };
+
+  await transporter.sendMail(mailOptions);
+};
+
+/**
+ * Envia um email com suporte a HTML e anexos
+ * @param {Object} options
+ * @param {string} options.to
+ * @param {string} options.subject
+ * @param {string} options.html
+ * @param {Array} [options.attachments]
+ * @returns {Promise<void>}
+ */
+export const sendEmail = async ({ to, subject, html, attachments }) => {
+  const mailOptions = {
+    from: `"Viva Portugal" <${process.env.EMAIL_FROM || process.env.EMAIL_USER}>`,
+    to,
+    subject,
+    html,
+    attachments: attachments || [],
   };
 
   await transporter.sendMail(mailOptions);
