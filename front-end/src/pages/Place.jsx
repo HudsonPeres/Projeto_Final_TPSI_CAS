@@ -6,6 +6,7 @@ import Perk from "../components/Perk";
 import Booking from "../components/Booking";
 import BookingCalendar from "../components/BookingCalendar";
 import StarRating from "../components/StarRating";
+import ReservationButton from "../components/ReservationButton";
 
 const Place = () => {
   const { id } = useParams();
@@ -18,6 +19,9 @@ const Place = () => {
   const [guests, setGuests] = useState("");
   const [booking, setBooking] = useState(null);
   const [redirect, setRedirect] = useState(false);
+  const [bookingLoading, setBookingLoading] = useState(false);
+  const [bookingProgress, setBookingProgress] = useState(0);
+  const [bookingSuccess, setBookingSuccess] = useState(false);
 
   // Estado para avaliações da experiência
   const [placeRatings, setPlaceRatings] = useState({
@@ -36,12 +40,10 @@ const Place = () => {
     );
   };
 
-  // ==================== CORREÇÃO AQUI ====================
   useEffect(() => {
     if (place) {
       const axiosGet = async () => {
         const { data } = await axios.get("/bookings/owner");
-        // Filtra apenas reservas activas (confirmadas ou check-in realizado)
         const activeBooking = data.find(
           (booking) =>
             booking.place._id === place._id &&
@@ -52,7 +54,6 @@ const Place = () => {
       axiosGet();
     }
   }, [place]);
-  // ======================================================
 
   useEffect(() => {
     if (id) {
@@ -103,6 +104,8 @@ const Place = () => {
   const handleBooking = async (e) => {
     e.preventDefault();
     if (checkin && checkout && guests) {
+      setBookingLoading(true);
+      setBookingProgress(0);
       const nights = numberofDays(checkin, checkout);
       const objBooking = {
         place: id,
@@ -114,11 +117,28 @@ const Place = () => {
         guests,
         nights,
       };
+      // Simular progresso (opcional)
+      const interval = setInterval(() => {
+        setBookingProgress((prev) => {
+          if (prev >= 90) {
+            clearInterval(interval);
+            return 90;
+          }
+          return prev + 10;
+        });
+      }, 100);
       try {
         await axios.post("/bookings", objBooking);
-        alert("Reservado com sucesso");
-        setRedirect(true);
+        clearInterval(interval);
+        setBookingProgress(100);
+        setBookingSuccess(true);
+        setTimeout(() => {
+          setRedirect(true);
+        }, 1500);
       } catch (error) {
+        clearInterval(interval);
+        setBookingLoading(false);
+        setBookingProgress(0);
         if (error.response) {
           const { status, data } = error.response;
           if (status === 400)
@@ -293,34 +313,15 @@ const Place = () => {
               <p className="text-2xl font-bold">Descrição</p>
               <p className="mt-2">{place.description}</p>
             </div>
-
-            {/* Comentários dos hóspedes */}
-            {placeRatings.reviews.length > 0 && (
-              <div className="mt-8">
-                <h3 className="text-xl font-bold">Comentários dos hóspedes</h3>
-                {placeRatings.reviews.map((review) => (
-                  <div key={review._id} className="mt-4 rounded-lg border p-4">
-                    <div className="flex items-center gap-2">
-                      <span className="font-semibold">
-                        {review.reviewer?.name}
-                      </span>
-                      <StarRating
-                        value={review.ratingExperience}
-                        readonly
-                        size={4}
-                      />
-                    </div>
-                    <p className="mt-2 text-gray-700">{review.comment}</p>
-                  </div>
-                ))}
-              </div>
-            )}
           </div>
 
           {/* Coluna direita (1/3 da largura) – Formulário de reserva */}
           {!booking && (!user || user._id !== place.owner?._id) && (
             <div className="md:col-span-1">
-              <form className="order-1 flex flex-col gap-4 self-center justify-self-center rounded-2xl border border-gray-300 px-4 py-3 text-2xl sm:px-8 sm:py-4 md:order-0">
+              <form
+                onSubmit={(e) => e.preventDefault()}
+                className="order-1 flex flex-col gap-4 self-center justify-self-center rounded-2xl border border-gray-300 px-4 py-3 text-2xl sm:px-8 sm:py-4 md:order-0"
+              >
                 <p className="text-center text-2xl font-bold">
                   Preço: {place.price}{" "}
                   {place.isMultiDay ? "€ / diária" : "€ / atividade"}
@@ -349,21 +350,12 @@ const Place = () => {
                     value={guests}
                     onChange={(e) => setGuests(e.target.value)}
                   />
-                  {user ? (
-                    <button
-                      onClick={handleBooking}
-                      className="bg-primary-400 hover:bg-secondary-400 mt-2 w-full cursor-pointer rounded-full px-4 py-2 text-center font-bold text-white"
-                    >
-                      Reservar
-                    </button>
-                  ) : (
-                    <Link
-                      to="/login"
-                      className="bg-primary-400 hover:bg-secondary-400 mt-2 w-full cursor-pointer rounded-full px-4 py-2 text-center font-bold text-white"
-                    >
-                      Faça Login para reservar
-                    </Link>
-                  )}
+                  <ReservationButton
+                    onClick={handleBooking}
+                    loading={bookingLoading}
+                    progress={bookingProgress}
+                    isSuccess={bookingSuccess}
+                  />
                 </div>
               </form>
             </div>
@@ -415,6 +407,31 @@ const Place = () => {
           <p className="text-2xl font-bold">Informações Extras</p>
           <p>{place.extras}</p>
         </div>
+
+        {/* Comentários dos hóspedes (apenas os 3 mais recentes) */}
+        {placeRatings.reviews.length > 0 && (
+          <div className="mt-8">
+            <h3 className="text-xl font-bold">Comentários dos hóspedes</h3>
+            {[...placeRatings.reviews]
+              .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+              .slice(0, 3)
+              .map((review) => (
+                <div key={review._id} className="mt-4 rounded-lg border p-4">
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold">
+                      {review.reviewer?.name}
+                    </span>
+                    <StarRating
+                      value={review.ratingExperience}
+                      readonly
+                      size={4}
+                    />
+                  </div>
+                  <p className="mt-2 text-gray-700">{review.comment}</p>
+                </div>
+              ))}
+          </div>
+        )}
 
         {/* overlay */}
         <div

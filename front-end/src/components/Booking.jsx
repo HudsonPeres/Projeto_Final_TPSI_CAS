@@ -6,7 +6,6 @@ const Booking = ({ booking, place = false, refresh }) => {
   const [showReviewForm, setShowReviewForm] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState(null);
 
-  // Função para obter o texto do status
   const getStatusText = () => {
     if (booking.status === "cancelled") {
       if (booking.cancelledBy === "host") return "Cancelada pelo Anfitrião";
@@ -85,18 +84,20 @@ const Booking = ({ booking, place = false, refresh }) => {
               <span className="font-semibold">Status:</span> {getStatusText()}
             </p>
           </div>
-
-          {/* Botão Avaliar – apenas para reservas concluídas, ainda não avaliadas, e apenas na lista do utilizador (não na página do anúncio) */}
-          {booking.status === "completed" && !booking.hasReviewed && !place && (
-            <button
-              onClick={handleReviewClick}
-              className="bg-secondary-400 mt-2 rounded-full px-4 py-2 text-center text-white"
-            >
-              Avaliar
-            </button>
-          )}
         </div>
       </Link>
+
+      {/* Botão Avaliar posicionado no lado direito, fora do Link */}
+      {!place && booking.status === "completed" && !booking.hasReviewed && (
+        <div className="absolute top-1/2 right-8 -translate-y-1/2">
+          <button
+            onClick={handleReviewClick}
+            className="rounded-xl bg-red-500 px-4 py-2 text-white transition hover:bg-green-600"
+          >
+            Avaliar
+          </button>
+        </div>
+      )}
 
       {showReviewForm && selectedBooking && (
         <ReviewForm
