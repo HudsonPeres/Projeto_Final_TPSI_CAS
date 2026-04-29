@@ -68,7 +68,8 @@ const AccPlaces = () => {
                   Editar anúncio
                 </Link>
                 <Link
-                  to={`/account/places/${place._id}/bookings`}
+                  /* to={`/account/places/${place._id}/bookings`} */
+                  to={`/account/place-bookings/${place._id}`}
                   className="bg-primary-400 hover:bg-secondary-400 rounded-xl px-4 py-2 text-center text-white transition"
                 >
                   Ver Reservas

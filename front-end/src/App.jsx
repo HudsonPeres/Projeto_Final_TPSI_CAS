@@ -37,10 +37,10 @@ function App() {
               element={<Account />}
             />
             <Route path="/place/:id" element={<Place />} />
-            <Route
+            {/* <Route
               path="/account/places/:placeId/bookings"
               element={<PlaceBookingsManager />}
-            />
+            /> */}
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/help" element={<HelpCenter />} />
             <Route path="/about" element={<About />} />

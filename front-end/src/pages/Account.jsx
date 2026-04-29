@@ -9,9 +9,10 @@ import AuditPanel from "../components/AuditPanel";
 import UserManager from "../components/UserManager";
 import SupportPanel from "../components/SupportPanel";
 import Inbox from "../components/Inbox";
+import PlaceBookingsManager from "../components/PlaceBookingsManager";
 
 export const Account = () => {
-  const { subpage } = useParams();
+  const { subpage, action, id } = useParams();
   const { user, ready } = useUserContext();
 
   const buttonClass = (button) => {
@@ -71,6 +72,9 @@ export const Account = () => {
         {subpage === "audit" && <AuditPanel />}
         {subpage === "support" && <SupportPanel />}
         {subpage === "inbox" && <Inbox />}
+        {subpage === "place-bookings" && (
+          <PlaceBookingsManager placeId={action} />
+        )}
       </div>
     </section>
   );

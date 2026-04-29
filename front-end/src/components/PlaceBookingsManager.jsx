@@ -1,10 +1,8 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { useParams } from "react-router-dom";
 import StarRating from "./StarRating";
 
-const PlaceBookingsManager = () => {
-  const { placeId } = useParams();
+const PlaceBookingsManager = ({ placeId }) => {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -17,6 +15,10 @@ const PlaceBookingsManager = () => {
   const [reviewLoading, setReviewLoading] = useState(false);
 
   useEffect(() => {
+    if (!placeId) {
+      setLoading(false);
+      return;
+    }
     const fetchBookings = async () => {
       try {
         const { data } = await axios.get(`/bookings/place/${placeId}/owner`);
@@ -73,7 +75,7 @@ const PlaceBookingsManager = () => {
     try {
       await axios.post("/reviews", {
         bookingId: selectedBookingForGuestReview._id,
-        ratingHost: guestRating, // nota para o hóspede (reutilizamos o campo)
+        ratingHost: guestRating,
         comment: guestComment || undefined,
         type: "guest",
       });
@@ -81,7 +83,7 @@ const PlaceBookingsManager = () => {
       setShowGuestReviewForm(false);
       setGuestRating(0);
       setGuestComment("");
-      // Recarregar a lista para esconder o botão (se a reserva já tiver avaliação)
+      // Recarregar a lista
       const { data } = await axios.get(`/bookings/place/${placeId}/owner`);
       setBookings(data);
     } catch (error) {
@@ -93,6 +95,8 @@ const PlaceBookingsManager = () => {
   };
 
   if (loading) return <p className="text-center">Carregando...</p>;
+  if (!placeId)
+    return <div className="p-4 text-red-500">ID do anúncio inválido.</div>;
 
   return (
     <div className="mx-auto w-full max-w-7xl p-4">
@@ -165,7 +169,6 @@ const PlaceBookingsManager = () => {
                     </span>
                   </td>
                   <td className="px-6 py-4 text-sm font-medium whitespace-nowrap">
-                    {/* Botões de ação */}
                     {booking.status === "confirmed" ? (
                       <div className="flex flex-wrap gap-2">
                         <button
