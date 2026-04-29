@@ -4,19 +4,21 @@ import { connectDB } from "../../config/db.js";
 import { JWTVerify } from "../../utils/jwt.js";
 import Place from "../places/models.js";
 import User from "../users/model.js";
-import { isAdmin } from "../../utils/adminMiddleware.js";
+import {
+  isAdmin,
+  isSuperAdmin,
+  isSupport,
+  isSupportOrAdmin,
+} from "../../utils/adminMiddleware.js";
 import DeletedBooking from "./deletedModel.js";
-import { isSuperAdmin } from "../../utils/adminMiddleware.js";
-import { isSupport } from "../../utils/adminMiddleware.js";
 import { Conversation, Message } from "../chat/models.js";
 import { generateBookingCode } from "../../utils/bookingCode.js";
 import generateBookingPDF from "../../utils/pdfGenerator.js";
 import { sendEmail } from "../../utils/emailService.js";
-import Review from "../reviews/model.js"; // ← Importação do modelo Review
+import Review from "../reviews/model.js";
 
 const router = Router();
 
-// ==================== ROTA PARA O HÓSPEDE (MOSTRA AS SUAS RESERVAS) ====================
 router.get("/owner", async (req, res) => {
   connectDB();
 
@@ -285,8 +287,7 @@ router.delete("/admin/:id", isAdmin, async (req, res) => {
   }
 });
 
-// ==================== CANCELAMENTO PELO ADMIN ====================
-router.patch("/admin/:id/cancel", isAdmin, async (req, res) => {
+router.patch("/admin/:id/cancel", isSupportOrAdmin, async (req, res) => {
   connectDB();
   const { id } = req.params;
   try {
