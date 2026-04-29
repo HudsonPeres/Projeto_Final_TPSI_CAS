@@ -18,9 +18,8 @@ const StarRating = ({ value, onChange, readonly = false, size = 6 }) => {
             viewBox="0 0 24 24"
             strokeWidth={1.5}
             stroke="currentColor"
-            className={`size-${size} ${
-              star <= value ? "text-yellow-500" : "text-gray-300"
-            }`}
+            style={{ width: `${size * 4}px`, height: `${size * 4}px` }}
+            className={star <= value ? "text-yellow-500" : "text-gray-300"}
           >
             <path
               strokeLinecap="round"

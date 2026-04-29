@@ -47,20 +47,30 @@ const ReviewForm = ({ booking, onClose, onSuccess }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-      <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl dark:bg-gray-800">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+      <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
         <h2 className="mb-4 text-2xl font-bold">Avaliar experiência</h2>
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
-            <label className="mb-1 block font-semibold">Avaliação do anfitrião</label>
+            <label className="mb-1 block font-semibold">
+              Avaliação do anfitrião
+            </label>
             <StarRating value={ratingHost} onChange={setRatingHost} size={7} />
           </div>
           <div className="mb-4">
-            <label className="mb-1 block font-semibold">Avaliação da experiência</label>
-            <StarRating value={ratingExperience} onChange={setRatingExperience} size={7} />
+            <label className="mb-1 block font-semibold">
+              Avaliação da experiência
+            </label>
+            <StarRating
+              value={ratingExperience}
+              onChange={setRatingExperience}
+              size={7}
+            />
           </div>
           <div className="mb-4">
-            <label className="mb-1 block font-semibold">Comentário (opcional)</label>
+            <label className="mb-1 block font-semibold">
+              Comentário (opcional)
+            </label>
             <textarea
               value={comment}
               onChange={(e) => setComment(e.target.value)}
@@ -81,7 +91,7 @@ const ReviewForm = ({ booking, onClose, onSuccess }) => {
             <button
               type="submit"
               disabled={loading}
-              className="rounded-full bg-primary-400 px-4 py-2 text-white disabled:opacity-50"
+              className="bg-primary-400 hover:bg-secondary-400 rounded-full px-4 py-2 text-white disabled:opacity-50"
             >
               {loading ? "A enviar..." : "Enviar avaliação"}
             </button>

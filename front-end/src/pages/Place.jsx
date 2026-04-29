@@ -36,19 +36,23 @@ const Place = () => {
     );
   };
 
+  // ==================== CORREÇÃO AQUI ====================
   useEffect(() => {
     if (place) {
       const axiosGet = async () => {
         const { data } = await axios.get("/bookings/owner");
-        setBooking(
-          data.filter((booking) => {
-            return booking.place._id === place._id;
-          })[0],
+        // Filtra apenas reservas activas (confirmadas ou check-in realizado)
+        const activeBooking = data.find(
+          (booking) =>
+            booking.place._id === place._id &&
+            (booking.status === "confirmed" || booking.status === "checked_in"),
         );
+        setBooking(activeBooking);
       };
       axiosGet();
     }
   }, [place]);
+  // ======================================================
 
   useEffect(() => {
     if (id) {

@@ -12,9 +12,11 @@ import { Conversation, Message } from "../chat/models.js";
 import { generateBookingCode } from "../../utils/bookingCode.js";
 import generateBookingPDF from "../../utils/pdfGenerator.js";
 import { sendEmail } from "../../utils/emailService.js";
+import Review from "../reviews/model.js"; // ← Importação do modelo Review
 
 const router = Router();
 
+// ==================== ROTA PARA O HÓSPEDE (MOSTRA AS SUAS RESERVAS) ====================
 router.get("/owner", async (req, res) => {
   connectDB();
 
@@ -23,7 +25,23 @@ router.get("/owner", async (req, res) => {
 
     try {
       const bookingDocs = await Booking.find({ user: id }).populate("place");
-      res.json(bookingDocs);
+
+      // Adiciona o campo 'hasReviewed' a cada reserva (para saber se o hóspede já avaliou)
+      const bookingsWithReviewFlag = await Promise.all(
+        bookingDocs.map(async (booking) => {
+          const existingReview = await Review.findOne({
+            booking: booking._id,
+            reviewer: id,
+            type: { $in: ["host", "experience"] }, // avaliação do anfitrião ou da experiência
+          });
+          return {
+            ...booking.toObject(),
+            hasReviewed: !!existingReview,
+          };
+        }),
+      );
+
+      res.json(bookingsWithReviewFlag);
     } catch (error) {
       console.log(error);
       res.status(500).json("erro ao encontrar reservas deste usuário");
@@ -35,6 +53,7 @@ router.get("/owner", async (req, res) => {
 });
 
 router.post("/", async (req, res) => {
+  // ... (restante do código da rota POST mantém-se igual) ...
   connectDB();
   const { place, user, price, total, checkin, checkout, guests, nights } =
     req.body;
@@ -149,7 +168,6 @@ router.post("/", async (req, res) => {
         const guestId = user;
         const hostId = placeInfo.owner;
 
-        // Procurar conversa existente
         let conversation = await Conversation.findOne({
           participants: { $all: [guestId, hostId], $size: 2 },
           place: place,
@@ -163,7 +181,6 @@ router.post("/", async (req, res) => {
           });
         }
 
-        // Formatar datas
         const startFormatted = new Date(checkin).toLocaleDateString("pt-PT");
         const endFormatted = new Date(checkout).toLocaleDateString("pt-PT");
 
@@ -268,16 +285,41 @@ router.delete("/admin/:id", isAdmin, async (req, res) => {
   }
 });
 
+// ==================== CANCELAMENTO PELO ADMIN ====================
 router.patch("/admin/:id/cancel", isAdmin, async (req, res) => {
   connectDB();
   const { id } = req.params;
   try {
-    const booking = await Booking.findById(id);
+    const booking = await Booking.findById(id).populate("place user");
     if (!booking) return res.status(404).json("Reserva não encontrada");
     booking.status = "cancelled";
+    booking.cancelledBy = "admin";
     await booking.save();
+
+    // Notificar no chat
+    try {
+      const conversation = await Conversation.findOne({
+        participants: {
+          $all: [booking.user._id, booking.place.owner],
+          $size: 2,
+        },
+        place: booking.place._id,
+      });
+      if (conversation) {
+        await Message.create({
+          conversation: conversation._id,
+          sender: null,
+          text: `⚠️ A reserva para a experiência "${booking.place.title}" foi **cancelada pelo administrador**. Contacte o suporte para mais informações.`,
+          isSystem: true,
+          read: false,
+        });
+      }
+    } catch (err) {
+      console.error("Erro ao enviar notificação de cancelamento (admin):", err);
+    }
     res.json({ message: "Reserva cancelada", status: booking.status });
   } catch (error) {
+    console.error(error);
     res.status(500).json("Erro ao cancelar reserva");
   }
 });
@@ -289,6 +331,8 @@ router.patch("/admin/:id/reactivate", isAdmin, async (req, res) => {
     const booking = await Booking.findById(id);
     if (!booking) return res.status(404).json("Reserva não encontrada");
     booking.status = "confirmed";
+    // Se for reativada, removemos o cancelledBy (opcional)
+    booking.cancelledBy = null;
     await booking.save();
     res.json({ message: "Reserva reativada", status: booking.status });
   } catch (error) {
@@ -296,6 +340,86 @@ router.patch("/admin/:id/reactivate", isAdmin, async (req, res) => {
   }
 });
 
+// ==================== CHECK-IN E CHECK-OUT ====================
+router.patch("/:id/checkin", async (req, res) => {
+  connectDB();
+  const { id } = req.params;
+  const { code } = req.body;
+  try {
+    const booking = await Booking.findById(id).populate("place");
+    if (!booking)
+      return res.status(404).json({ message: "Reserva não encontrada" });
+    if (booking.status !== "confirmed") {
+      return res
+        .status(400)
+        .json({ message: "Apenas reservas confirmadas podem fazer check-in" });
+    }
+    if (booking.bookingCode !== code) {
+      return res.status(401).json({ message: "Código da reserva inválido" });
+    }
+    booking.status = "checked_in";
+    await booking.save();
+    res.json({ message: "Check-in efetuado com sucesso", booking });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Erro ao fazer check-in" });
+  }
+});
+
+router.patch("/:id/checkout", async (req, res) => {
+  connectDB();
+  const { id } = req.params;
+  try {
+    const booking = await Booking.findById(id).populate("place user");
+    if (!booking)
+      return res.status(404).json({ message: "Reserva não encontrada" });
+    if (booking.status !== "checked_in") {
+      return res.status(400).json({
+        message: "Apenas reservas com check-in podem fazer check-out",
+      });
+    }
+    booking.status = "completed";
+    await booking.save();
+
+    // Enviar lembrete para avaliar
+    try {
+      const conversation = await Conversation.findOne({
+        participants: {
+          $all: [booking.user._id, booking.place.owner],
+          $size: 2,
+        },
+        place: booking.place._id,
+      });
+      if (conversation) {
+        await Message.create({
+          conversation: conversation._id,
+          sender: null,
+          text: `✅ A sua experiência "${booking.place.title}" foi concluída! Não se esqueça de avaliar o anfitrião e a experiência.`,
+          isSystem: true,
+          read: false,
+        });
+      }
+      const guest = await User.findById(booking.user);
+      await sendEmail({
+        to: guest.email,
+        subject: `Experiência concluída: ${booking.place.title}`,
+        html: `<p>Olá ${guest.name}, a sua experiência foi concluída! Por favor, avalie o anfitrião e a experiência na sua área de reservas.</p>`,
+      });
+    } catch (err) {
+      console.error("Erro ao enviar lembrete:", err);
+    }
+
+    res.json({
+      message: "Check-out efetuado com sucesso. Avalie a experiência!",
+      booking,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Erro ao fazer check-out" });
+  }
+});
+
+// ==================== ROTAS PARA O ANFITRIÃO (LISTAR RESERVAS DO SEU ANÚNCIO) ====================
 router.get("/place/:placeId/owner", async (req, res) => {
   connectDB();
   const { placeId } = req.params;
@@ -313,30 +437,81 @@ router.get("/place/:placeId/owner", async (req, res) => {
       "user",
       "name email",
     );
-    res.json(bookings);
+
+    // Adiciona o campo 'guestReviewed' para cada reserva (indica se o anfitrião já avaliou o hóspede)
+    const bookingsWithFlag = await Promise.all(
+      bookings.map(async (booking) => {
+        const existingReview = await Review.findOne({
+          booking: booking._id,
+          type: "guest",
+        });
+        return {
+          ...booking.toObject(),
+          guestReviewed: !!existingReview,
+        };
+      }),
+    );
+
+    res.json(bookingsWithFlag);
   } catch (error) {
     console.error(error);
     res.status(500).json("Erro ao buscar reservas");
   }
 });
 
+// ==================== CANCELAMENTO PELO ANFITRIÃO ====================
 router.patch("/:id/cancel/owner", async (req, res) => {
   connectDB();
   const { id } = req.params;
   try {
     const { _id: userId } = await JWTVerify(req);
-    const booking = await Booking.findById(id).populate("place");
+    const booking = await Booking.findById(id).populate("place user");
     if (!booking)
       return res.status(404).json({ message: "Reserva não encontrada" });
     if (booking.place.owner.toString() !== userId.toString()) {
       return res.status(403).json({ message: "Não autorizado" });
     }
+    if (booking.status !== "confirmed") {
+      return res
+        .status(400)
+        .json({ message: "Apenas reservas confirmadas podem ser canceladas" });
+    }
     booking.status = "cancelled";
+    booking.cancelledBy = "host";
     await booking.save();
+
+    // Notificar hóspede
+    try {
+      const conversation = await Conversation.findOne({
+        participants: {
+          $all: [booking.user._id, booking.place.owner],
+          $size: 2,
+        },
+        place: booking.place._id,
+      });
+      if (conversation) {
+        await Message.create({
+          conversation: conversation._id,
+          sender: null,
+          text: `⚠️ A reserva para a experiência "${booking.place.title}" foi **cancelada pelo anfitrião**. Qualquer dúvida, responda a esta mensagem.`,
+          isSystem: true,
+          read: false,
+        });
+      }
+      const guest = await User.findById(booking.user);
+      await sendEmail({
+        to: guest.email,
+        subject: `Reserva cancelada pelo anfitrião`,
+        html: `<p>Olá ${guest.name}, a sua reserva para a experiência "${booking.place.title}" foi cancelada pelo anfitrião.</p>`,
+      });
+    } catch (err) {
+      console.error("Erro ao enviar notificação de cancelamento (host):", err);
+    }
+
     res.json({ message: "Reserva cancelada com sucesso", booking });
   } catch (error) {
     console.error(error);
-    res.status(500).json("Erro ao cancelar reserva");
+    res.status(500).json({ message: "Erro ao cancelar reserva" });
   }
 });
 

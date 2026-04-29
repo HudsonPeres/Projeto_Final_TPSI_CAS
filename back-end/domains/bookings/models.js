@@ -11,8 +11,8 @@ const bookingSchema = new Schema({
   nights: Number,
   status: {
     type: String,
+    enum: ["confirmed", "cancelled", "checked_in", "completed"],
     default: "confirmed",
-    enum: ["confirmed", "cancelled"],
   },
   bookingCode: { type: String, unique: true, required: true },
 });

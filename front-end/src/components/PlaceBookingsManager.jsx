@@ -65,7 +65,44 @@ const PlaceBookingsManager = ({ placeId }) => {
     }
   };
 
-  // Submeter avaliação do hóspede
+  // ==================== CHECK-IN E CHECK-OUT PARA O ANFITRIÃO ====================
+  const handleCheckin = async (booking) => {
+    const code = prompt("Introduza o código da reserva (ex: RES-XXXXX)");
+    if (!code) return;
+    try {
+      await axios.patch(`/bookings/${booking._id}/checkin`, { code });
+      alert("Check-in realizado com sucesso!");
+      const { data } = await axios.get(`/bookings/place/${placeId}/owner`);
+      setBookings(data);
+    } catch (error) {
+      alert(
+        error.response?.data?.message ||
+          "Erro no check-in. Código inválido ou reserva não confirmada.",
+      );
+    }
+  };
+
+  const handleCheckout = async (booking) => {
+    if (
+      window.confirm(
+        "Confirmar check-out? O hóspede receberá um lembrete para avaliar.",
+      )
+    ) {
+      try {
+        await axios.patch(`/bookings/${booking._id}/checkout`);
+        alert("Check-out realizado! O hóspede será notificado para avaliar.");
+        const { data } = await axios.get(`/bookings/place/${placeId}/owner`);
+        setBookings(data);
+      } catch (error) {
+        alert(
+          error.response?.data?.message ||
+            "Erro no check-out. Apenas reservas com check-in podem fazer checkout.",
+        );
+      }
+    }
+  };
+  // ===========================================================================
+
   const submitGuestReview = async () => {
     if (guestRating === 0) {
       alert("Por favor, dê uma classificação (1 a 5 estrelas).");
@@ -83,7 +120,6 @@ const PlaceBookingsManager = ({ placeId }) => {
       setShowGuestReviewForm(false);
       setGuestRating(0);
       setGuestComment("");
-      // Recarregar a lista
       const { data } = await axios.get(`/bookings/place/${placeId}/owner`);
       setBookings(data);
     } catch (error) {
@@ -165,36 +201,61 @@ const PlaceBookingsManager = ({ placeId }) => {
                     >
                       {booking.status === "confirmed"
                         ? "Confirmada"
-                        : "Cancelada"}
+                        : booking.status === "checked_in"
+                          ? "Check-in realizado"
+                          : booking.status === "completed"
+                            ? "Concluída"
+                            : "Cancelada"}
                     </span>
                   </td>
                   <td className="px-6 py-4 text-sm font-medium whitespace-nowrap">
-                    {booking.status === "confirmed" ? (
-                      <div className="flex flex-wrap gap-2">
+                    <div className="flex flex-wrap gap-2">
+                      {booking.status === "confirmed" && (
+                        <button
+                          onClick={() => handleCheckin(booking)}
+                          className="rounded-md bg-blue-600 px-3 py-1 text-white transition hover:bg-blue-700"
+                        >
+                          Check-in
+                        </button>
+                      )}
+                      {booking.status === "checked_in" && (
+                        <button
+                          onClick={() => handleCheckout(booking)}
+                          className="rounded-md bg-yellow-600 px-3 py-1 text-white transition hover:bg-yellow-700"
+                        >
+                          Check-out
+                        </button>
+                      )}
+                      {booking.status === "confirmed" && (
                         <button
                           onClick={() => cancelBooking(booking._id)}
-                          className="bg-primary-400 rounded-md px-3 py-1 text-white transition hover:bg-yellow-600"
+                          className="rounded-md bg-red-500 px-3 py-1 text-white transition hover:bg-red-600"
                         >
                           Cancelar
                         </button>
+                      )}
+                      {(booking.status === "completed" ||
+                        booking.status === "checked_in") &&
+                        !booking.guestReviewed && (
+                          <button
+                            onClick={() => {
+                              setSelectedBookingForGuestReview(booking);
+                              setShowGuestReviewForm(true);
+                            }}
+                            className="rounded-md bg-blue-500 px-3 py-1 text-white transition hover:bg-blue-600"
+                          >
+                            Avaliar Hóspede
+                          </button>
+                        )}
+                      {booking.status === "cancelled" && (
                         <button
-                          onClick={() => {
-                            setSelectedBookingForGuestReview(booking);
-                            setShowGuestReviewForm(true);
-                          }}
-                          className="rounded-md bg-blue-500 px-3 py-1 text-white transition hover:bg-blue-600"
+                          onClick={() => deleteBooking(booking._id)}
+                          className="rounded-md bg-red-500 px-3 py-1 text-white transition hover:bg-red-600"
                         >
-                          Avaliar Hóspede
+                          Apagar
                         </button>
-                      </div>
-                    ) : (
-                      <button
-                        onClick={() => deleteBooking(booking._id)}
-                        className="rounded-md bg-red-500 px-3 py-1 text-white transition hover:bg-red-600"
-                      >
-                        Apagar
-                      </button>
-                    )}
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))
