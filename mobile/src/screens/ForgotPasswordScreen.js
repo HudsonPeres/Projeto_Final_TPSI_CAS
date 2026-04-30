@@ -7,6 +7,7 @@ import {
   Alert,
   StyleSheet,
 } from "react-native";
+import DismissKeyboardView from "../components/DismissKeyboardView";
 import api from "../services/api";
 
 export default function ForgotPasswordScreen({ navigation }) {
@@ -41,32 +42,34 @@ export default function ForgotPasswordScreen({ navigation }) {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Recuperar Password</Text>
-      <Text style={styles.subtitle}>
-        Insira o seu email para receber um código de verificação.
-      </Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Email"
-        value={email}
-        onChangeText={setEmail}
-        keyboardType="email-address"
-        autoCapitalize="none"
-      />
-      <TouchableOpacity
-        style={styles.button}
-        onPress={handleSendOTP}
-        disabled={loading}
-      >
-        <Text style={styles.buttonText}>
-          {loading ? "A enviar..." : "Enviar código"}
+    <DismissKeyboardView>
+      <View style={styles.container}>
+        <Text style={styles.title}>Recuperar Password</Text>
+        <Text style={styles.subtitle}>
+          Insira o seu email para receber um código de verificação.
         </Text>
-      </TouchableOpacity>
-      <TouchableOpacity onPress={() => navigation.goBack()}>
-        <Text style={styles.link}>Voltar ao login</Text>
-      </TouchableOpacity>
-    </View>
+        <TextInput
+          style={styles.input}
+          placeholder="Email"
+          value={email}
+          onChangeText={setEmail}
+          keyboardType="email-address"
+          autoCapitalize="none"
+        />
+        <TouchableOpacity
+          style={styles.button}
+          onPress={handleSendOTP}
+          disabled={loading}
+        >
+          <Text style={styles.buttonText}>
+            {loading ? "A enviar..." : "Enviar código"}
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => navigation.goBack()}>
+          <Text style={styles.link}>Voltar ao login</Text>
+        </TouchableOpacity>
+      </View>
+    </DismissKeyboardView>
   );
 }
 

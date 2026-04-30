@@ -13,9 +13,19 @@ import { isSupport } from "../../utils/adminMiddleware.js";
 
 const router = Router();
 
+// Rota principal com suporte a filtro geoespacial (perto de mim)
 router.get("/", async (req, res) => {
   connectDB();
-  const { minPrice, maxPrice, location, minGuests, maxGuests } = req.query;
+  const {
+    minPrice,
+    maxPrice,
+    location,
+    minGuests,
+    maxGuests,
+    lat,
+    lng,
+    radius,
+  } = req.query;
 
   try {
     let filter = { isActive: true };
@@ -34,6 +44,19 @@ router.get("/", async (req, res) => {
 
     if (location && location.trim()) {
       filter.address = { $regex: location.trim(), $options: "i" };
+    }
+
+    // 🔹 NOVO: filtro geoespacial
+    if (lat && lng && radius) {
+      filter.location = {
+        $nearSphere: {
+          $geometry: {
+            type: "Point",
+            coordinates: [parseFloat(lng), parseFloat(lat)],
+          },
+          $maxDistance: parseInt(radius), // em metros
+        },
+      };
     }
 
     const placeDocs = await Place.find(filter);
@@ -236,7 +259,6 @@ router.get("/admin/all", isAdmin, async (req, res) => {
   }
 });
 
-// CORREÇÃO APLICADA AQUI ↓
 router.delete("/admin/:id", isAdmin, async (req, res) => {
   connectDB();
   const { id } = req.params;

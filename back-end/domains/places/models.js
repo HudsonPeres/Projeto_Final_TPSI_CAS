@@ -4,6 +4,17 @@ const placeSchema = new Schema({
   owner: { type: Schema.Types.ObjectId, ref: "Users" },
   title: String,
   address: String,
+  location: {
+    type: {
+      type: String,
+      enum: ["Point"],
+      default: "Point",
+    },
+    coordinates: {
+      type: [Number], // [longitude, latitude]
+      required: false,
+    },
+  },
   photos: [String],
   description: String,
   extras: String,
@@ -16,5 +27,7 @@ const placeSchema = new Schema({
   availableDates: [{ type: Date }],
   isMultiDay: { type: Boolean, default: true },
 });
+
+placeSchema.index({ location: "2dsphere" });
 
 export default model("Places", placeSchema);

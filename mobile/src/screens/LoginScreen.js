@@ -13,6 +13,7 @@ import * as WebBrowser from "expo-web-browser";
 import * as Google from "expo-auth-session/providers/google";
 import Constants from "expo-constants";
 import { useAuth } from "../contexts/AuthContext";
+import DismissKeyboardView from "../components/DismissKeyboardView";
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -25,11 +26,12 @@ export default function LoginScreen({ navigation }) {
   const [step, setStep] = useState("credentials");
   const [loading, setLoading] = useState(false);
 
-  // Configuração do Google Sign-In
   const [request, response, promptAsync] = Google.useIdTokenAuthRequest({
-    clientId: Constants.expoConfig.extra.GOOGLE_CLIENT_ID,
-    iosClientId: Constants.expoConfig.extra.GOOGLE_CLIENT_ID,
-    androidClientId: Constants.expoConfig.extra.GOOGLE_CLIENT_ID,
+    iosClientId:
+      "155839010735-lqqhkg77soggfeb90kb7bcjaiehp64d3.apps.googleusercontent.com",
+    androidClientId:
+      "155839010735-h8i389vg6pr922g7c8n4k2ev54igarls.apps.googleusercontent.com",
+    webClientId: Constants.expoConfig.extra.GOOGLE_CLIENT_ID,
   });
 
   // Trata a resposta do Google
@@ -99,87 +101,90 @@ export default function LoginScreen({ navigation }) {
   );
 
   return (
-    <View style={styles.container}>
-      <Image
-        source={require("../../assets/Viva_Portugal_full.png")}
-        style={styles.logo}
-        resizeMode="contain"
-      />
+    <DismissKeyboardView>
+      <View style={styles.container}>
+        <Image
+          source={require("../../assets/Viva_Portugal_full.png")}
+          style={styles.logo}
+          resizeMode="contain"
+        />
 
-      {step === "credentials" ? (
-        <>
-          <TextInput
-            style={styles.input}
-            placeholder="Email"
-            value={email}
-            onChangeText={setEmail}
-            keyboardType="email-address"
-            autoCapitalize="none"
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="Password"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-          />
-          <TouchableOpacity
-            style={styles.button}
-            onPress={handleRequestOTP}
-            disabled={loading}
-          >
-            <Text style={styles.buttonText}>
-              {loading ? "A enviar..." : "Entrar"}
+        {step === "credentials" ? (
+          <>
+            <TextInput
+              style={styles.input}
+              placeholder="Email"
+              value={email}
+              onChangeText={setEmail}
+              keyboardType="email-address"
+              autoCapitalize="none"
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="Password"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry
+            />
+            <TouchableOpacity
+              style={styles.button}
+              onPress={handleRequestOTP}
+              disabled={loading}
+            >
+              <Text style={styles.buttonText}>
+                {loading ? "A enviar..." : "Entrar"}
+              </Text>
+            </TouchableOpacity>
+
+            {/* 🔹 Botão Google com proxy forçado */}
+            <TouchableOpacity
+              style={styles.googleButton}
+              onPress={() => promptAsync({ useProxy: true })}
+              disabled={!request}
+            >
+              <GoogleIcon />
+              <Text style={styles.googleButtonText}>Entrar com Google</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity onPress={() => navigation.navigate("Register")}>
+              <Text style={styles.link}>Não tem conta? Registe-se</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => navigation.navigate("ForgotPassword")}
+            >
+              <Text style={styles.link}>Esqueceu a password?</Text>
+            </TouchableOpacity>
+          </>
+        ) : (
+          <>
+            <Text style={styles.info}>
+              Introduza o código enviado para {email}
             </Text>
-          </TouchableOpacity>
+            <TextInput
+              style={styles.input}
+              placeholder="Código OTP"
+              value={otp}
+              onChangeText={setOtp}
+              keyboardType="number-pad"
+            />
+            <TouchableOpacity
+              style={styles.button}
+              onPress={handleVerifyOTP}
+              disabled={loading}
+            >
+              <Text style={styles.buttonText}>
+                {loading ? "Verificando..." : "Confirmar"}
+              </Text>
+            </TouchableOpacity>
 
-          <TouchableOpacity
-            style={styles.googleButton}
-            onPress={() => promptAsync()}
-            disabled={!request}
-          >
-            <GoogleIcon />
-            <Text style={styles.googleButtonText}>Entrar com Google</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity onPress={() => navigation.navigate("Register")}>
-            <Text style={styles.link}>Não tem conta? Registe-se</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            onPress={() => navigation.navigate("ForgotPassword")}
-          >
-            <Text style={styles.link}>Esqueceu a password?</Text>
-          </TouchableOpacity>
-        </>
-      ) : (
-        <>
-          <Text style={styles.info}>
-            Introduza o código enviado para {email}
-          </Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Código OTP"
-            value={otp}
-            onChangeText={setOtp}
-            keyboardType="number-pad"
-          />
-          <TouchableOpacity
-            style={styles.button}
-            onPress={handleVerifyOTP}
-            disabled={loading}
-          >
-            <Text style={styles.buttonText}>
-              {loading ? "Verificando..." : "Confirmar"}
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity onPress={() => setStep("credentials")}>
-            <Text style={styles.link}>Voltar</Text>
-          </TouchableOpacity>
-        </>
-      )}
-    </View>
+            <TouchableOpacity onPress={() => setStep("credentials")}>
+              <Text style={styles.link}>Voltar</Text>
+            </TouchableOpacity>
+          </>
+        )}
+      </View>
+    </DismissKeyboardView>
   );
 }
 

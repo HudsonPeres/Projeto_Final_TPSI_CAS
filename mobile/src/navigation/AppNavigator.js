@@ -21,7 +21,7 @@ const AuthStack = () => (
 );
 
 const MainStack = () => (
-  <Stack.Navigator>
+  <Stack.Navigator screenOptions={{ headerShown: false }}>
     <Stack.Screen name="Home" component={HomeScreen} />
   </Stack.Navigator>
 );

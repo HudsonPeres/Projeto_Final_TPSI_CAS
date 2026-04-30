@@ -7,6 +7,7 @@ import {
   Alert,
   StyleSheet,
 } from "react-native";
+import DismissKeyboardView from "../components/DismissKeyboardView";
 import api from "../services/api";
 
 export default function ResetPasswordScreen({ route, navigation }) {
@@ -42,38 +43,40 @@ export default function ResetPasswordScreen({ route, navigation }) {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Nova Password</Text>
-      <Text style={styles.subtitle}>
-        Introduza o código enviado para {email} e a nova password.
-      </Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Código OTP"
-        value={otp}
-        onChangeText={setOtp}
-        keyboardType="number-pad"
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Nova password"
-        value={newPassword}
-        onChangeText={setNewPassword}
-        secureTextEntry={true}
-      />
-      <TouchableOpacity
-        style={styles.button}
-        onPress={handleReset}
-        disabled={loading}
-      >
-        <Text style={styles.buttonText}>
-          {loading ? "Alterando..." : "Alterar password"}
+    <DismissKeyboardView>
+      <View style={styles.container}>
+        <Text style={styles.title}>Nova Password</Text>
+        <Text style={styles.subtitle}>
+          Introduza o código enviado para {email} e a nova password.
         </Text>
-      </TouchableOpacity>
-      <TouchableOpacity onPress={() => navigation.navigate("Login")}>
-        <Text style={styles.link}>Voltar ao login</Text>
-      </TouchableOpacity>
-    </View>
+        <TextInput
+          style={styles.input}
+          placeholder="Código OTP"
+          value={otp}
+          onChangeText={setOtp}
+          keyboardType="number-pad"
+        />
+        <TextInput
+          style={styles.input}
+          placeholder="Nova password"
+          value={newPassword}
+          onChangeText={setNewPassword}
+          secureTextEntry={true}
+        />
+        <TouchableOpacity
+          style={styles.button}
+          onPress={handleReset}
+          disabled={loading}
+        >
+          <Text style={styles.buttonText}>
+            {loading ? "Alterando..." : "Alterar password"}
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => navigation.navigate("Login")}>
+          <Text style={styles.link}>Voltar ao login</Text>
+        </TouchableOpacity>
+      </View>
+    </DismissKeyboardView>
   );
 }
 
