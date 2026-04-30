@@ -10,6 +10,7 @@ import DeletedPlace from "./deletedModel.js";
 import Booking from "../bookings/models.js";
 import { isSuperAdmin } from "../../utils/adminMiddleware.js";
 import { isSupport } from "../../utils/adminMiddleware.js";
+import User from "../users/model.js"; // <-- NOVO IMPORT
 
 const router = Router();
 
@@ -154,6 +155,62 @@ router.put("/:id", async (req, res) => {
     res.json(updatedPlaceDoc);
   } catch (error) {
     res.status(500).json("Erro ao atualizar");
+  }
+});
+
+router.delete("/:id", async (req, res) => {
+  connectDB();
+  const { id } = req.params;
+  const { reason } = req.body;
+
+  try {
+    // 1. Verificar autenticação
+    const tokenPayload = await JWTVerify(req);
+    if (!tokenPayload) {
+      return res.status(401).json({ message: "Não autenticado" });
+    }
+
+    // 2. Buscar utilizador completo para obter a role
+    const user = await User.findById(tokenPayload._id);
+    if (!user) {
+      return res.status(401).json({ message: "Utilizador não encontrado" });
+    }
+
+    // 3. Buscar o anúncio
+    const place = await Place.findById(id);
+    if (!place) {
+      return res.status(404).json({ message: "Lugar não encontrado" });
+    }
+
+    // 4. Verificar permissões: dono OU (admin ou superadmin)
+    const isOwner = place.owner.toString() === user._id.toString();
+    const isAdminOrSuper = user.role === "admin" || user.role === "superadmin";
+
+    if (!isOwner && !isAdminOrSuper) {
+      return res
+        .status(403)
+        .json({ message: "Sem permissão para apagar este anúncio" });
+    }
+
+    // 5. Mover para auditoria (DeletedPlace)
+    await DeletedPlace.create({
+      originalId: place._id,
+      data: place.toObject(),
+      deletedBy: user._id,
+      reason:
+        reason ||
+        (isAdminOrSuper
+          ? "Removido por administrador"
+          : "Removido pelo proprietário"),
+    });
+
+    // 6. Apagar o anúncio original
+    await Place.deleteOne({ _id: id });
+
+    res.json({ message: "Anúncio removido e registado em auditoria" });
+  } catch (error) {
+    console.error("Erro ao apagar anúncio:", error);
+    res.status(500).json({ message: "Erro ao apagar anúncio" });
   }
 });
 

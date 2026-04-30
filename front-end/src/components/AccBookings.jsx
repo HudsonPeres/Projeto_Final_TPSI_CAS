@@ -19,7 +19,6 @@ const AccBookings = () => {
     fetchBookings();
   }, []);
 
-  // Filtrar reservas por intervalo de datas e por local
   const filteredBookings = bookings.filter((booking) => {
     const checkin = booking.checkin;
     if (startDate && checkin < startDate) return false;
@@ -32,7 +31,7 @@ const AccBookings = () => {
     return true;
   });
 
-  // Ordenar: activas primeiro (confirmed/checked_in), depois concluídas, depois canceladas
+  // Ordenação
   const sortedBookings = [...filteredBookings].sort((a, b) => {
     const getPriority = (status) => {
       if (status === "confirmed" || status === "checked_in") return 1;
@@ -42,7 +41,6 @@ const AccBookings = () => {
     const priorityA = getPriority(a.status);
     const priorityB = getPriority(b.status);
     if (priorityA !== priorityB) return priorityA - priorityB;
-    // mesma prioridade: mais recente primeiro (checkin descendente)
     return new Date(b.checkin) - new Date(a.checkin);
   });
 
@@ -81,7 +79,7 @@ const AccBookings = () => {
 
   return (
     <div className="flex w-full max-w-7xl flex-col gap-8">
-      {/* Barra de filtros */}
+      {/* Barra do filtro */}
       <div className="flex flex-wrap gap-4 rounded-2xl bg-gray-100 p-4 shadow-sm">
         <div className="flex flex-col gap-1">
           <label className="text-sm font-semibold">Data inicial</label>
