@@ -65,7 +65,6 @@ const PlaceBookingsManager = ({ placeId }) => {
     }
   };
 
-  // ==================== CHECK-IN E CHECK-OUT PARA O ANFITRIÃO ====================
   const handleCheckin = async (booking) => {
     const code = prompt("Introduza o código da reserva (ex: RES-XXXXX)");
     if (!code) return;
@@ -101,7 +100,6 @@ const PlaceBookingsManager = ({ placeId }) => {
       }
     }
   };
-  // ===========================================================================
 
   const submitGuestReview = async () => {
     if (guestRating === 0) {

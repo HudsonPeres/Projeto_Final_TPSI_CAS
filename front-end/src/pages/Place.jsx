@@ -117,7 +117,6 @@ const Place = () => {
         guests,
         nights,
       };
-      // Simular progresso (opcional)
       const interval = setInterval(() => {
         setBookingProgress((prev) => {
           if (prev >= 90) {
@@ -182,7 +181,6 @@ const Place = () => {
   return (
     <section>
       <div className="mx-auto flex grid max-w-7xl flex-col gap-4 p-4 sm:gap-6 sm:p-8">
-        {/* titulos */}
         <div className="flex flex-col sm:gap-1">
           <div className="text-2xl font-bold sm:text-3xl">{place.title}</div>
 
@@ -262,7 +260,6 @@ const Place = () => {
 
         {/* colunas */}
         <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
-          {/* Coluna esquerda (2/3 da largura) */}
           <div className="md:col-span-2">
             {/* Card do Host */}
             <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
@@ -315,64 +312,81 @@ const Place = () => {
             </div>
           </div>
 
-          {/* Coluna direita (1/3 da largura) – Formulário de reserva */}
-          {!booking && (!user || user._id !== place.owner?._id) && (
-            <div className="md:col-span-1">
-              <form
-                onSubmit={(e) => e.preventDefault()}
-                className="order-1 flex flex-col gap-4 self-center justify-self-center rounded-2xl border border-gray-300 px-4 py-3 text-2xl sm:px-8 sm:py-4 md:order-0"
-              >
-                <p className="text-center text-2xl font-bold">
-                  Preço: {place.price}{" "}
-                  {place.isMultiDay ? "€ / diária" : "€ / atividade"}
-                </p>
-                <p className="text-center text-sm text-gray-500">
-                  Nº máximo de participantes: {place.guests}
-                </p>
-                <BookingCalendar
-                  placeId={id}
-                  isMultiDay={place.isMultiDay}
-                  onDateChange={(range) => {
-                    setCheckin(
-                      range.startDate?.toISOString().split("T")[0] || "",
-                    );
-                    setCheckout(
-                      range.endDate?.toISOString().split("T")[0] || "",
-                    );
-                  }}
-                />
-                <div className="flex flex-col rounded-2xl border border-gray-300 px-4 py-2">
-                  <p className="font-bold">Nº de Participantes</p>
-                  <input
-                    className="rounded-2xl border border-gray-300 px-4 py-2"
-                    placeholder={`Nº máximo: ${place.guests}`}
-                    type="number"
-                    value={guests}
-                    onChange={(e) => setGuests(e.target.value)}
-                  />
-                  <ReservationButton
-                    onClick={handleBooking}
-                    loading={bookingLoading}
-                    progress={bookingProgress}
-                    isSuccess={bookingSuccess}
-                  />
+          {/* Formulário de reserva / Botão de login */}
+          {!booking && (
+            <>
+              {!user ? (
+                <div className="md:col-span-1">
+                  <div className="rounded-2xl border border-gray-300 bg-white p-6 text-center shadow-sm">
+                    <p className="mb-4 text-gray-600">
+                      Faça login para reservar esta experiência.
+                    </p>
+                    <Link
+                      to="/login"
+                      className="bg-primary-400 hover:bg-secondary-400 inline-block rounded-full px-6 py-2 text-white transition"
+                    >
+                      Entrar / Registar
+                    </Link>
+                  </div>
                 </div>
-              </form>
-            </div>
-          )}
-          {!booking && user && user._id === place.owner?._id && (
-            <div className="rounded-2xl border border-gray-300 bg-gray-50 p-6 text-center md:col-span-1">
-              <p className="text-gray-600">
-                Você é o anfitrião deste anúncio e não pode reservar a sua
-                própria experiência.
-              </p>
-              <Link
-                to="/account/places"
-                className="text-primary-400 mt-2 inline-block underline"
-              >
-                Gerir os seus anúncios
-              </Link>
-            </div>
+              ) : user._id !== place.owner?._id ? (
+                <div className="md:col-span-1">
+                  <form
+                    onSubmit={(e) => e.preventDefault()}
+                    className="order-1 flex flex-col gap-4 self-center justify-self-center rounded-2xl border border-gray-300 px-4 py-3 text-2xl sm:px-8 sm:py-4 md:order-0"
+                  >
+                    <p className="text-center text-2xl font-bold">
+                      Preço: {place.price}{" "}
+                      {place.isMultiDay ? "€ / diária" : "€ / atividade"}
+                    </p>
+                    <p className="text-center text-sm text-gray-500">
+                      Nº máximo de participantes: {place.guests}
+                    </p>
+                    <BookingCalendar
+                      placeId={id}
+                      isMultiDay={place.isMultiDay}
+                      onDateChange={(range) => {
+                        setCheckin(
+                          range.startDate?.toISOString().split("T")[0] || "",
+                        );
+                        setCheckout(
+                          range.endDate?.toISOString().split("T")[0] || "",
+                        );
+                      }}
+                    />
+                    <div className="flex flex-col rounded-2xl border border-gray-300 px-4 py-2">
+                      <p className="font-bold">Nº de Participantes</p>
+                      <input
+                        className="rounded-2xl border border-gray-300 px-4 py-2"
+                        placeholder={`Nº máximo: ${place.guests}`}
+                        type="number"
+                        value={guests}
+                        onChange={(e) => setGuests(e.target.value)}
+                      />
+                      <ReservationButton
+                        onClick={handleBooking}
+                        loading={bookingLoading}
+                        progress={bookingProgress}
+                        isSuccess={bookingSuccess}
+                      />
+                    </div>
+                  </form>
+                </div>
+              ) : (
+                <div className="rounded-2xl border border-gray-300 bg-gray-50 p-6 text-center md:col-span-1">
+                  <p className="text-gray-600">
+                    Você é o anfitrião deste anúncio e não pode reservar a sua
+                    própria experiência.
+                  </p>
+                  <Link
+                    to="/account/places"
+                    className="text-primary-400 mt-2 inline-block underline"
+                  >
+                    Gerir os seus anúncios
+                  </Link>
+                </div>
+              )}
+            </>
           )}
         </div>
 
@@ -408,7 +422,7 @@ const Place = () => {
           <p>{place.extras}</p>
         </div>
 
-        {/* Comentários dos hóspedes (apenas os 3 mais recentes) */}
+        {/* Comentários dos hóspedes */}
         {placeRatings.reviews.length > 0 && (
           <div className="mt-8">
             <h3 className="text-xl font-bold">Comentários dos hóspedes</h3>

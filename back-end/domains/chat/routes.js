@@ -10,7 +10,7 @@ const getUserId = async (req) => {
   return user._id;
 };
 
-// GET /conversations – lista conversas do utilizador autenticado, com contagem de não lidas
+//  lista conversas do utilizador autenticado, com contagem de não lidas
 router.get("/conversations", async (req, res) => {
   connectDB();
   try {
@@ -52,7 +52,7 @@ router.get("/conversations", async (req, res) => {
   }
 });
 
-// GET /conversations/:id/messages – obtém mensagens e marca como lidas
+//obtém mensagens e marca como lidas
 router.get("/conversations/:id/messages", async (req, res) => {
   connectDB();
   try {
@@ -77,7 +77,7 @@ router.get("/conversations/:id/messages", async (req, res) => {
   }
 });
 
-// POST /conversations/:id/messages – enviar nova mensagem
+//  enviar nova mensagem
 router.post("/conversations/:id/messages", async (req, res) => {
   connectDB();
   try {
@@ -111,7 +111,7 @@ router.post("/conversations/:id/messages", async (req, res) => {
   }
 });
 
-// POST /conversations/start – iniciar conversa (ou obter existente)
+// iniciar conversa (ou obter existente)
 router.post("/conversations/start", async (req, res) => {
   connectDB();
   try {

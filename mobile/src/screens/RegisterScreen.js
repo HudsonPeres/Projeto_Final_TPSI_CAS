@@ -26,7 +26,6 @@ export default function RegisterScreen({ navigation }) {
   const [step, setStep] = useState("data");
   const [loading, setLoading] = useState(false);
 
-  // Configuração do Google Sign-In (mesma do LoginScreen)
   const [googleRequest, googleResponse, promptAsync] =
     Google.useIdTokenAuthRequest({
       iosClientId:

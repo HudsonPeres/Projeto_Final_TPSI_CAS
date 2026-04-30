@@ -5,7 +5,7 @@ import { JWTVerify } from "../../utils/jwt.js";
 
 const router = Router();
 
-// GET /demands – listar demandas (apenas suporte, opcionalmente filtrar por status)
+// listar demandas (apenas suporte)
 router.get("/", async (req, res) => {
   connectDB();
   const { status } = req.query; // 'open' ou 'resolved'
@@ -22,7 +22,7 @@ router.get("/", async (req, res) => {
   }
 });
 
-// PUT /demands/:id/resolve – marcar demanda como resolvida
+//  marcar demanda como resolvida
 router.put("/:id/resolve", async (req, res) => {
   connectDB();
   const { id } = req.params;
@@ -43,7 +43,7 @@ router.put("/:id/resolve", async (req, res) => {
   }
 });
 
-// POST /demands – criar uma nova demanda (utilizador autenticado)
+//  criar uma nova demanda
 router.post("/", async (req, res) => {
   connectDB();
   try {

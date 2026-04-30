@@ -8,8 +8,8 @@ const demandSchema = new Schema({
   createdAt: { type: Date, default: Date.now },
   resolvedAt: { type: Date },
   resolvedBy: { type: Schema.Types.ObjectId, ref: "Users" },
-  relatedPlace: { type: String, default: null }, // ← mudado para String
-  relatedBooking: { type: String, default: null }, // ← mudado para String
+  relatedPlace: { type: String, default: null },
+  relatedBooking: { type: String, default: null },
 });
 
 export default model("Demand", demandSchema);

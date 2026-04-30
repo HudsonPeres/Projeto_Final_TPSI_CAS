@@ -18,7 +18,6 @@ const ReviewForm = ({ booking, onClose, onSuccess }) => {
     setLoading(true);
     setError("");
     try {
-      // Primeiro, avaliar anfitrião (se nota >0)
       if (ratingHost > 0) {
         await axios.post("/reviews", {
           bookingId: booking._id,

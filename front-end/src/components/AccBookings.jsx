@@ -6,6 +6,9 @@ import Booking from "./Booking";
 const AccBookings = () => {
   const navigate = useNavigate();
   const [bookings, setBookings] = useState([]);
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [filterPlace, setFilterPlace] = useState("");
 
   const fetchBookings = async () => {
     const { data } = await axios.get("/bookings/owner");
@@ -15,6 +18,33 @@ const AccBookings = () => {
   useEffect(() => {
     fetchBookings();
   }, []);
+
+  // Filtrar reservas por intervalo de datas e por local
+  const filteredBookings = bookings.filter((booking) => {
+    const checkin = booking.checkin;
+    if (startDate && checkin < startDate) return false;
+    if (endDate && checkin > endDate) return false;
+    if (
+      filterPlace &&
+      !booking.place.title.toLowerCase().includes(filterPlace.toLowerCase())
+    )
+      return false;
+    return true;
+  });
+
+  // Ordenar: activas primeiro (confirmed/checked_in), depois concluídas, depois canceladas
+  const sortedBookings = [...filteredBookings].sort((a, b) => {
+    const getPriority = (status) => {
+      if (status === "confirmed" || status === "checked_in") return 1;
+      if (status === "completed") return 2;
+      return 3; // cancelled e outros
+    };
+    const priorityA = getPriority(a.status);
+    const priorityB = getPriority(b.status);
+    if (priorityA !== priorityB) return priorityA - priorityB;
+    // mesma prioridade: mais recente primeiro (checkin descendente)
+    return new Date(b.checkin) - new Date(a.checkin);
+  });
 
   // Verificar se faltam menos de 48h para o check-in
   const isWithin48Hours = (booking) => {
@@ -51,21 +81,70 @@ const AccBookings = () => {
 
   return (
     <div className="flex w-full max-w-7xl flex-col gap-8">
-      {bookings.map((booking) => (
-        <div key={booking._id} className="relative">
-          <Booking booking={booking} refresh={fetchBookings} />
-          <div className="absolute top-1/2 right-8 flex -translate-y-1/2 gap-2">
-            {booking.status === "confirmed" && (
-              <button
-                onClick={() => handleCancel(booking)}
-                className="rounded-xl bg-red-500 px-4 py-2 text-white transition hover:bg-red-600"
-              >
-                Cancelar reserva
-              </button>
-            )}
-          </div>
+      {/* Barra de filtros */}
+      <div className="flex flex-wrap gap-4 rounded-2xl bg-gray-100 p-4 shadow-sm">
+        <div className="flex flex-col gap-1">
+          <label className="text-sm font-semibold">Data inicial</label>
+          <input
+            type="date"
+            value={startDate}
+            onChange={(e) => setStartDate(e.target.value)}
+            className="rounded-full border border-gray-300 px-4 py-2"
+          />
         </div>
-      ))}
+        <div className="flex flex-col gap-1">
+          <label className="text-sm font-semibold">Data final</label>
+          <input
+            type="date"
+            value={endDate}
+            onChange={(e) => setEndDate(e.target.value)}
+            className="rounded-full border border-gray-300 px-4 py-2"
+          />
+        </div>
+        <div className="flex flex-col gap-1">
+          <label className="text-sm font-semibold">Filtrar por local</label>
+          <input
+            type="text"
+            value={filterPlace}
+            onChange={(e) => setFilterPlace(e.target.value)}
+            placeholder="Nome do anúncio"
+            className="rounded-full border border-gray-300 px-4 py-2"
+          />
+        </div>
+        <div className="flex items-end">
+          <button
+            onClick={() => {
+              setStartDate("");
+              setEndDate("");
+              setFilterPlace("");
+            }}
+            className="bg-primary-400 hover:bg-secondary-400 rounded-full px-4 py-2 text-white transition"
+          >
+            Limpar filtros
+          </button>
+        </div>
+      </div>
+
+      {/* Lista de reservas ordenadas */}
+      {sortedBookings.length === 0 ? (
+        <p className="text-center text-gray-500">Nenhuma reserva encontrada.</p>
+      ) : (
+        sortedBookings.map((booking) => (
+          <div key={booking._id} className="relative">
+            <Booking booking={booking} refresh={fetchBookings} />
+            <div className="absolute top-1/2 right-8 flex -translate-y-1/2 gap-2">
+              {booking.status === "confirmed" && (
+                <button
+                  onClick={() => handleCancel(booking)}
+                  className="rounded-xl bg-red-500 px-4 py-2 text-white transition hover:bg-red-600"
+                >
+                  Cancelar reserva
+                </button>
+              )}
+            </div>
+          </div>
+        ))
+      )}
     </div>
   );
 };

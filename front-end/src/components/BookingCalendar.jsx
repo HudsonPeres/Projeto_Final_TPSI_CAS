@@ -67,7 +67,7 @@ const BookingCalendar = ({ placeId, onDateChange, isMultiDay = true }) => {
     <div>
       <Calendar
         onChange={handleDateSelect}
-        selectRange={isMultiDay} // ← apenas permite intervalo se multi-dia
+        selectRange={isMultiDay}
         tileClassName={tileClassName}
         minDate={new Date()}
         locale="pt-PT"

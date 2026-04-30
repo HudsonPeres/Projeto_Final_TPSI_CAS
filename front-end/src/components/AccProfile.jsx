@@ -419,7 +419,6 @@ export const AccProfile = () => {
         </div>
       </div>
 
-      {/* ROLE */}
       <div className="text-sm text-gray-500">
         Seu perfil é:{" "}
         <strong className="text-primary-400">{getRoleLabel()}</strong>

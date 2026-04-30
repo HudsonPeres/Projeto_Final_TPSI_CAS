@@ -21,7 +21,7 @@ const Booking = ({ booking, place = false, refresh }) => {
   };
 
   const handleReviewClick = (e) => {
-    e.stopPropagation(); // impede o redirecionamento do Link
+    e.stopPropagation();
     setSelectedBooking(booking);
     setShowReviewForm(true);
   };
@@ -36,31 +36,31 @@ const Booking = ({ booking, place = false, refresh }) => {
       <Link
         key={booking.place._id}
         to={`/place/${booking.place._id}`}
-        className={`flex items-center gap-4 rounded-2xl bg-gray-100 p-6 ${place ? "cursor-auto" : ""}`}
+        className={`flex items-center gap-3 rounded-2xl bg-gray-100 p-4 ${place ? "cursor-auto" : ""}`}
       >
         {!place && (
           <img
-            className="aspect-square max-w-56 rounded-2xl object-center"
+            className="aspect-square max-w-40 rounded-2xl object-center"
             src={booking.place.photos[0]}
             alt="Foto da Acomodação"
           />
         )}
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-1">
           {place ? (
-            <p className="text-2xl font-medium">
+            <p className="text-xl font-medium">
               Você já tem uma reserva para esta experiência:
             </p>
           ) : (
-            <p className="text-2xl font-medium">{booking.place.title}</p>
+            <p className="text-xl font-medium">{booking.place.title}</p>
           )}
 
-          <div>
+          <div className="text-sm">
             <p>
-              <span className="font-semibold">Código da reserva:</span>{" "}
+              <span className="font-semibold">Código:</span>{" "}
               {booking.bookingCode}
             </p>
             <p>
-              <span className="font-semibold">Checkin: </span>{" "}
+              <span className="font-semibold">Checkin:</span>{" "}
               {new Date(booking.checkin).toLocaleDateString("PT-pt")} às{" "}
               {booking.place.checkin}
             </p>
@@ -87,12 +87,11 @@ const Booking = ({ booking, place = false, refresh }) => {
         </div>
       </Link>
 
-      {/* Botão Avaliar posicionado no lado direito, fora do Link */}
       {!place && booking.status === "completed" && !booking.hasReviewed && (
         <div className="absolute top-1/2 right-8 -translate-y-1/2">
           <button
             onClick={handleReviewClick}
-            className="rounded-xl bg-red-500 px-4 py-2 text-white transition hover:bg-green-600"
+            className="rounded-xl bg-red-500 px-3 py-1 text-sm text-white transition hover:bg-green-600"
           >
             Avaliar
           </button>

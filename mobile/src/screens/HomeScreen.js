@@ -18,7 +18,6 @@ import * as Location from "expo-location";
 import api from "../services/api";
 import { useAuth } from "../contexts/AuthContext";
 
-// Paleta de cores conforme identidade visual
 const COLORS = {
   primary: "#e53935",
   secondary: "#43a047",
@@ -31,7 +30,6 @@ const COLORS = {
   cardBackground: "#ffffff",
 };
 
-// Valores fixos para o filtro de distância
 const DISTANCE_OPTIONS = [
   { label: "25 km", value: 25000 },
   { label: "50 km", value: 50000 },
@@ -44,20 +42,17 @@ export default function HomeScreen({ navigation }) {
   const [loading, setLoading] = useState(true);
   const [modalVisible, setModalVisible] = useState(false);
 
-  // Estados dos filtros
   const [minPrice, setMinPrice] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
   const [minGuests, setMinGuests] = useState("");
   const [maxGuests, setMaxGuests] = useState("");
   const [locationText, setLocationText] = useState("");
-  const [selectedDistance, setSelectedDistance] = useState(null); // valor em metros
+  const [selectedDistance, setSelectedDistance] = useState(null);
   const [usingLocation, setUsingLocation] = useState(false);
 
-  // Dados de localização atuais
   const [userLat, setUserLat] = useState(null);
   const [userLng, setUserLng] = useState(null);
 
-  // Buscar localização do dispositivo
   const getCurrentLocation = async () => {
     setUsingLocation(true);
     try {
@@ -80,7 +75,6 @@ export default function HomeScreen({ navigation }) {
     }
   };
 
-  // Montar query string para a API
   const buildQueryParams = () => {
     const params = {};
     if (minPrice) params.minPrice = minPrice;
@@ -96,7 +90,6 @@ export default function HomeScreen({ navigation }) {
     return params;
   };
 
-  // Carregar anúncios
   const fetchPlaces = useCallback(async () => {
     setLoading(true);
     try {
@@ -119,18 +112,15 @@ export default function HomeScreen({ navigation }) {
     userLng,
   ]);
 
-  // Atualiza quando os filtros mudam ou ao montar
   useEffect(() => {
     fetchPlaces();
   }, [fetchPlaces]);
 
-  // 🔹 Fecha o modal E dispensa o teclado
   const closeModal = () => {
     Keyboard.dismiss(); // recolhe o teclado
     setModalVisible(false); // fecha o modal
   };
 
-  // Renderizar cada card
   const renderItem = ({ item }) => (
     <TouchableOpacity
       style={styles.card}
@@ -192,26 +182,25 @@ export default function HomeScreen({ navigation }) {
         />
       )}
 
-      {/* Modal de Filtros – com fecho ao tocar fora e teclado dispensável */}
+      {/* Modal de Filtros */}
       <Modal
         visible={modalVisible}
         animationType="slide"
         transparent
-        onRequestClose={closeModal} // para o botão "voltar" do Android
+        onRequestClose={closeModal}
       >
-        {/* Overlay que fecha o modal ao tocar fora */}
         <TouchableOpacity
           style={styles.modalOverlay}
           activeOpacity={1}
           onPress={closeModal}
         >
-          {/* Conteúdo do modal – impede que o toque se propague para o overlay */}
+          
           <TouchableOpacity
             style={styles.modalContent}
             activeOpacity={1}
-            onPress={() => {}} // não faz nada, apenas absorve o toque
+            onPress={() => {}} 
           >
-            {/* Tudo o que está aqui dentro pode ser tocado sem fechar o modal */}
+           
             <TouchableWithoutFeedback
               onPress={Keyboard.dismiss}
               accessible={false}
@@ -260,7 +249,6 @@ export default function HomeScreen({ navigation }) {
                   />
                 </View>
 
-                {/* Pesquisa textual */}
                 <Text style={styles.filterLabel}>Local (endereço)</Text>
                 <TextInput
                   style={styles.filterInput}
@@ -269,7 +257,6 @@ export default function HomeScreen({ navigation }) {
                   onChangeText={setLocationText}
                 />
 
-                {/* Distância */}
                 <Text style={styles.filterLabel}>Distância máxima</Text>
                 <View style={styles.distanceRow}>
                   {DISTANCE_OPTIONS.map((opt) => (

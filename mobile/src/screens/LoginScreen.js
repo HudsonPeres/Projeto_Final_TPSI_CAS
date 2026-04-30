@@ -34,7 +34,6 @@ export default function LoginScreen({ navigation }) {
     webClientId: Constants.expoConfig.extra.GOOGLE_CLIENT_ID,
   });
 
-  // Trata a resposta do Google
   useEffect(() => {
     if (response?.type === "success") {
       const { id_token } = response.params;
@@ -136,7 +135,6 @@ export default function LoginScreen({ navigation }) {
               </Text>
             </TouchableOpacity>
 
-            {/* 🔹 Botão Google com proxy forçado */}
             <TouchableOpacity
               style={styles.googleButton}
               onPress={() => promptAsync({ useProxy: true })}

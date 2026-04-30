@@ -59,7 +59,6 @@ export const isSupport = async (req, res, next) => {
   }
 };
 
-// ==================== MIDDLEWARE PARA SUPORTE OU ADMIN ====================
 export const isSupportOrAdmin = async (req, res, next) => {
   try {
     const user = await JWTVerify(req);

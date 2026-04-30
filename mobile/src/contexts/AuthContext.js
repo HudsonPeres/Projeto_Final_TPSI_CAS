@@ -56,7 +56,6 @@ export const AuthProvider = ({ children }) => {
     return userData;
   };
 
-  // 🔥 Nova função para login com Google
   const googleSignIn = async (idToken) => {
     const res = await api.post("/auth/google/mobile", { idToken });
     const userData = res.data;
@@ -65,7 +64,6 @@ export const AuthProvider = ({ children }) => {
     setUser(userWithoutToken);
     setToken(newToken);
     await AsyncStorage.setItem("token", newToken);
-    // Navegação automática porque o estado user muda
   };
 
   const logout = async () => {

@@ -13,7 +13,6 @@ import { isSupport } from "../../utils/adminMiddleware.js";
 
 const router = Router();
 
-// Rota principal com suporte a filtro geoespacial (perto de mim)
 router.get("/", async (req, res) => {
   connectDB();
   const {
@@ -46,7 +45,6 @@ router.get("/", async (req, res) => {
       filter.address = { $regex: location.trim(), $options: "i" };
     }
 
-    // 🔹 NOVO: filtro geoespacial
     if (lat && lng && radius) {
       filter.location = {
         $nearSphere: {

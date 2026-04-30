@@ -3,7 +3,6 @@ import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import Users from "../users/model.js";
 import { connectDB } from "../../config/db.js";
 
-// Função reutilizável: exportada para o mobile também poder usar
 export const findOrCreateUser = async (profile) => {
   await connectDB();
   const email = profile.emails[0].value;
@@ -12,7 +11,6 @@ export const findOrCreateUser = async (profile) => {
 
   let user = await Users.findOne({ email });
   if (!user) {
-    // Criar novo utilizador com role padrão "user"
     user = await Users.create({
       name,
       email,

@@ -28,7 +28,6 @@ router.get("/owner", async (req, res) => {
     try {
       const bookingDocs = await Booking.find({ user: id }).populate("place");
 
-      // Adiciona o campo 'hasReviewed' a cada reserva (para saber se o hóspede já avaliou)
       const bookingsWithReviewFlag = await Promise.all(
         bookingDocs.map(async (booking) => {
           const existingReview = await Review.findOne({
@@ -55,7 +54,6 @@ router.get("/owner", async (req, res) => {
 });
 
 router.post("/", async (req, res) => {
-  // ... (restante do código da rota POST mantém-se igual) ...
   connectDB();
   const { place, user, price, total, checkin, checkout, guests, nights } =
     req.body;
@@ -76,7 +74,6 @@ router.post("/", async (req, res) => {
     const startDate = new Date(checkin);
     const endDate = new Date(checkout);
 
-    // 2.5. Validar tipo de reserva (um dia vs vários dias)
     if (!placeDoc.isMultiDay) {
       if (checkin !== checkout) {
         return res.status(400).json({
@@ -86,7 +83,7 @@ router.post("/", async (req, res) => {
       }
     }
 
-    // 3. Verificar se todas as datas estão dentro de availableDates (se o array existir e não for vazio)
+    // 3. Verificar se todas as datas estão dentro de availableDates
     if (placeDoc.availableDates && placeDoc.availableDates.length > 0) {
       let allAvailable = true;
       let current = new Date(startDate);
@@ -137,7 +134,6 @@ router.post("/", async (req, res) => {
       return res.status(409).json({ message: "Data já reservada" });
     }
 
-    // 4.5. Calcular noites e total corretamente (ignorar dados do frontend)
     let calculatedNights;
     if (placeDoc.isMultiDay) {
       const diffDays = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24));
@@ -163,7 +159,7 @@ router.post("/", async (req, res) => {
       bookingCode,
     });
 
-    // 6. Enviar mensagem automática de sistema (com código da reserva)
+    // 6. Enviar mensagem automática com código da reserva
     try {
       const placeInfo = await Place.findById(place);
       if (placeInfo && placeInfo.owner) {
@@ -187,7 +183,7 @@ router.post("/", async (req, res) => {
         const endFormatted = new Date(checkout).toLocaleDateString("pt-PT");
 
         const systemMessage =
-          `📅 **Reserva confirmada!**\n\n` +
+          ` **Reserva confirmada!**\n\n` +
           `**Código da reserva:** \`${bookingCode}\`\n` +
           `**Experiência:** ${placeInfo.title}\n` +
           `**Datas:** ${startFormatted} a ${endFormatted}\n` +
@@ -341,7 +337,6 @@ router.patch("/admin/:id/reactivate", isAdmin, async (req, res) => {
   }
 });
 
-// ==================== CHECK-IN E CHECK-OUT ====================
 router.patch("/:id/checkin", async (req, res) => {
   connectDB();
   const { id } = req.params;
@@ -382,7 +377,6 @@ router.patch("/:id/checkout", async (req, res) => {
     booking.status = "completed";
     await booking.save();
 
-    // Enviar lembrete para avaliar
     try {
       const conversation = await Conversation.findOne({
         participants: {
@@ -420,7 +414,6 @@ router.patch("/:id/checkout", async (req, res) => {
   }
 });
 
-// ==================== ROTAS PARA O ANFITRIÃO (LISTAR RESERVAS DO SEU ANÚNCIO) ====================
 router.get("/place/:placeId/owner", async (req, res) => {
   connectDB();
   const { placeId } = req.params;
@@ -439,7 +432,6 @@ router.get("/place/:placeId/owner", async (req, res) => {
       "name email",
     );
 
-    // Adiciona o campo 'guestReviewed' para cada reserva (indica se o anfitrião já avaliou o hóspede)
     const bookingsWithFlag = await Promise.all(
       bookings.map(async (booking) => {
         const existingReview = await Review.findOne({
@@ -460,7 +452,6 @@ router.get("/place/:placeId/owner", async (req, res) => {
   }
 });
 
-// ==================== CANCELAMENTO PELO ANFITRIÃO ====================
 router.patch("/:id/cancel/owner", async (req, res) => {
   connectDB();
   const { id } = req.params;
@@ -481,7 +472,6 @@ router.patch("/:id/cancel/owner", async (req, res) => {
     booking.cancelledBy = "host";
     await booking.save();
 
-    // Notificar hóspede
     try {
       const conversation = await Conversation.findOne({
         participants: {

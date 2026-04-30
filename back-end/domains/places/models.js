@@ -11,7 +11,7 @@ const placeSchema = new Schema({
       default: "Point",
     },
     coordinates: {
-      type: [Number], // [longitude, latitude]
+      type: [Number],
       required: false,
     },
   },

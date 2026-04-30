@@ -50,11 +50,9 @@ router.post("/", async (req, res) => {
       const now = new Date();
       const diffDays = (now - checkoutDate) / (1000 * 60 * 60 * 24);
       if (diffDays > 7)
-        return res
-          .status(400)
-          .json({
-            message: "Prazo para avaliar expirou (7 dias após checkout)",
-          });
+        return res.status(400).json({
+          message: "Prazo para avaliar expirou (7 dias após checkout)",
+        });
 
       const review = await Review.create({
         booking: bookingId,
@@ -105,7 +103,7 @@ router.post("/", async (req, res) => {
     }
 
     if (type === "experience") {
-      // O hóspede avalia a experiência (nota para o lugar)
+      // O hóspede avalia a experiência
       if (booking.user.toString() !== userId.toString()) {
         return res
           .status(403)

@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 
 const ReservationButton = ({ onClick, loading, progress, isSuccess }) => {
-  // Se já estiver concluído (reserva bem‑sucedida), mostra apenas o check (verde)
   if (isSuccess) {
     return (
       <button
@@ -26,7 +25,6 @@ const ReservationButton = ({ onClick, loading, progress, isSuccess }) => {
     );
   }
 
-  // Se estiver a processar a reserva (loading), mostra o percentual
   if (loading) {
     return (
       <button

@@ -8,17 +8,14 @@ import { generateOTP } from "../../utils/otp.js";
 import { sendTokenEmail } from "../../utils/emailService.js";
 import { validatePassword } from "../../utils/passwordValidator.js";
 import { JWTVerify } from "../../utils/jwt.js";
-import passport, { findOrCreateUser } from "./google.js"; // ← agora importa a função exportada
-import { OAuth2Client } from "google-auth-library"; // ← novo para validar idToken
+import passport, { findOrCreateUser } from "./google.js";
+import { OAuth2Client } from "google-auth-library";
 
 const router = Router();
 const bcryptSalt = bcrypt.genSaltSync();
 const { JWT_SECRET_KEY } = process.env;
 
-// Cliente de verificação da Google (reutilizável)
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
-
-// ==================== ROTAS EXISTENTES (INTACTAS) ====================
 
 router.post("/request-otp", async (req, res) => {
   // ... código original mantido igual ...
@@ -88,7 +85,6 @@ router.post("/request-otp", async (req, res) => {
 });
 
 router.post("/verify-otp", async (req, res) => {
-  // ... código original mantido igual ...
   connectDB();
   const { email, otp, type, name, password, newPassword, newEmail } = req.body;
 
@@ -158,7 +154,6 @@ router.post("/verify-otp", async (req, res) => {
     res.cookie("token", token).json({ message: "Email alterado com sucesso." });
   }
 
-  // ========== REGISTO (com token no corpo) ==========
   if (type === "register") {
     if (!name || !password) {
       return res
@@ -181,25 +176,20 @@ router.post("/verify-otp", async (req, res) => {
     });
     const { _id, role } = newUser;
     const token = jwt.sign({ name, email, _id, role }, JWT_SECRET_KEY);
-    // ---- ALTERAÇÃO: adicionamos "token" no objeto JSON ----
     res.cookie("token", token).json({ name, email, _id, role, token });
   }
 
-  // ========== LOGIN (com token no corpo) ==========
   if (type === "login") {
-    // A senha já foi validada no request-otp, não precisa verificar novamente
     const user = await Users.findOne({ email });
     if (!user)
       return res.status(404).json({ message: "Utilizador não encontrado" });
 
     const { name, _id, role } = user;
     const token = jwt.sign({ name, email, _id, role }, JWT_SECRET_KEY);
-    // ---- ALTERAÇÃO: adicionamos "token" no objeto JSON ----
     res.cookie("token", token).json({ name, email, _id, role, token });
   }
 });
 
-// ========== NOVA ROTA: obter perfil do utilizador autenticado ==========
 router.get("/me", async (req, res) => {
   try {
     const user = await JWTVerify(req);
@@ -210,7 +200,6 @@ router.get("/me", async (req, res) => {
 });
 
 router.post("/forgot-password", async (req, res) => {
-  // ... código original mantido igual ...
   connectDB();
   const { email } = req.body;
 
@@ -244,7 +233,6 @@ router.post("/forgot-password", async (req, res) => {
 });
 
 router.post("/reset-password", async (req, res) => {
-  // ... código original mantido igual ...
   connectDB();
   const { email, otp, newPassword } = req.body;
 
@@ -290,7 +278,6 @@ router.post("/reset-password", async (req, res) => {
   });
 });
 
-// ==================== ROTAS GOOGLE (WEB) – INALTERADAS ====================
 router.get(
   "/google",
   passport.authenticate("google", { scope: ["profile", "email"] }),
@@ -319,7 +306,6 @@ router.get(
   },
 );
 
-// ==================== NOVA ROTA: GOOGLE PARA MOBILE ====================
 router.post("/google/mobile", async (req, res) => {
   const { idToken } = req.body;
   if (!idToken) {
@@ -337,7 +323,6 @@ router.post("/google/mobile", async (req, res) => {
       return res.status(400).json({ message: "Token inválido" });
     }
 
-    // Mapear payload para o formato esperado pelo findOrCreateUser
     const profile = {
       id: payload.sub,
       displayName: payload.name,

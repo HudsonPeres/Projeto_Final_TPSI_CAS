@@ -45,7 +45,7 @@ const Inbox = () => {
           `/chat/conversations/${currentConversation._id}/messages`,
         );
         setMessages(data);
-        // Após carregar as mensagens, actualizar a lista de conversas para zerar o contador de não lidas desta conversa
+        
         setConversations((prev) =>
           prev.map((conv) =>
             conv._id === currentConversation._id
@@ -73,7 +73,6 @@ const Inbox = () => {
       );
       setMessages([...messages, data]);
       setNewMessage("");
-      // Actualizar a lista de conversas (última mensagem e timestamp)
       const updatedConversations = conversations.map((conv) =>
         conv._id === currentConversation._id
           ? { ...conv, updatedAt: new Date().toISOString() }

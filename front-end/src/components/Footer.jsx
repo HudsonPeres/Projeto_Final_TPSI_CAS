@@ -1,10 +1,20 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useUserContext } from "../contexts/UserContext";
 
 const Footer = () => {
+  const { user } = useUserContext();
+  const navigate = useNavigate();
+
+  const handleHostClick = (e) => {
+    if (!user) {
+      e.preventDefault();
+      navigate("/login");
+    }
+  };
+
   return (
     <footer className="border-t border-gray-200 bg-gray-200 py-8 shadow-[0_-2px_4px_rgba(0,0,0,0.06)]">
-      {" "}
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 justify-items-center gap-8 text-center md:grid-cols-3">
           {/* Coluna 1 */}
@@ -28,6 +38,7 @@ const Footer = () => {
               <li>
                 <Link
                   to="/account/places/new"
+                  onClick={handleHostClick}
                   className="text-sm text-gray-500 hover:text-gray-700"
                 >
                   Ofereça o seu espaço
