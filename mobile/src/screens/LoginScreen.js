@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import {
   View,
+  Image,
   Text,
   TextInput,
   TouchableOpacity,
@@ -55,6 +56,11 @@ export default function LoginScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
+      <Image
+        source={require("../../assets/Viva_Portugal_full.png")}
+        style={styles.logo}
+        resizeMode="contain"
+      />
       <Text style={styles.title}>Login</Text>
 
       {step === "credentials" ? (
@@ -136,7 +142,7 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   button: {
-    backgroundColor: "#007AFF",
+    backgroundColor: "#e53935",
     padding: 14,
     borderRadius: 6,
     alignItems: "center",
@@ -144,4 +150,10 @@ const styles = StyleSheet.create({
   buttonText: { color: "#fff", fontWeight: "bold" },
   link: { color: "#007AFF", textAlign: "center", marginTop: 12 },
   info: { marginBottom: 12, textAlign: "center" },
+  logo: {
+    width: 400,
+    height: 160,
+    alignSelf: "center",
+    marginBottom: 20,
+  },
 });
