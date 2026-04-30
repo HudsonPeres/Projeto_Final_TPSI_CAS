@@ -129,7 +129,6 @@ export const Login = () => {
           <p className="text-center text-sm text-red-500">{message}</p>
         )}
 
-        {/* Separador "ou" com linhas e botão Google (estilo igual ao registo) */}
         <div className="relative my-2 w-full">
           <div className="absolute inset-0 flex items-center">
             <div className="w-full border-t border-gray-300"></div>

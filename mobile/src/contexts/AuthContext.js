@@ -11,7 +11,6 @@ export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // verifica se já existe token e se é válido
   useEffect(() => {
     const loadToken = async () => {
       try {
@@ -20,12 +19,10 @@ export const AuthProvider = ({ children }) => {
           setLoading(false);
           return;
         }
-        // Valida o token
         const res = await api.get("/auth/me");
         setToken(storedToken);
         setUser(res.data);
       } catch (err) {
-        // limpa se o Token for inválido ou estiver expirado
         await AsyncStorage.removeItem("token");
         setToken(null);
         setUser(null);
@@ -36,22 +33,19 @@ export const AuthProvider = ({ children }) => {
     loadToken();
   }, []);
 
-  // Solicitar OTP
   const requestOTP = async (email, type, password = null) => {
     const body = { email, type };
     if (password) body.password = password;
     const res = await api.post("/auth/request-otp", body);
-    return res.data; // { message }
+    return res.data;
   };
 
-  // Verificar OTP
   const verifyOTP = async (email, otp, type, name = null, password = null) => {
     const body = { email, otp, type };
     if (name) body.name = name;
     if (password) body.password = password;
 
     const res = await api.post("/auth/verify-otp", body);
-    // resposta do backend
     const userData = res.data;
     const { token: newToken, ...userWithoutToken } = userData;
 
@@ -62,7 +56,18 @@ export const AuthProvider = ({ children }) => {
     return userData;
   };
 
-  // Logout
+  // 🔥 Nova função para login com Google
+  const googleSignIn = async (idToken) => {
+    const res = await api.post("/auth/google/mobile", { idToken });
+    const userData = res.data;
+    const { token: newToken, ...userWithoutToken } = userData;
+
+    setUser(userWithoutToken);
+    setToken(newToken);
+    await AsyncStorage.setItem("token", newToken);
+    // Navegação automática porque o estado user muda
+  };
+
   const logout = async () => {
     setUser(null);
     setToken(null);
@@ -77,6 +82,7 @@ export const AuthProvider = ({ children }) => {
         loading,
         requestOTP,
         verifyOTP,
+        googleSignIn,
         logout,
       }}
     >

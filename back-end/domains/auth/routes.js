@@ -8,13 +8,20 @@ import { generateOTP } from "../../utils/otp.js";
 import { sendTokenEmail } from "../../utils/emailService.js";
 import { validatePassword } from "../../utils/passwordValidator.js";
 import { JWTVerify } from "../../utils/jwt.js";
-import passport from "./google.js";
+import passport, { findOrCreateUser } from "./google.js"; // ← agora importa a função exportada
+import { OAuth2Client } from "google-auth-library"; // ← novo para validar idToken
 
 const router = Router();
 const bcryptSalt = bcrypt.genSaltSync();
 const { JWT_SECRET_KEY } = process.env;
 
+// Cliente de verificação da Google (reutilizável)
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+
+// ==================== ROTAS EXISTENTES (INTACTAS) ====================
+
 router.post("/request-otp", async (req, res) => {
+  // ... código original mantido igual ...
   connectDB();
   const { email, type, password } = req.body;
 
@@ -81,6 +88,7 @@ router.post("/request-otp", async (req, res) => {
 });
 
 router.post("/verify-otp", async (req, res) => {
+  // ... código original mantido igual ...
   connectDB();
   const { email, otp, type, name, password, newPassword, newEmail } = req.body;
 
@@ -195,7 +203,6 @@ router.post("/verify-otp", async (req, res) => {
 router.get("/me", async (req, res) => {
   try {
     const user = await JWTVerify(req);
-    // Retorna o payload descodificado: { _id, name, email, role }
     res.json(user);
   } catch (err) {
     return res.status(401).json({ message: "Token inválido ou expirado." });
@@ -203,6 +210,7 @@ router.get("/me", async (req, res) => {
 });
 
 router.post("/forgot-password", async (req, res) => {
+  // ... código original mantido igual ...
   connectDB();
   const { email } = req.body;
 
@@ -236,6 +244,7 @@ router.post("/forgot-password", async (req, res) => {
 });
 
 router.post("/reset-password", async (req, res) => {
+  // ... código original mantido igual ...
   connectDB();
   const { email, otp, newPassword } = req.body;
 
@@ -281,7 +290,7 @@ router.post("/reset-password", async (req, res) => {
   });
 });
 
-// ==================== ROTAS GOOGLE ====================
+// ==================== ROTAS GOOGLE (WEB) – INALTERADAS ====================
 router.get(
   "/google",
   passport.authenticate("google", { scope: ["profile", "email"] }),
@@ -309,5 +318,52 @@ router.get(
     }
   },
 );
+
+// ==================== NOVA ROTA: GOOGLE PARA MOBILE ====================
+router.post("/google/mobile", async (req, res) => {
+  const { idToken } = req.body;
+  if (!idToken) {
+    return res.status(400).json({ message: "Token de ID obrigatório" });
+  }
+
+  try {
+    // Verificar o token recebido do Google
+    const ticket = await googleClient.verifyIdToken({
+      idToken,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+    const payload = ticket.getPayload();
+    if (!payload || !payload.email) {
+      return res.status(400).json({ message: "Token inválido" });
+    }
+
+    // Mapear payload para o formato esperado pelo findOrCreateUser
+    const profile = {
+      id: payload.sub,
+      displayName: payload.name,
+      emails: [{ value: payload.email }],
+    };
+
+    // Reutilizar a mesma lógica de criação/login do Google
+    const user = await findOrCreateUser(profile);
+
+    // Gerar JWT e devolver (sem cookie, o mobile guarda o token manualmente)
+    const token = jwt.sign(
+      { _id: user._id, name: user.name, email: user.email, role: user.role },
+      process.env.JWT_SECRET_KEY,
+    );
+
+    res.json({
+      name: user.name,
+      email: user.email,
+      _id: user._id,
+      role: user.role,
+      token,
+    });
+  } catch (error) {
+    console.error("Erro Google Mobile:", error);
+    res.status(401).json({ message: "Autenticação Google falhou" });
+  }
+});
 
 export default router;

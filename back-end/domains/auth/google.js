@@ -3,7 +3,8 @@ import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import Users from "../users/model.js";
 import { connectDB } from "../../config/db.js";
 
-const findOrCreateUser = async (profile) => {
+// Função reutilizável: exportada para o mobile também poder usar
+export const findOrCreateUser = async (profile) => {
   await connectDB();
   const email = profile.emails[0].value;
   const name = profile.displayName;

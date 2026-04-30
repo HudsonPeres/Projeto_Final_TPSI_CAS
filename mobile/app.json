@@ -23,8 +23,10 @@
     "web": {
       "favicon": "./assets/favicon.png"
     },
+    "scheme": "vivaportugal",
     "extra": {
-      "API_URL": "http://192.168.1.217:3000"
+      "API_URL": "http://192.168.1.217:3000",
+      "GOOGLE_CLIENT_ID": "155839010735-lm2jers08nhlpv4ronudldiblh9maogs.apps.googleusercontent.com"
     }
   }
 }
