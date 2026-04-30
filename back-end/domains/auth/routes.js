@@ -150,6 +150,7 @@ router.post("/verify-otp", async (req, res) => {
     res.cookie("token", token).json({ message: "Email alterado com sucesso." });
   }
 
+  // ========== REGISTO (com token no corpo) ==========
   if (type === "register") {
     if (!name || !password) {
       return res
@@ -172,9 +173,11 @@ router.post("/verify-otp", async (req, res) => {
     });
     const { _id, role } = newUser;
     const token = jwt.sign({ name, email, _id, role }, JWT_SECRET_KEY);
-    res.cookie("token", token).json({ name, email, _id, role });
+    // ---- ALTERAÇÃO: adicionamos "token" no objeto JSON ----
+    res.cookie("token", token).json({ name, email, _id, role, token });
   }
 
+  // ========== LOGIN (com token no corpo) ==========
   if (type === "login") {
     // A senha já foi validada no request-otp, não precisa verificar novamente
     const user = await Users.findOne({ email });
@@ -183,7 +186,19 @@ router.post("/verify-otp", async (req, res) => {
 
     const { name, _id, role } = user;
     const token = jwt.sign({ name, email, _id, role }, JWT_SECRET_KEY);
-    res.cookie("token", token).json({ name, email, _id, role });
+    // ---- ALTERAÇÃO: adicionamos "token" no objeto JSON ----
+    res.cookie("token", token).json({ name, email, _id, role, token });
+  }
+});
+
+// ========== NOVA ROTA: obter perfil do utilizador autenticado ==========
+router.get("/me", async (req, res) => {
+  try {
+    const user = await JWTVerify(req);
+    // Retorna o payload descodificado: { _id, name, email, role }
+    res.json(user);
+  } catch (err) {
+    return res.status(401).json({ message: "Token inválido ou expirado." });
   }
 });
 
