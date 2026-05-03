@@ -620,4 +620,65 @@ router.get("/host", async (req, res) => {
   }
 });
 
+// REENVIO DE COMPROVATIVO
+router.post("/:id/resend-voucher", async (req, res) => {
+  connectDB();
+  const { id } = req.params;
+  try {
+    // 1. Obter a reserva e o lugar associado
+    const booking = await Booking.findById(id).populate("place");
+    if (!booking) {
+      return res.status(404).json({ message: "Reserva não encontrada" });
+    }
+
+    // 2. Permitir apenas para reservas confirmadas
+    if (booking.status !== "confirmed") {
+      return res.status(400).json({
+        message:
+          "O comprovativo só pode ser reenviado para reservas confirmadas.",
+      });
+    }
+
+    // 3. Obter o utilizador (hóspede)
+    const guest = await User.findById(booking.user);
+    if (!guest || !guest.email) {
+      return res
+        .status(404)
+        .json({ message: "Email do hóspede não encontrado." });
+    }
+
+    // 4. Gerar o PDF (função já existente, usada no POST /bookings)
+    const pdfBuffer = await generateBookingPDF(booking, booking.place);
+
+    // 5. Enviar email com o PDF em anexo (função já existente)
+    await sendEmail({
+      to: guest.email,
+      subject: `Reenvio do comprovativo - ${booking.bookingCode}`,
+      html: `
+        <div style="font-family: Arial, sans-serif;">
+          <h2>Comprovativo de reserva</h2>
+          <p>Olá <strong>${guest.name}</strong>,</p>
+          <p>Segue em anexo o comprovativo da sua reserva <strong>${booking.bookingCode}</strong> para a experiência <strong>${booking.place.title}</strong>.</p>
+          <p>Qualquer dúvida, contacte o anfitrião através do chat da plataforma.</p>
+          <br/>
+          <p>Equipa Viva Portugal</p>
+        </div>
+      `,
+      attachments: [
+        {
+          filename: `reserva_${booking.bookingCode}.pdf`,
+          content: pdfBuffer,
+        },
+      ],
+    });
+
+    res.json({
+      message: "Comprovativo reenviado com sucesso para o seu email.",
+    });
+  } catch (error) {
+    console.error("Erro ao reenviar comprovativo:", error);
+    res.status(500).json({ message: "Erro ao reenviar comprovativo." });
+  }
+});
+
 export default router;

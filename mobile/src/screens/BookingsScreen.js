@@ -11,6 +11,7 @@ import {
 import { useFocusEffect } from "@react-navigation/native";
 import api from "../services/api";
 import { useAuth } from "../contexts/AuthContext";
+import ReviewModal from "../components/ReviewModal";
 
 const COLORS = {
   primary: "#e53935",
@@ -40,6 +41,8 @@ export default function BookingsScreen({ navigation }) {
   const { user } = useAuth();
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [selectedBooking, setSelectedBooking] = useState(null);
+  const [reviewModalVisible, setReviewModalVisible] = useState(false);
 
   const fetchBookings = useCallback(async () => {
     setLoading(true);
@@ -59,42 +62,84 @@ export default function BookingsScreen({ navigation }) {
     }, [fetchBookings]),
   );
 
-  const renderItem = ({ item }) => (
-    <TouchableOpacity
-      style={styles.card}
-      onPress={() => {}}
-      activeOpacity={0.7}
-    >
-      <View style={styles.cardHeader}>
-        <Text style={styles.placeTitle}>
-          {item.place?.title || "Experiência"}
-        </Text>
-        <View
-          style={[
-            styles.badge,
-            { backgroundColor: statusColors[item.status] || "#ccc" },
-          ]}
-        >
-          <Text style={styles.badgeText}>
-            {statusLabels[item.status] || item.status}
+  const handleResend = async (bookingId) => {
+    try {
+      await api.post(`/bookings/${bookingId}/resend-voucher`);
+      Alert.alert("Sucesso", "Comprovativo reenviado para o seu email.");
+    } catch (error) {
+      const msg =
+        error.response?.data?.message || "Erro ao reenviar comprovativo.";
+      Alert.alert("Erro", msg);
+    }
+  };
+
+  const handleReview = (booking) => {
+    setSelectedBooking(booking);
+    setReviewModalVisible(true);
+  };
+
+  const handleReviewSuccess = () => {
+    setReviewModalVisible(false);
+    setSelectedBooking(null);
+    fetchBookings(); // atualiza a lista (hasReviewed será true)
+  };
+
+  const renderItem = ({ item }) => {
+    // Determina se o utilizador logado é o hóspede ou o anfitrião
+    const isGuest = item.user === user._id; // simplificado: comparar _id
+    // (Como o endpoint /bookings/owner retorna as reservas do utilizador,
+    // todas as reservas aqui são do hóspede, pois é GET /bookings/owner que listamos.
+    // Logo, o user logado é o hóspede. Então podemos usar isso.)
+    const canReview = item.status === "completed" && !item.hasReviewed;
+
+    return (
+      <View style={styles.card}>
+        <View style={styles.cardHeader}>
+          <Text style={styles.placeTitle}>
+            {item.place?.title || "Experiência"}
           </Text>
+          <View
+            style={[
+              styles.badge,
+              { backgroundColor: statusColors[item.status] || "#ccc" },
+            ]}
+          >
+            <Text style={styles.badgeText}>
+              {statusLabels[item.status] || item.status}
+            </Text>
+          </View>
+        </View>
+        <Text style={styles.code}>Código: {item.bookingCode}</Text>
+        <Text style={styles.dates}>
+          {item.checkin} → {item.checkout} • {item.nights}{" "}
+          {item.nights === 1 ? "noite" : "noites"}
+        </Text>
+        <Text style={styles.guests}>Participantes: {item.guests}</Text>
+        <Text style={styles.total}>Total: €{item.total}</Text>
+
+        <View style={styles.actions}>
+          {item.status === "confirmed" && (
+            <TouchableOpacity
+              style={styles.actionButton}
+              onPress={() => handleResend(item._id)}
+            >
+              <Text style={styles.actionText}>Reenviar comprovativo</Text>
+            </TouchableOpacity>
+          )}
+          {canReview && (
+            <TouchableOpacity
+              style={styles.actionButton}
+              onPress={() => handleReview(item)}
+            >
+              <Text style={[styles.actionText, { color: COLORS.accent }]}>
+                Avaliar
+              </Text>
+            </TouchableOpacity>
+          )}
         </View>
       </View>
-      <Text style={styles.code}>Código: {item.bookingCode}</Text>
-      <Text style={styles.dates}>
-        {item.checkin} → {item.checkout} • {item.nights}{" "}
-        {item.nights === 1 ? "noite" : "noites"}
-      </Text>
-      <Text style={styles.guests}>Participantes: {item.guests}</Text>
-      <Text style={styles.total}>Total: €{item.total}</Text>
-      {/* Botão para reenviar comprovativo (futuro) */}
-      {item.status === "confirmed" && (
-        <TouchableOpacity style={styles.resendButton}>
-          <Text style={styles.resendText}>Reenviar comprovativo</Text>
-        </TouchableOpacity>
-      )}
-    </TouchableOpacity>
-  );
+    );
+  };
 
   if (loading) {
     return (
@@ -115,6 +160,12 @@ export default function BookingsScreen({ navigation }) {
         ListEmptyComponent={
           <Text style={styles.empty}>Ainda não tem reservas.</Text>
         }
+      />
+      <ReviewModal
+        visible={reviewModalVisible}
+        booking={selectedBooking}
+        onClose={() => setReviewModalVisible(false)}
+        onSuccess={handleReviewSuccess}
       />
     </View>
   );
@@ -173,10 +224,19 @@ const styles = StyleSheet.create({
     color: COLORS.primary,
     marginBottom: 8,
   },
-  resendButton: {
-    alignSelf: "flex-start",
+  actions: {
+    flexDirection: "row",
+    justifyContent: "flex-start",
+    gap: 12,
     marginTop: 8,
   },
-  resendText: { color: COLORS.accent, fontWeight: "600" },
+  actionButton: {
+    paddingVertical: 6,
+  },
+  actionText: {
+    color: COLORS.accent,
+    fontWeight: "600",
+    fontSize: 14,
+  },
   empty: { textAlign: "center", marginTop: 40, color: "#999" },
 });
