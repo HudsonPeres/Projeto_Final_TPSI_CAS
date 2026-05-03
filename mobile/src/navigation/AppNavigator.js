@@ -2,6 +2,8 @@ import React from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { useAuth } from "../contexts/AuthContext";
+import BookingsScreen from "../screens/BookingsScreen";
+import CheckInScreen from "../screens/CheckInScreen";
 
 import LoginScreen from "../screens/LoginScreen";
 import RegisterScreen from "../screens/RegisterScreen";
@@ -25,6 +27,8 @@ const MainStack = () => (
   <Stack.Navigator screenOptions={{ headerShown: false }}>
     <Stack.Screen name="Home" component={HomeScreen} />
     <Stack.Screen name="PlaceDetail" component={PlaceDetailScreen} />
+    <Stack.Screen name="Bookings" component={BookingsScreen} />
+    <Stack.Screen name="CheckIn" component={CheckInScreen} />
   </Stack.Navigator>
 );
 

@@ -580,4 +580,44 @@ router.get("/support/all", isSupport, async (req, res) => {
   }
 });
 
+router.get("/search", async (req, res) => {
+  connectDB();
+  const { code } = req.query;
+  if (!code) {
+    return res.status(400).json({ message: "Código da reserva obrigatório" });
+  }
+  try {
+    const booking = await Booking.findOne({ bookingCode: code }).populate(
+      "place",
+      "title",
+    );
+    if (!booking) {
+      return res.status(404).json({ message: "Reserva não encontrada" });
+    }
+    res.json(booking);
+  } catch (error) {
+    console.error("Erro na pesquisa de reserva:", error);
+    res.status(500).json({ message: "Erro ao pesquisar reserva" });
+  }
+});
+
+router.get("/host", async (req, res) => {
+  connectDB();
+  try {
+    const { _id: userId } = await JWTVerify(req);
+    // Encontrar todos os anúncios do utilizador
+    const places = await Place.find({ owner: userId }).select("_id");
+    const placeIds = places.map((p) => p._id);
+    // Buscar reservas desses anúncios
+    const bookings = await Booking.find({ place: { $in: placeIds } })
+      .populate("place", "title")
+      .populate("user", "name email");
+
+    res.json(bookings);
+  } catch (error) {
+    console.error("Erro ao buscar reservas do anfitrião:", error);
+    res.status(500).json({ message: "Erro ao buscar reservas" });
+  }
+});
+
 export default router;
