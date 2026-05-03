@@ -11,6 +11,7 @@ import {
 import { useFocusEffect } from "@react-navigation/native";
 import api from "../services/api";
 import ReviewModal from "../components/ReviewModal";
+import BackButton from "../components/BackButton"; // ✅ IMPORTADO
 
 const COLORS = {
   primary: "#e53935",
@@ -31,20 +32,16 @@ export default function HostReviewsScreen() {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      // Obter todas as reservas dos anúncios do anfitrião
       const res = await api.get("/bookings/host");
       const all = res.data;
 
-      // Filtrar apenas concluídas e verificar se já avaliou
       const withReviewStatus = await Promise.all(
         all.map(async (booking) => {
           if (booking.status !== "completed") return null;
-          // Verificar se já existe review de tipo "guest" para esta reserva
           try {
             const reviewRes = await api.get(
               `/reviews/user/${booking.user._id}`,
             );
-            // Procurar review com este bookingId e type "guest"
             const alreadyReviewed = reviewRes.data.reviews.some(
               (r) => r.booking === booking._id && r.type === "guest",
             );
@@ -52,7 +49,6 @@ export default function HostReviewsScreen() {
               return { ...booking, guestReviewed: false };
             }
           } catch (err) {
-            // Se der erro, mostrar na mesma (não avaliado)
             return { ...booking, guestReviewed: false };
           }
           return null;
@@ -110,7 +106,12 @@ export default function HostReviewsScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.header}>Avaliações Pendentes</Text>
+      {/* ✅ HEADER COM BOTÃO */}
+      <View style={styles.headerContainer}>
+        <BackButton />
+        <Text style={styles.header}>Avaliações Pendentes</Text>
+      </View>
+
       <FlatList
         data={bookings}
         renderItem={renderItem}
@@ -120,6 +121,7 @@ export default function HostReviewsScreen() {
           <Text style={styles.empty}>Não há hóspedes por avaliar.</Text>
         }
       />
+
       <ReviewModal
         visible={reviewModalVisible}
         booking={selectedBooking}
@@ -138,13 +140,22 @@ const styles = StyleSheet.create({
     paddingTop: 60,
   },
   centered: { flex: 1, justifyContent: "center", alignItems: "center" },
+
+  // ✅ NOVO
+  headerContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    marginBottom: 16,
+    gap: 12,
+  },
+
   header: {
     fontSize: 24,
     fontWeight: "bold",
-    paddingHorizontal: 20,
-    marginBottom: 16,
     color: COLORS.textLight,
   },
+
   list: { paddingHorizontal: 16, paddingBottom: 20 },
   card: {
     backgroundColor: COLORS.cardBackground,

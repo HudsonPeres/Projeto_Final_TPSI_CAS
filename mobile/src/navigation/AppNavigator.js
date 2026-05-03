@@ -17,6 +17,8 @@ import SupportScreen from "../screens/SupportScreen";
 import MessagesScreen from "../screens/MessagesScreen";
 import ConversationScreen from "../screens/ConversationScreen";
 import HostReviewsScreen from "../screens/HostReviewsScreen";
+import ChangeEmailScreen from "../screens/ChangeEmailScreen";
+import ChangePasswordScreen from "../screens/ChangePasswordScreen";
 
 const Stack = createNativeStackNavigator();
 
@@ -41,6 +43,8 @@ const MainStack = () => (
     <Stack.Screen name="Messages" component={MessagesScreen} />
     <Stack.Screen name="Conversation" component={ConversationScreen} />
     <Stack.Screen name="HostReviews" component={HostReviewsScreen} />
+    <Stack.Screen name="ChangeEmail" component={ChangeEmailScreen} />
+    <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} />
   </Stack.Navigator>
 );
 

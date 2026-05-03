@@ -12,6 +12,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import api from "../services/api";
 import { useAuth } from "../contexts/AuthContext";
 import ReviewModal from "../components/ReviewModal";
+import BackButton from "../components/BackButton"; // ✅ IMPORTADO
 
 const COLORS = {
   primary: "#e53935",
@@ -26,7 +27,7 @@ const COLORS = {
 const statusLabels = {
   confirmed: "Confirmada",
   cancelled: "Cancelada",
-  checked_in: "Check‑in realizado",
+  checked_in: "Check-in realizado",
   completed: "Concluída",
 };
 
@@ -81,15 +82,10 @@ export default function BookingsScreen({ navigation }) {
   const handleReviewSuccess = () => {
     setReviewModalVisible(false);
     setSelectedBooking(null);
-    fetchBookings(); // atualiza a lista (hasReviewed será true)
+    fetchBookings();
   };
 
   const renderItem = ({ item }) => {
-    // Determina se o utilizador logado é o hóspede ou o anfitrião
-    const isGuest = item.user === user._id; // simplificado: comparar _id
-    // (Como o endpoint /bookings/owner retorna as reservas do utilizador,
-    // todas as reservas aqui são do hóspede, pois é GET /bookings/owner que listamos.
-    // Logo, o user logado é o hóspede. Então podemos usar isso.)
     const canReview = item.status === "completed" && !item.hasReviewed;
 
     return (
@@ -151,7 +147,12 @@ export default function BookingsScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.header}>As Minhas Reservas</Text>
+      {/* ✅ NOVO HEADER COM BOTÃO */}
+      <View style={styles.headerContainer}>
+        <BackButton />
+        <Text style={styles.header}>As Minhas Reservas</Text>
+      </View>
+
       <FlatList
         data={bookings}
         renderItem={renderItem}
@@ -161,6 +162,7 @@ export default function BookingsScreen({ navigation }) {
           <Text style={styles.empty}>Ainda não tem reservas.</Text>
         }
       />
+
       <ReviewModal
         visible={reviewModalVisible}
         booking={selectedBooking}
@@ -178,13 +180,22 @@ const styles = StyleSheet.create({
     paddingTop: 60,
   },
   centered: { flex: 1, justifyContent: "center", alignItems: "center" },
+
+  // ✅ NOVO
+  headerContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    marginBottom: 16,
+    gap: 12,
+  },
+
   header: {
     fontSize: 24,
     fontWeight: "bold",
-    paddingHorizontal: 20,
-    marginBottom: 16,
     color: COLORS.textLight,
   },
+
   list: { paddingHorizontal: 16, paddingBottom: 20 },
   card: {
     backgroundColor: COLORS.cardBackground,

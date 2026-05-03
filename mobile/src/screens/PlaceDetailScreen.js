@@ -93,7 +93,6 @@ export default function PlaceDetailScreen({ route, navigation }) {
     fetchReviews();
   }, [fetchData, fetchReviews]);
 
-  // Iniciar conversa com o anfitrião
   const handleContactHost = async () => {
     if (!place?.owner?._id) {
       Alert.alert("Erro", "Não foi possível identificar o anfitrião.");
@@ -118,18 +117,180 @@ export default function PlaceDetailScreen({ route, navigation }) {
     }
   };
 
-  // (resto das funções mantêm-se iguais)
+  // 🔹 Função auxiliar: verifica se uma data é "disponível"
+  const isDateAvailable = (dateStr) => {
+    // Se não há datas reservadas, está disponível
+    if (availability.bookedDates.includes(dateStr)) return false;
+    // Se availableDates não está definido ou está vazio, todas as datas são disponíveis
+    if (
+      !availability.availableDates ||
+      availability.availableDates.length === 0
+    )
+      return true;
+    // Caso contrário, a data precisa estar explicitamente na lista
+    return availability.availableDates.includes(dateStr);
+  };
+
   const getMarkedDates = () => {
-    /* ... igual ... */
+    const marked = {};
+
+    // Marcar dias disponíveis (apenas se houver uma lista explícita)
+    if (availability.availableDates && availability.availableDates.length > 0) {
+      availability.availableDates.forEach((date) => {
+        marked[date] = { color: COLORS.secondary, textColor: "white" };
+      });
+    }
+
+    // Marcar dias reservados (sempre)
+    availability.bookedDates.forEach((date) => {
+      marked[date] = {
+        color: COLORS.primary,
+        textColor: "white",
+        disabled: true,
+      };
+    });
+
+    // Marcar seleção do utilizador
+    if (selectedStart) {
+      const start = new Date(selectedStart);
+      const end = selectedEnd ? new Date(selectedEnd) : start;
+
+      if (isMultiDay) {
+        for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+          const dateStr = d.toISOString().split("T")[0];
+          if (!availability.bookedDates.includes(dateStr)) {
+            marked[dateStr] = {
+              color: COLORS.accent,
+              textColor: "white",
+              startingDay: d.getTime() === start.getTime(),
+              endingDay: d.getTime() === end.getTime(),
+            };
+          }
+        }
+      } else {
+        const dateStr = selectedStart;
+        if (!availability.bookedDates.includes(dateStr)) {
+          marked[dateStr] = {
+            selected: true,
+            color: COLORS.accent,
+            textColor: "white",
+          };
+        }
+      }
+    }
+
+    return marked;
   };
+
   const handleDayPress = (day) => {
-    /* ... igual ... */
+    const dateStr = day.dateString;
+
+    // Data reservada nunca pode ser selecionada
+    if (availability.bookedDates.includes(dateStr)) {
+      return;
+    }
+
+    if (isMultiDay) {
+      // Comportamento de intervalo
+      if (!selectedStart || (selectedStart && selectedEnd)) {
+        // Reset ou início de novo intervalo
+        setSelectedStart(dateStr);
+        setSelectedEnd(null);
+      } else {
+        // selectedStart existe e selectedEnd é null
+        const start = new Date(selectedStart);
+        const end = new Date(dateStr);
+        if (end < start) {
+          // Se a data final for antes da inicial, troca
+          setSelectedStart(dateStr);
+          setSelectedEnd(null);
+        } else {
+          // Verifica se todo o intervalo é válido
+          let allAvailable = true;
+          const current = new Date(start);
+          while (current <= end) {
+            const curStr = current.toISOString().split("T")[0];
+            if (!isDateAvailable(curStr)) {
+              allAvailable = false;
+              break;
+            }
+            current.setDate(current.getDate() + 1);
+          }
+          if (allAvailable) {
+            setSelectedEnd(dateStr);
+          } else {
+            Alert.alert(
+              "Datas indisponíveis",
+              "O intervalo contém datas reservadas ou não disponíveis.",
+            );
+          }
+        }
+      }
+    } else {
+      // Single day
+      if (isDateAvailable(dateStr)) {
+        setSelectedStart(dateStr);
+        setSelectedEnd(dateStr);
+      }
+    }
   };
+
   const calculateNights = () => {
-    /* ... igual ... */
+    if (!selectedStart || !selectedEnd) return 0;
+    const start = new Date(selectedStart);
+    const end = new Date(selectedEnd);
+    if (isMultiDay) {
+      return Math.max(1, Math.ceil((end - start) / (1000 * 60 * 60 * 24)));
+    }
+    return 1;
   };
+
   const handleReserve = async () => {
-    /* ... igual ... */
+    if (!selectedStart || (!isMultiDay && !selectedEnd)) {
+      Alert.alert("Erro", "Selecione a(s) data(s).");
+      return;
+    }
+    if (guests < 1 || guests > place.guests) {
+      Alert.alert(
+        "Erro",
+        `Número de participantes deve ser entre 1 e ${place.guests}.`,
+      );
+      return;
+    }
+
+    const nights = calculateNights();
+    const total = place.price * nights;
+
+    setBookingLoading(true);
+    try {
+      const bookingData = {
+        place: place._id,
+        user: user._id,
+        price: place.price,
+        total,
+        checkin: selectedStart,
+        checkout: selectedEnd || selectedStart,
+        guests,
+        nights,
+      };
+
+      const res = await api.post("/bookings", bookingData);
+      Alert.alert(
+        "Reserva confirmada!",
+        `Código: ${res.data.bookingCode}\nUm email com o comprovativo foi enviado.`,
+        [
+          {
+            text: "OK",
+            onPress: () => navigation.navigate("Home"),
+          },
+        ],
+      );
+    } catch (error) {
+      const msg = error.response?.data?.message || "Erro ao efetuar reserva.";
+      Alert.alert("Erro", msg);
+    } finally {
+      setBookingLoading(false);
+    }
   };
 
   if (loading) {
@@ -180,7 +341,7 @@ export default function PlaceDetailScreen({ route, navigation }) {
         <Text style={styles.title}>{place.title}</Text>
         <Text style={styles.address}>{place.address}</Text>
         <Text style={styles.price}>
-          €{place.price} / {isMultiDay ? "noite" : "dia"}
+          €{place.price} / {isMultiDay ? "diária" : "atividade"}
         </Text>
         <Text style={styles.description}>{place.description}</Text>
 
@@ -204,7 +365,7 @@ export default function PlaceDetailScreen({ route, navigation }) {
           </View>
         )}
 
-        {/*DÚVIDAS? ME CONTACTE */}
+        {/* Botão Dúvidas? Me contacte */}
         <TouchableOpacity
           style={styles.contactButton}
           onPress={handleContactHost}
@@ -280,7 +441,7 @@ export default function PlaceDetailScreen({ route, navigation }) {
           </View>
         </View>
 
-        {/* Seleção de datas e reserva (inalterado) */}
+        {/* Datas escolhidas */}
         {selectedStart && (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Datas escolhidas</Text>
@@ -299,6 +460,7 @@ export default function PlaceDetailScreen({ route, navigation }) {
           </View>
         )}
 
+        {/* Participantes */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>
             Participantes (máx {place.guests})
@@ -317,6 +479,7 @@ export default function PlaceDetailScreen({ route, navigation }) {
           />
         </View>
 
+        {/* Total */}
         {selectedStart && selectedEnd && nights > 0 && (
           <View style={styles.section}>
             <Text style={styles.total}>
@@ -325,6 +488,7 @@ export default function PlaceDetailScreen({ route, navigation }) {
           </View>
         )}
 
+        {/* Reservar */}
         <TouchableOpacity
           style={[
             styles.reserveButton,
@@ -427,7 +591,6 @@ const styles = StyleSheet.create({
     marginLeft: 8,
     marginBottom: 4,
   },
-  // Botão de contacto
   contactButton: {
     backgroundColor: COLORS.accent,
     paddingVertical: 14,
@@ -440,7 +603,6 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     fontSize: 16,
   },
-  // Avaliações
   avgRatingRow: {
     flexDirection: "row",
     alignItems: "center",

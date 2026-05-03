@@ -10,9 +10,10 @@ import {
 } from "react-native";
 import { Camera, CameraView } from "expo-camera";
 import api from "../services/api";
+import BackButton from "../components/BackButton";
 
 export default function CheckInScreen({ navigation }) {
-  const [mode, setMode] = useState("menu"); // 'menu', 'qr', 'manual', 'confirm'
+  const [mode, setMode] = useState("menu");
   const [hasPermission, setHasPermission] = useState(null);
   const [scanned, setScanned] = useState(false);
   const [code, setCode] = useState("");
@@ -74,11 +75,11 @@ export default function CheckInScreen({ navigation }) {
       await api.patch(`/bookings/${booking._id}/checkin`, {
         code: booking.bookingCode,
       });
-      Alert.alert("Sucesso", "Check‑in realizado com sucesso!");
+      Alert.alert("Sucesso", "Check-in realizado com sucesso!");
       setMode("menu");
       setBooking(null);
     } catch (error) {
-      const msg = error.response?.data?.message || "Erro ao fazer check‑in.";
+      const msg = error.response?.data?.message || "Erro ao fazer check-in.";
       Alert.alert("Erro", msg);
     } finally {
       setLoading(false);
@@ -90,11 +91,11 @@ export default function CheckInScreen({ navigation }) {
     setLoading(true);
     try {
       await api.patch(`/bookings/${booking._id}/checkout`);
-      Alert.alert("Sucesso", "Check‑out realizado com sucesso!");
+      Alert.alert("Sucesso", "Check-out realizado com sucesso!");
       setMode("menu");
       setBooking(null);
     } catch (error) {
-      const msg = error.response?.data?.message || "Erro ao fazer check‑out.";
+      const msg = error.response?.data?.message || "Erro ao fazer check-out.";
       Alert.alert("Erro", msg);
     } finally {
       setLoading(false);
@@ -153,7 +154,7 @@ export default function CheckInScreen({ navigation }) {
   if (mode === "confirm" && booking) {
     return (
       <View style={styles.centered}>
-        <Text style={styles.title}>Confirmar Check‑in</Text>
+        <Text style={styles.title}>Confirmar Check-in</Text>
         <Text style={styles.info}>Reserva: {booking.place?.title}</Text>
         <Text style={styles.info}>Código: {booking.bookingCode}</Text>
         <Text style={styles.info}>Estado atual: {booking.status}</Text>
@@ -166,7 +167,7 @@ export default function CheckInScreen({ navigation }) {
             {loading ? (
               <ActivityIndicator color="#fff" />
             ) : (
-              <Text style={styles.actionButtonText}>Fazer Check‑in</Text>
+              <Text style={styles.actionButtonText}>Fazer Check-in</Text>
             )}
           </TouchableOpacity>
         )}
@@ -179,7 +180,7 @@ export default function CheckInScreen({ navigation }) {
             {loading ? (
               <ActivityIndicator color="#fff" />
             ) : (
-              <Text style={styles.actionButtonText}>Fazer Check‑out</Text>
+              <Text style={styles.actionButtonText}>Fazer Check-out</Text>
             )}
           </TouchableOpacity>
         )}
@@ -195,36 +196,58 @@ export default function CheckInScreen({ navigation }) {
     );
   }
 
-  // Menu principal
   return (
-    <View style={styles.centered}>
-      <Text style={styles.title}>Gestão de Check‑in</Text>
-      <TouchableOpacity style={styles.menuButton} onPress={() => setMode("qr")}>
-        <Text style={styles.menuButtonText}>Ler QR Code</Text>
-      </TouchableOpacity>
-      <View style={styles.manualContainer}>
-        <TextInput
-          style={styles.input}
-          placeholder="Código da reserva"
-          value={code}
-          onChangeText={setCode}
-          autoCapitalize="none"
-        />
+    <View style={styles.container}>
+      <View style={styles.headerContainer}>
+        <BackButton />
+      </View>
+
+      <View style={styles.centerContent}>
+        <Text style={styles.title}>Gestão de Check-in</Text>
         <TouchableOpacity
           style={styles.menuButton}
-          onPress={handleManualSubmit}
+          onPress={() => setMode("qr")}
         >
-          <Text style={styles.menuButtonText}>Inserir código manualmente</Text>
+          <Text style={styles.menuButtonText}>Ler QR Code</Text>
         </TouchableOpacity>
+        <View style={styles.manualContainer}>
+          <TextInput
+            style={styles.input}
+            placeholder="Código da reserva"
+            value={code}
+            onChangeText={setCode}
+            autoCapitalize="none"
+          />
+          <TouchableOpacity
+            style={styles.menuButton}
+            onPress={handleManualSubmit}
+          >
+            <Text style={styles.menuButtonText}>
+              Inserir código manualmente
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
-      <TouchableOpacity onPress={() => navigation.goBack()}>
-        <Text style={styles.link}>Voltar</Text>
-      </TouchableOpacity>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#fefefe",
+    paddingTop: 60,
+  },
+  headerContainer: {
+    paddingHorizontal: 20,
+    marginBottom: 10,
+  },
+  centerContent: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+  },
   centered: {
     flex: 1,
     justifyContent: "center",

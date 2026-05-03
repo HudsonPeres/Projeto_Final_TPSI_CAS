@@ -9,6 +9,7 @@ import {
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import api from "../services/api";
+import BackButton from "../components/BackButton"; // ✅ IMPORTADO
 
 export default function MyPlacesScreen({ navigation }) {
   const [places, setPlaces] = useState([]);
@@ -48,7 +49,12 @@ export default function MyPlacesScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.header}>Meus Anúncios</Text>
+      {/* ✅ HEADER COM BOTÃO */}
+      <View style={styles.headerContainer}>
+        <BackButton />
+        <Text style={styles.header}>Meus Anúncios</Text>
+      </View>
+
       <FlatList
         data={places}
         renderItem={renderItem}
@@ -69,12 +75,21 @@ const styles = StyleSheet.create({
     backgroundColor: "#fefefe",
   },
   loader: { flex: 1, justifyContent: "center" },
+
+  // ✅ NOVO
+  headerContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 20,
+    gap: 12,
+  },
+
   header: {
     fontSize: 24,
     fontWeight: "bold",
-    marginBottom: 20,
     color: "#1b1b1b",
   },
+
   card: {
     backgroundColor: "#fff",
     padding: 16,

@@ -13,6 +13,7 @@ import {
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import api from "../services/api";
+import BackButton from "../components/BackButton"; // ✅ IMPORTADO
 
 const COLORS = {
   primary: "#e53935",
@@ -37,7 +38,7 @@ export default function SupportScreen() {
       const res = await api.get("/demands/my");
       setDemands(res.data);
     } catch (error) {
-      // silencioso; pode não ter demandas
+      // silencioso
     } finally {
       setLoading(false);
     }
@@ -63,7 +64,7 @@ export default function SupportScreen() {
       Alert.alert("Obrigado", "A sua mensagem foi enviada para o suporte.");
       setSubject("");
       setMessage("");
-      fetchDemands(); // atualiza a lista
+      fetchDemands();
     } catch (error) {
       const msg = error.response?.data?.message || "Erro ao enviar pedido.";
       Alert.alert("Erro", msg);
@@ -107,9 +108,13 @@ export default function SupportScreen() {
       behavior={Platform.OS === "ios" ? "padding" : undefined}
       keyboardVerticalOffset={90}
     >
-      <Text style={styles.header}>Suporte</Text>
+      {/* ✅ HEADER COM BOTÃO */}
+      <View style={styles.headerContainer}>
+        <BackButton />
+        <Text style={styles.header}>Suporte</Text>
+      </View>
 
-      {/* Formulário de nova demanda */}
+      {/* Formulário */}
       <View style={styles.form}>
         <Text style={styles.formTitle}>Nova Mensagem</Text>
         <TextInput
@@ -140,7 +145,7 @@ export default function SupportScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Histórico de demandas */}
+      {/* Histórico */}
       <View style={styles.historyContainer}>
         <Text style={styles.historyTitle}>As Minhas Mensagens</Text>
         {loading ? (
@@ -169,12 +174,21 @@ const styles = StyleSheet.create({
     paddingTop: 60,
     paddingHorizontal: 20,
   },
+
+  // ✅ NOVO
+  headerContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 20,
+    gap: 12,
+  },
+
   header: {
     fontSize: 24,
     fontWeight: "bold",
     color: COLORS.textLight,
-    marginBottom: 20,
   },
+
   form: {
     backgroundColor: COLORS.cardBackground,
     borderRadius: 16,

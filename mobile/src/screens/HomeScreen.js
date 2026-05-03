@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
+import ChatbotModal from "../components/ChatbotModal";
+
 import {
   View,
   Text,
@@ -42,6 +44,7 @@ export default function HomeScreen({ navigation }) {
   const [loading, setLoading] = useState(true);
   const [modalVisible, setModalVisible] = useState(false);
   const [menuVisible, setMenuVisible] = useState(false);
+  const [chatbotVisible, setChatbotVisible] = useState(false);
 
   const [minPrice, setMinPrice] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
@@ -143,7 +146,9 @@ export default function HomeScreen({ navigation }) {
           {item.description}
         </Text>
         <View style={styles.cardFooter}>
-          <Text style={styles.cardPrice}>€{item.price} / atividade</Text>
+          <Text style={styles.cardPrice}>
+            €{item.price} / {item.isMultiDay ? "diária" : "atividade"}
+          </Text>
           <Text style={styles.cardGuests}>Até {item.guests} pessoas</Text>
         </View>
       </View>
@@ -152,7 +157,6 @@ export default function HomeScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
-      {/* Cabeçalho com menu hambúrguer */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => setMenuVisible(true)}>
           <Text style={styles.menuIcon}>☰</Text>
@@ -186,7 +190,6 @@ export default function HomeScreen({ navigation }) {
         />
       )}
 
-      {/* Modal de Filtros */}
       <Modal
         visible={modalVisible}
         animationType="slide"
@@ -371,16 +374,16 @@ export default function HomeScreen({ navigation }) {
                 navigation.navigate("Messages");
               }}
             >
-              <TouchableOpacity
-                style={styles.menuItem}
-                onPress={() => {
-                  setMenuVisible(false);
-                  navigation.navigate("HostReviews");
-                }}
-              >
-                <Text style={styles.menuItemText}>Avaliar hóspedes</Text>
-              </TouchableOpacity>
               <Text style={styles.menuItemText}>Mensagens</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.menuItem}
+              onPress={() => {
+                setMenuVisible(false);
+                navigation.navigate("HostReviews");
+              }}
+            >
+              <Text style={styles.menuItemText}>Avaliar hóspedes</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.menuItem}
@@ -405,6 +408,24 @@ export default function HomeScreen({ navigation }) {
           </View>
         </TouchableOpacity>
       </Modal>
+
+      {/* FAB do Chatbot */}
+      <TouchableOpacity
+        style={styles.chatbotFab}
+        onPress={() => setChatbotVisible(true)}
+        activeOpacity={0.8}
+      >
+        <Image
+          source={require("../../assets/MarIA.png")}
+          style={styles.chatbotFabImage}
+          resizeMode="contain"
+        />
+      </TouchableOpacity>
+
+      <ChatbotModal
+        visible={chatbotVisible}
+        onClose={() => setChatbotVisible(false)}
+      />
     </View>
   );
 }
@@ -460,7 +481,6 @@ const styles = StyleSheet.create({
   cardPrice: { fontSize: 16, fontWeight: "bold", color: COLORS.primary },
   cardGuests: { fontSize: 13, color: "#888" },
   emptyText: { textAlign: "center", marginTop: 40, color: "#999" },
-  // Modal de Filtros
   modalOverlay: {
     flex: 1,
     justifyContent: "flex-end",
@@ -554,4 +574,28 @@ const styles = StyleSheet.create({
   },
   menuItemText: { fontSize: 16, color: "#1b1b1b" },
   logoutItem: { borderBottomWidth: 0, marginTop: 8 },
+  chatbotFab: {
+    position: "absolute",
+    bottom: 24,
+    right: 24,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: "#43a047",
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 8,
+  },
+  chatbotFabImage: {
+    width: 38,
+    height: 38,
+  },
+  /* chatbotFabText: {
+    fontSize: 28,
+    color: "#fff",
+  }, */
 });

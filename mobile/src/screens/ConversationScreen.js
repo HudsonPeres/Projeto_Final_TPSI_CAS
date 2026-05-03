@@ -9,9 +9,11 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
+  Alert,
 } from "react-native";
 import api from "../services/api";
 import { useAuth } from "../contexts/AuthContext";
+import BackButton from "../components/BackButton";
 
 const COLORS = {
   primary: "#e53935",
@@ -42,7 +44,6 @@ export default function ConversationScreen({ route, navigation }) {
       );
       setMessages(res.data);
     } catch (error) {
-      // Silencioso; pode adicionar um Alert se quiser
     } finally {
       setLoading(false);
     }
@@ -50,7 +51,6 @@ export default function ConversationScreen({ route, navigation }) {
 
   useEffect(() => {
     fetchMessages();
-    // Podemos adicionar um intervalo para polling (ex.: 5 segundos)
     const interval = setInterval(fetchMessages, 5000);
     return () => clearInterval(interval);
   }, [fetchMessages]);
@@ -63,7 +63,7 @@ export default function ConversationScreen({ route, navigation }) {
         text: inputText.trim(),
       });
       setInputText("");
-      fetchMessages(); // atualiza a lista
+      fetchMessages();
     } catch (error) {
       Alert.alert("Erro", "Não foi possível enviar a mensagem.");
     } finally {
@@ -121,13 +121,15 @@ export default function ConversationScreen({ route, navigation }) {
       keyboardVerticalOffset={90}
     >
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={styles.backButton}>← Voltar</Text>
-        </TouchableOpacity>
+        <View style={styles.side}>
+          <BackButton />
+        </View>
+
         <Text style={styles.headerTitle} numberOfLines={1}>
           {otherUserName || "Chat"}
         </Text>
-        <View style={{ width: 60 }} />
+
+        <View style={styles.side} />
       </View>
 
       <FlatList
@@ -168,6 +170,7 @@ export default function ConversationScreen({ route, navigation }) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.backgroundLight },
   centered: { flex: 1, justifyContent: "center", alignItems: "center" },
+
   header: {
     flexDirection: "row",
     alignItems: "center",
@@ -179,7 +182,11 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: "#eee",
   },
-  backButton: { fontSize: 16, color: COLORS.accent },
+
+  side: {
+    width: 60,
+  },
+
   headerTitle: {
     fontSize: 18,
     fontWeight: "bold",
@@ -187,6 +194,7 @@ const styles = StyleSheet.create({
     flex: 1,
     textAlign: "center",
   },
+
   messagesList: { paddingHorizontal: 16, paddingBottom: 8 },
   systemMessage: {
     alignItems: "center",

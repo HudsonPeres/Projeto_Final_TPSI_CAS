@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import api from "../services/api";
+import BackButton from "../components/BackButton";
 
 const COLORS = {
   primary: "#e53935",
@@ -89,7 +90,11 @@ export default function MessagesScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.header}>Mensagens</Text>
+      <View style={styles.headerContainer}>
+        <BackButton />
+        <Text style={styles.header}>Mensagens</Text>
+      </View>
+
       <FlatList
         data={conversations}
         renderItem={renderItem}
@@ -110,13 +115,21 @@ const styles = StyleSheet.create({
     paddingTop: 60,
   },
   centered: { flex: 1, justifyContent: "center", alignItems: "center" },
+
+  headerContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    marginBottom: 16,
+    gap: 12,
+  },
+
   header: {
     fontSize: 24,
     fontWeight: "bold",
-    paddingHorizontal: 20,
-    marginBottom: 16,
     color: COLORS.textLight,
   },
+
   list: { paddingHorizontal: 16, paddingBottom: 20 },
   card: {
     backgroundColor: COLORS.cardBackground,
