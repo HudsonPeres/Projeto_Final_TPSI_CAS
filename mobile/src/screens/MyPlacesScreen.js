@@ -6,10 +6,11 @@ import {
   TouchableOpacity,
   StyleSheet,
   ActivityIndicator,
+  Alert,
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import api from "../services/api";
-import BackButton from "../components/BackButton"; // ✅ IMPORTADO
+import BackButton from "../components/BackButton";
 
 export default function MyPlacesScreen({ navigation }) {
   const [places, setPlaces] = useState([]);
@@ -21,7 +22,7 @@ export default function MyPlacesScreen({ navigation }) {
       const res = await api.get("/places/owner");
       setPlaces(res.data);
     } catch (error) {
-      console.error(error);
+      Alert.alert("Erro", "Falha ao carregar os seus anúncios.");
     } finally {
       setLoading(false);
     }
@@ -34,35 +35,50 @@ export default function MyPlacesScreen({ navigation }) {
   );
 
   const renderItem = ({ item }) => (
-    <TouchableOpacity style={styles.card}>
+    <View style={styles.card}>
       <Text style={styles.cardTitle}>{item.title}</Text>
       <Text style={styles.cardAddress}>{item.address}</Text>
-      <Text style={styles.cardPrice}>€{item.price}</Text>
-    </TouchableOpacity>
+      <Text style={styles.cardPrice}>
+        €{item.price} / {item.isMultiDay ? "diária" : "atividade"}
+      </Text>
+      <TouchableOpacity
+        style={styles.editButton}
+        onPress={() => navigation.navigate("PlaceForm", { placeId: item._id })}
+      >
+        <Text style={styles.editText}>Editar</Text>
+      </TouchableOpacity>
+    </View>
   );
-
-  if (loading) {
-    return (
-      <ActivityIndicator size="large" color="#e53935" style={styles.loader} />
-    );
-  }
 
   return (
     <View style={styles.container}>
-      {/* ✅ HEADER COM BOTÃO */}
-      <View style={styles.headerContainer}>
+      <View style={styles.header}>
         <BackButton />
-        <Text style={styles.header}>Meus Anúncios</Text>
+        <Text style={styles.title}>Meus Anúncios</Text>
+        <TouchableOpacity
+          style={styles.addButton}
+          onPress={() => navigation.navigate("PlaceForm", { placeId: null })}
+        >
+          <Text style={styles.addButtonText}>+ Novo</Text>
+        </TouchableOpacity>
       </View>
-
-      <FlatList
-        data={places}
-        renderItem={renderItem}
-        keyExtractor={(item) => item._id}
-        ListEmptyComponent={
-          <Text style={styles.empty}>Ainda não tem anúncios.</Text>
-        }
-      />
+      {loading ? (
+        <ActivityIndicator
+          size="large"
+          color="#e53935"
+          style={{ marginTop: 20 }}
+        />
+      ) : (
+        <FlatList
+          data={places}
+          renderItem={renderItem}
+          keyExtractor={(item) => item._id}
+          contentContainerStyle={styles.list}
+          ListEmptyComponent={
+            <Text style={styles.empty}>Ainda não tem anúncios.</Text>
+          }
+        />
+      )}
     </View>
   );
 }
@@ -70,26 +86,25 @@ export default function MyPlacesScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop: 60,
-    paddingHorizontal: 16,
     backgroundColor: "#fefefe",
+    paddingTop: 50,
+    paddingHorizontal: 20,
   },
-  loader: { flex: 1, justifyContent: "center" },
-
-  // ✅ NOVO
-  headerContainer: {
+  header: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
     marginBottom: 20,
-    gap: 12,
   },
-
-  header: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#1b1b1b",
+  title: { fontSize: 24, fontWeight: "bold", color: "#1b1b1b" },
+  addButton: {
+    backgroundColor: "#e53935",
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 20,
   },
-
+  addButtonText: { color: "#fff", fontWeight: "bold" },
+  list: { paddingBottom: 20 },
   card: {
     backgroundColor: "#fff",
     padding: 16,
@@ -98,8 +113,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#e0e0e0",
   },
-  cardTitle: { fontSize: 18, fontWeight: "bold", color: "#1b1b1b" },
+  cardTitle: { fontSize: 18, fontWeight: "bold" },
   cardAddress: { color: "#666", marginBottom: 4 },
-  cardPrice: { color: "#e53935", fontWeight: "bold" },
+  cardPrice: { color: "#e53935", fontWeight: "bold", marginBottom: 8 },
+  editButton: { alignSelf: "flex-start" },
+  editText: { color: "#4a90e2", fontWeight: "600" },
   empty: { textAlign: "center", marginTop: 40, color: "#999" },
 });

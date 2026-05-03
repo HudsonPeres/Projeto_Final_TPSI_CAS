@@ -10,7 +10,7 @@ import DeletedPlace from "./deletedModel.js";
 import Booking from "../bookings/models.js";
 import { isSuperAdmin } from "../../utils/adminMiddleware.js";
 import { isSupport } from "../../utils/adminMiddleware.js";
-import User from "../users/model.js"; // <-- NOVO IMPORT
+import User from "../users/model.js";
 
 const router = Router();
 
@@ -53,7 +53,7 @@ router.get("/", async (req, res) => {
             type: "Point",
             coordinates: [parseFloat(lng), parseFloat(lat)],
           },
-          $maxDistance: parseInt(radius), // em metros
+          $maxDistance: parseInt(radius),
         },
       };
     }
@@ -130,6 +130,7 @@ router.put("/:id", async (req, res) => {
     guests,
     availableDates,
     isMultiDay,
+    location,
   } = req.body;
 
   try {
@@ -148,6 +149,7 @@ router.put("/:id", async (req, res) => {
         guests,
         availableDates,
         isMultiDay,
+        location,
       },
       { new: true },
     );
@@ -164,25 +166,21 @@ router.delete("/:id", async (req, res) => {
   const { reason } = req.body;
 
   try {
-    // 1. Verificar autenticação
     const tokenPayload = await JWTVerify(req);
     if (!tokenPayload) {
       return res.status(401).json({ message: "Não autenticado" });
     }
 
-    // 2. Buscar utilizador completo para obter a role
     const user = await User.findById(tokenPayload._id);
     if (!user) {
       return res.status(401).json({ message: "Utilizador não encontrado" });
     }
 
-    // 3. Buscar o anúncio
     const place = await Place.findById(id);
     if (!place) {
       return res.status(404).json({ message: "Lugar não encontrado" });
     }
 
-    // 4. Verificar permissões: dono OU (admin ou superadmin)
     const isOwner = place.owner.toString() === user._id.toString();
     const isAdminOrSuper = user.role === "admin" || user.role === "superadmin";
 
@@ -192,7 +190,6 @@ router.delete("/:id", async (req, res) => {
         .json({ message: "Sem permissão para apagar este anúncio" });
     }
 
-    // 5. Mover para auditoria (DeletedPlace)
     await DeletedPlace.create({
       originalId: place._id,
       data: place.toObject(),
@@ -204,7 +201,6 @@ router.delete("/:id", async (req, res) => {
           : "Removido pelo proprietário"),
     });
 
-    // 6. Apagar o anúncio original
     await Place.deleteOne({ _id: id });
 
     res.json({ message: "Anúncio removido e registado em auditoria" });
@@ -229,6 +225,7 @@ router.post("/", async (req, res) => {
     guests,
     availableDates,
     isMultiDay,
+    location,
   } = req.body;
 
   try {
@@ -247,6 +244,7 @@ router.post("/", async (req, res) => {
       guests,
       availableDates,
       isMultiDay,
+      location,
     });
 
     res.json(newPlaceDoc);
@@ -276,18 +274,17 @@ router.post("/upload", uploadImage().array("files", 10), async (req, res) => {
   const filesPromise = new Promise((resolve, reject) => {
     const fileURLArray = [];
 
-    files.forEach(async (file, index) => {
+    files.forEach(async (file) => {
       const { filename, path, mimetype } = file;
 
       try {
         const fileURL = await sendtoS3(filename, path, mimetype);
-
         fileURLArray.push(fileURL);
       } catch (error) {
-        console.error("Erro ao subir para o S3");
         reject(error);
       }
     });
+
     const idInterval = setInterval(() => {
       if (files.length === fileURLArray.length) {
         clearInterval(idInterval);
@@ -298,8 +295,6 @@ router.post("/upload", uploadImage().array("files", 10), async (req, res) => {
 
   const fileURLArrayResolved = await filesPromise;
 
-  const path = `${__dirname}/tmp/`;
-
   res.json(fileURLArrayResolved);
 });
 
@@ -309,7 +304,6 @@ router.get("/admin/all", isAdmin, async (req, res) => {
     const places = await Place.find().populate("owner", "name email");
     res.json(places);
   } catch (error) {
-    console.error(error);
     res.status(500).json({ message: "Erro ao buscar lugares" });
   }
 });
@@ -335,7 +329,6 @@ router.delete("/admin/:id", isAdmin, async (req, res) => {
     await Place.deleteOne({ _id: id });
     res.json({ message: "Lugar removido e registrado em auditoria" });
   } catch (error) {
-    console.error(error);
     res.status(500).json({ message: "Erro ao deletar lugar" });
   }
 });
@@ -354,7 +347,6 @@ router.patch("/admin/:id/toggle", isAdmin, async (req, res) => {
       isActive: place.isActive,
     });
   } catch (error) {
-    console.error(error);
     res.status(500).json({ message: "Erro ao alterar status" });
   }
 });
@@ -363,8 +355,10 @@ router.get("/:id/availability", async (req, res) => {
   const { id } = req.params;
   const place = await Place.findById(id);
   if (!place) return res.status(404).json({ message: "Lugar não encontrado" });
+
   const bookings = await Booking.find({ place: id, status: "confirmed" });
   const bookedDates = [];
+
   bookings.forEach((b) => {
     let d = new Date(b.checkin);
     while (d <= new Date(b.checkout)) {
@@ -372,6 +366,7 @@ router.get("/:id/availability", async (req, res) => {
       d.setDate(d.getDate() + 1);
     }
   });
+
   res.json({
     availableDates: place.availableDates.map(
       (d) => d.toISOString().split("T")[0],

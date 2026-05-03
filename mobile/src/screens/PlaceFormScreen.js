@@ -59,7 +59,6 @@ export default function PlaceDetailScreen({ route, navigation }) {
   const [chatLoading, setChatLoading] = useState(false);
 
   const isMultiDay = place?.isMultiDay ?? true;
-  const isOwner = place?.owner?._id === user._id; // 🔹 Verifica se é o anfitrião
 
   // 🔹 Limpa seleções (reutilizável)
   const resetSelection = () => {
@@ -133,7 +132,6 @@ export default function PlaceDetailScreen({ route, navigation }) {
     }
   };
 
-  // 🔹 Função auxiliar: verifica se uma data é "disponível"
   const isDateAvailable = (dateStr) => {
     if (availability.bookedDates.includes(dateStr)) return false;
     if (
@@ -447,89 +445,77 @@ export default function PlaceDetailScreen({ route, navigation }) {
           </View>
         </View>
 
-        {/* 🔹 Se for o dono, mostra mensagem de bloqueio; caso contrário, mostra a área de reserva */}
-        {isOwner ? (
-          <View style={styles.ownerMessage}>
-            <Text style={styles.ownerMessageText}>
-              Você é o anfitrião deste anúncio e não pode reservar a sua própria
-              experiência.
+        {/* Datas escolhidas */}
+        {selectedStart && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Datas escolhidas</Text>
+            <Text style={styles.text}>
+              Check‑in: {selectedStart}
+              {isMultiDay
+                ? `\nCheck‑out: ${selectedEnd || "não definida"}`
+                : ""}
+            </Text>
+            {isMultiDay && selectedEnd && (
+              <Text style={styles.text}>Noites: {nights}</Text>
+            )}
+            {isMultiDay && selectedStart && !selectedEnd && (
+              <Text style={styles.hint}>Toque na data de saída</Text>
+            )}
+          </View>
+        )}
+
+        {/* Participantes */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>
+            Participantes (máx {place.guests})
+          </Text>
+          <TextInput
+            style={styles.input}
+            value={String(guests)}
+            onChangeText={(text) => {
+              const num = parseInt(text, 10);
+              if (!isNaN(num) && num >= 1 && num <= place.guests)
+                setGuests(num);
+              else if (text === "") setGuests("");
+            }}
+            keyboardType="numeric"
+            placeholder="Número de pessoas"
+          />
+        </View>
+
+        {/* Total */}
+        {selectedStart && selectedEnd && nights > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.total}>
+              Total estimado: €{place.price * nights}
             </Text>
           </View>
-        ) : (
-          <>
-            {/* Datas escolhidas */}
-            {selectedStart && (
-              <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Datas escolhidas</Text>
-                <Text style={styles.text}>
-                  Check‑in: {selectedStart}
-                  {isMultiDay
-                    ? `\nCheck‑out: ${selectedEnd || "não definida"}`
-                    : ""}
-                </Text>
-                {isMultiDay && selectedEnd && (
-                  <Text style={styles.text}>Noites: {nights}</Text>
-                )}
-                {isMultiDay && selectedStart && !selectedEnd && (
-                  <Text style={styles.hint}>Toque na data de saída</Text>
-                )}
-              </View>
-            )}
-
-            {/* Participantes */}
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>
-                Participantes (máx {place.guests})
-              </Text>
-              <TextInput
-                style={styles.input}
-                value={String(guests)}
-                onChangeText={(text) => {
-                  const num = parseInt(text, 10);
-                  if (!isNaN(num) && num >= 1 && num <= place.guests)
-                    setGuests(num);
-                  else if (text === "") setGuests("");
-                }}
-                keyboardType="numeric"
-                placeholder="Número de pessoas"
-              />
-            </View>
-
-            {/* Total */}
-            {selectedStart && selectedEnd && nights > 0 && (
-              <View style={styles.section}>
-                <Text style={styles.total}>
-                  Total estimado: €{place.price * nights}
-                </Text>
-              </View>
-            )}
-
-            {/* Reservar */}
-            <TouchableOpacity
-              style={[
-                styles.reserveButton,
-                (bookingLoading ||
-                  !selectedStart ||
-                  (isMultiDay && !selectedEnd) ||
-                  !place) &&
-                  styles.disabledButton,
-              ]}
-              onPress={handleReserve}
-              disabled={
-                bookingLoading ||
-                !selectedStart ||
-                (isMultiDay && !selectedEnd) ||
-                !place
-              }
-            >
-              {bookingLoading ? (
-                <ActivityIndicator color="#fff" />
-              ) : (
-                <Text style={styles.reserveButtonText}>Reservar</Text>
-              )}
-            </TouchableOpacity>
-          </>
         )}
+
+        {/* Reservar */}
+        <TouchableOpacity
+          style={[
+            styles.reserveButton,
+            (bookingLoading ||
+              !selectedStart ||
+              (isMultiDay && !selectedEnd) ||
+              !place) &&
+              styles.disabledButton,
+          ]}
+          onPress={handleReserve}
+          disabled={
+            bookingLoading ||
+            !selectedStart ||
+            (isMultiDay && !selectedEnd) ||
+            !place
+          }
+        >
+          {bookingLoading ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={styles.reserveButtonText}>Reservar</Text>
+          )}
+        </TouchableOpacity>
       </View>
     </ScrollView>
   );
@@ -709,17 +695,5 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 18,
     fontWeight: "bold",
-  },
-  // 🔹 Estilos para a mensagem de bloqueio do anfitrião
-  ownerMessage: {
-    backgroundColor: "#f0f0f0",
-    padding: 16,
-    borderRadius: 12,
-    marginTop: 20,
-  },
-  ownerMessageText: {
-    fontSize: 16,
-    color: "#666",
-    textAlign: "center",
   },
 });

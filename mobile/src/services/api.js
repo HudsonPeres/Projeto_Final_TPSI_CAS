@@ -1,5 +1,6 @@
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Alert } from "react-native";
 import { API_URL } from "../config";
 
 const api = axios.create({
@@ -15,6 +16,20 @@ api.interceptors.request.use(
     return config;
   },
   (error) => Promise.reject(error),
+);
+
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response) {
+      console.log("API Error:", error.response.data);
+    } else if (error.request) {
+      Alert.alert("Erro de rede", "Verifique a sua ligação à internet.");
+    } else {
+      Alert.alert("Erro", "Ocorreu um erro inesperado.");
+    }
+    return Promise.reject(error);
+  },
 );
 
 export default api;
