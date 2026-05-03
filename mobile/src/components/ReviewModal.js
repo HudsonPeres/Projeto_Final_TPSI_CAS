@@ -21,7 +21,13 @@ const COLORS = {
   textLight: "#1b1b1b",
 };
 
-export default function ReviewModal({ visible, booking, onClose, onSuccess }) {
+export default function ReviewModal({
+  visible,
+  booking,
+  mode = "guest",
+  onClose,
+  onSuccess,
+}) {
   const [ratingHost, setRatingHost] = useState(0);
   const [ratingExperience, setRatingExperience] = useState(0);
   const [comment, setComment] = useState("");
@@ -29,9 +35,10 @@ export default function ReviewModal({ visible, booking, onClose, onSuccess }) {
 
   if (!booking) return null;
 
-  const isHostReview = booking.place?.owner !== booking.user?._id;
+  const isGuestReview = mode === "guest"; // true quando é o hóspede a avaliar o anfitrião + experiência
+
   const handleSubmit = async () => {
-    if (isHostReview) {
+    if (isGuestReview) {
       if (ratingHost === 0) {
         Alert.alert("Atenção", "Avalie o anfitrião com estrelas.");
         return;
@@ -45,7 +52,8 @@ export default function ReviewModal({ visible, booking, onClose, onSuccess }) {
 
     setLoading(true);
     try {
-      if (isHostReview) {
+      if (isGuestReview) {
+        // Hóspede: avaliar anfitrião
         await api.post("/reviews", {
           bookingId: booking._id,
           type: "host",
@@ -61,11 +69,11 @@ export default function ReviewModal({ visible, booking, onClose, onSuccess }) {
           });
         }
       } else {
-        // Anfitrião avalia hóspede
+        // Anfitrião: avaliar hóspede
         await api.post("/reviews", {
           bookingId: booking._id,
           type: "guest",
-          ratingHost,
+          ratingHost, // ratingHost usado como nota para o hóspede
           comment,
         });
       }
@@ -88,17 +96,16 @@ export default function ReviewModal({ visible, booking, onClose, onSuccess }) {
         >
           <View style={styles.card}>
             <Text style={styles.title}>
-              {isHostReview ? "Avaliar experiência" : "Avaliar hóspede"}
+              {isGuestReview ? "Avaliar experiência" : "Avaliar hóspede"}
             </Text>
 
-            {isHostReview ? (
+            {isGuestReview ? (
               <>
                 <Text style={styles.label}>Anfitrião</Text>
                 <StarRating
                   rating={ratingHost}
                   onRatingChange={setRatingHost}
                 />
-
                 <Text style={styles.label}>Experiência</Text>
                 <StarRating
                   rating={ratingExperience}

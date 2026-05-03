@@ -371,6 +371,15 @@ export default function HomeScreen({ navigation }) {
                 navigation.navigate("Messages");
               }}
             >
+              <TouchableOpacity
+                style={styles.menuItem}
+                onPress={() => {
+                  setMenuVisible(false);
+                  navigation.navigate("HostReviews");
+                }}
+              >
+                <Text style={styles.menuItemText}>Avaliar hóspedes</Text>
+              </TouchableOpacity>
               <Text style={styles.menuItemText}>Mensagens</Text>
             </TouchableOpacity>
             <TouchableOpacity
