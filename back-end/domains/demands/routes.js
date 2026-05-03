@@ -43,7 +43,6 @@ router.put("/:id/resolve", async (req, res) => {
   }
 });
 
-//  criar uma nova demanda
 router.post("/", async (req, res) => {
   connectDB();
   try {
@@ -69,6 +68,20 @@ router.post("/", async (req, res) => {
   } catch (error) {
     console.error("Erro ao criar demanda:", error);
     res.status(500).json({ message: "Erro ao criar pedido de ajuda" });
+  }
+});
+
+router.get("/my", async (req, res) => {
+  connectDB();
+  try {
+    const userInfo = await JWTVerify(req);
+    const demands = await Demand.find({ user: userInfo._id }).sort({
+      createdAt: -1,
+    });
+    res.json(demands);
+  } catch (error) {
+    console.error("Erro ao listar demandas do utilizador:", error);
+    res.status(500).json({ message: "Erro ao buscar as suas demandas" });
   }
 });
 
