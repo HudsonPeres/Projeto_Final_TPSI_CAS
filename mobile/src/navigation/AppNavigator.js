@@ -2,8 +2,6 @@ import React from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { useAuth } from "../contexts/AuthContext";
-import BookingsScreen from "../screens/BookingsScreen";
-import CheckInScreen from "../screens/CheckInScreen";
 
 import LoginScreen from "../screens/LoginScreen";
 import RegisterScreen from "../screens/RegisterScreen";
@@ -11,6 +9,12 @@ import ForgotPasswordScreen from "../screens/ForgotPasswordScreen";
 import ResetPasswordScreen from "../screens/ResetPasswordScreen";
 import HomeScreen from "../screens/HomeScreen";
 import PlaceDetailScreen from "../screens/PlaceDetailScreen";
+import BookingsScreen from "../screens/BookingsScreen";
+import CheckInScreen from "../screens/CheckInScreen";
+import ProfileScreen from "../screens/ProfileScreen";
+import MyPlacesScreen from "../screens/MyPlacesScreen";
+import SupportScreen from "../screens/SupportScreen";
+import MessagesScreen from "../screens/MessagesScreen";
 
 const Stack = createNativeStackNavigator();
 
@@ -29,6 +33,10 @@ const MainStack = () => (
     <Stack.Screen name="PlaceDetail" component={PlaceDetailScreen} />
     <Stack.Screen name="Bookings" component={BookingsScreen} />
     <Stack.Screen name="CheckIn" component={CheckInScreen} />
+    <Stack.Screen name="Profile" component={ProfileScreen} />
+    <Stack.Screen name="MyPlaces" component={MyPlacesScreen} />
+    <Stack.Screen name="Support" component={SupportScreen} />
+    <Stack.Screen name="Messages" component={MessagesScreen} />
   </Stack.Navigator>
 );
 

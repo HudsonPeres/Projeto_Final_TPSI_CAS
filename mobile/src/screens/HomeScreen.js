@@ -41,6 +41,7 @@ export default function HomeScreen({ navigation }) {
   const [places, setPlaces] = useState([]);
   const [loading, setLoading] = useState(true);
   const [modalVisible, setModalVisible] = useState(false);
+  const [menuVisible, setMenuVisible] = useState(false);
 
   const [minPrice, setMinPrice] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
@@ -117,8 +118,8 @@ export default function HomeScreen({ navigation }) {
   }, [fetchPlaces]);
 
   const closeModal = () => {
-    Keyboard.dismiss(); // recolhe o teclado
-    setModalVisible(false); // fecha o modal
+    Keyboard.dismiss();
+    setModalVisible(false);
   };
 
   const renderItem = ({ item }) => (
@@ -151,8 +152,11 @@ export default function HomeScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
-      {/* Cabeçalho com saudação e botão de filtro */}
+      {/* Cabeçalho com menu hambúrguer */}
       <View style={styles.header}>
+        <TouchableOpacity onPress={() => setMenuVisible(true)}>
+          <Text style={styles.menuIcon}>☰</Text>
+        </TouchableOpacity>
         <Text style={styles.greeting}>
           Bem‑vindo(a), {user?.name?.split(" ")[0]}
         </Text>
@@ -194,13 +198,11 @@ export default function HomeScreen({ navigation }) {
           activeOpacity={1}
           onPress={closeModal}
         >
-          
           <TouchableOpacity
             style={styles.modalContent}
             activeOpacity={1}
-            onPress={() => {}} 
+            onPress={() => {}}
           >
-           
             <TouchableWithoutFeedback
               onPress={Keyboard.dismiss}
               accessible={false}
@@ -321,6 +323,79 @@ export default function HomeScreen({ navigation }) {
           </TouchableOpacity>
         </TouchableOpacity>
       </Modal>
+
+      {/* Modal do Menu Principal */}
+      <Modal
+        visible={menuVisible}
+        animationType="fade"
+        transparent
+        onRequestClose={() => setMenuVisible(false)}
+      >
+        <TouchableOpacity
+          style={styles.menuOverlay}
+          activeOpacity={1}
+          onPress={() => setMenuVisible(false)}
+        >
+          <View style={styles.menuContainer}>
+            <TouchableOpacity
+              style={styles.menuItem}
+              onPress={() => {
+                setMenuVisible(false);
+                navigation.navigate("Profile");
+              }}
+            >
+              <Text style={styles.menuItemText}>Perfil</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.menuItem}
+              onPress={() => {
+                setMenuVisible(false);
+                navigation.navigate("Bookings");
+              }}
+            >
+              <Text style={styles.menuItemText}>Reservas</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.menuItem}
+              onPress={() => {
+                setMenuVisible(false);
+                navigation.navigate("MyPlaces");
+              }}
+            >
+              <Text style={styles.menuItemText}>Meus anúncios</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.menuItem}
+              onPress={() => {
+                setMenuVisible(false);
+                navigation.navigate("Messages");
+              }}
+            >
+              <Text style={styles.menuItemText}>Mensagens</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.menuItem}
+              onPress={() => {
+                setMenuVisible(false);
+                navigation.navigate("Support");
+              }}
+            >
+              <Text style={styles.menuItemText}>Suporte</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.menuItem, styles.logoutItem]}
+              onPress={() => {
+                setMenuVisible(false);
+                logout();
+              }}
+            >
+              <Text style={[styles.menuItemText, { color: "#e53935" }]}>
+                Encerrar sessão
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </View>
   );
 }
@@ -335,7 +410,14 @@ const styles = StyleSheet.create({
     paddingTop: 50,
     paddingBottom: 12,
   },
-  greeting: { fontSize: 20, fontWeight: "bold", color: COLORS.textLight },
+  menuIcon: { fontSize: 24, color: COLORS.textLight },
+  greeting: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: COLORS.textLight,
+    flex: 1,
+    marginLeft: 12,
+  },
   filterButton: {
     backgroundColor: COLORS.primary,
     paddingVertical: 8,
@@ -369,7 +451,7 @@ const styles = StyleSheet.create({
   cardPrice: { fontSize: 16, fontWeight: "bold", color: COLORS.primary },
   cardGuests: { fontSize: 13, color: "#888" },
   emptyText: { textAlign: "center", marginTop: 40, color: "#999" },
-  // Modal
+  // Modal de Filtros
   modalOverlay: {
     flex: 1,
     justifyContent: "flex-end",
@@ -435,4 +517,32 @@ const styles = StyleSheet.create({
   clearButtonText: { color: "#666", fontWeight: "600" },
   applyButton: { backgroundColor: COLORS.primary },
   applyButtonText: { color: "#fff", fontWeight: "bold" },
+  // Menu Lateral
+  menuOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.4)",
+    justifyContent: "center",
+    alignItems: "flex-start",
+  },
+  menuContainer: {
+    width: 260,
+    backgroundColor: "#fff",
+    paddingVertical: 20,
+    paddingHorizontal: 16,
+    borderTopRightRadius: 24,
+    borderBottomRightRadius: 24,
+    shadowColor: "#000",
+    shadowOffset: { width: 2, height: 0 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  menuItem: {
+    paddingVertical: 14,
+    paddingHorizontal: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: "#f0f0f0",
+  },
+  menuItemText: { fontSize: 16, color: "#1b1b1b" },
+  logoutItem: { borderBottomWidth: 0, marginTop: 8 },
 });
