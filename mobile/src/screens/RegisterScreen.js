@@ -78,7 +78,7 @@ export default function RegisterScreen({ navigation }) {
     }
   };
 
-  // Componente do ícone Google (SVG igual ao do LoginScreen)
+  // Componente do ícone Google
   const GoogleIcon = () => (
     <Svg width="20" height="20" viewBox="0 0 24 24">
       <Path

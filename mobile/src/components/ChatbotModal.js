@@ -16,7 +16,7 @@ import { useChatbot } from "../contexts/ChatbotContext";
 
 const { height } = Dimensions.get("window");
 
-// Modelo atualizado para gemini-2.5-flash-lite
+// Modelo gemini-2.5-flash-lite
 const GEMINI_URL =
   "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent";
 

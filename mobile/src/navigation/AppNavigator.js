@@ -73,17 +73,15 @@ function ProfileStack() {
   );
 }
 
-// ✅ Nova stack para "Meus Anúncios" como aba independente
 function MyPlacesStack() {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="MyPlacesMain" component={MyPlacesScreen} />
-      {/* Se mais tarde quiser adicionar um ecrã de detalhe do anúncio a partir daqui, pode fazê‑lo */}
     </Stack.Navigator>
   );
 }
 
-// ---------- Tab Navigator ----------
+// Tab Navigator
 
 function TabNavigator() {
   return (
@@ -122,7 +120,7 @@ function TabNavigator() {
         component={BookingsStack}
         options={{ tabBarLabel: "Reservas" }}
       />
-      {/* ✅ Nova aba Meus Anúncios */}
+
       <Tab.Screen
         name="MyPlacesTab"
         component={MyPlacesStack}
@@ -141,8 +139,6 @@ function TabNavigator() {
     </Tab.Navigator>
   );
 }
-
-// ---------- Autenticação ----------
 
 const AuthStack = () => (
   <Stack.Navigator screenOptions={{ headerShown: false }}>

@@ -26,7 +26,7 @@ const ReviewForm = ({ booking, onClose, onSuccess }) => {
           type: "host",
         });
       }
-      // Depois, avaliar experiência (se nota >0)
+      // avaliar experiência (se nota >0)
       if (ratingExperience > 0) {
         await axios.post("/reviews", {
           bookingId: booking._id,

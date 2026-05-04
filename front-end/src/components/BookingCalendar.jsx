@@ -55,7 +55,7 @@ const BookingCalendar = ({ placeId, onDateChange, isMultiDay = true }) => {
           setSelectedDates(value);
           onDateChange({ startDate: value[0], endDate: value[1] });
         } else if (value instanceof Date) {
-          // selecionou uma única data (modo range mas só clicou uma)
+          // selecionou uma única data
           setSelectedDates([value, value]);
           onDateChange({ startDate: value, endDate: value });
         }
@@ -65,7 +65,6 @@ const BookingCalendar = ({ placeId, onDateChange, isMultiDay = true }) => {
           setSelectedDates(value);
           onDateChange({ startDate: value, endDate: value });
         } else {
-          // pode ser array se clicar duas vezes? forçar start = end
           if (Array.isArray(value) && value.length > 0) {
             const single = value[0];
             setSelectedDates(single);

@@ -35,7 +35,7 @@ export const sendtoS3 = async (filename, path, mimetype) => {
   });
 
   try {
-    await client.send(command); // ← command com 'mm'
+    await client.send(command);
     return `https://${BUCKET}.s3.eu-north-1.amazonaws.com/${filename}`;
   } catch (error) {
     console.error("Erro S3:", error);

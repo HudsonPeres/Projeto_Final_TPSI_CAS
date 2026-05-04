@@ -20,7 +20,7 @@ import BackButton from "../components/BackButton";
 
 const { width } = Dimensions.get("window");
 
-// Lista fixa de comodidades (mesma da web)
+// Lista fixa de comodidades )
 const PERKS_OPTIONS = [
   { key: "wifi", label: "Wifi" },
   { key: "parking", label: "Estacionamento gratuito" },
@@ -35,7 +35,7 @@ export default function PlaceFormScreen({ route, navigation }) {
   const [address, setAddress] = useState("");
   const [description, setDescription] = useState("");
   const [extras, setExtras] = useState("");
-  const [perks, setPerks] = useState([]); // agora array de strings
+  const [perks, setPerks] = useState([]);
   const [price, setPrice] = useState("");
   const [checkin, setCheckin] = useState("");
   const [checkout, setCheckout] = useState("");
@@ -60,7 +60,7 @@ export default function PlaceFormScreen({ route, navigation }) {
           setAddress(p.address);
           setDescription(p.description);
           setExtras(p.extras || "");
-          setPerks(p.perks || []); // array direto
+          setPerks(p.perks || []);
           setPrice(String(p.price));
           setCheckin(p.checkin || "");
           setCheckout(p.checkout || "");
@@ -292,7 +292,7 @@ export default function PlaceFormScreen({ route, navigation }) {
       <Text style={styles.label}>Extras (ex: alimentação, transporte)</Text>
       <TextInput style={styles.input} value={extras} onChangeText={setExtras} />
 
-      {/* ✅ Novo seletor de comodidades */}
+      {/* seletor de comodidades */}
       <Text style={styles.label}>Comodidades</Text>
       <View style={styles.perksContainer}>
         {PERKS_OPTIONS.map((perk) => {
@@ -469,7 +469,7 @@ const styles = StyleSheet.create({
   },
   map: { flex: 1 },
   coordsText: { fontSize: 12, color: "#666", marginTop: 4 },
-  // ✅ Novos estilos de perks
+
   perksContainer: {
     flexDirection: "row",
     flexWrap: "wrap",

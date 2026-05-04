@@ -40,7 +40,7 @@ router.get("/conversations", async (req, res) => {
             : null,
           place: conv.place,
           updatedAt: conv.updatedAt,
-          unreadCount, // ← novo campo
+          unreadCount,
         };
       }),
     );
@@ -111,7 +111,7 @@ router.post("/conversations/:id/messages", async (req, res) => {
   }
 });
 
-// iniciar conversa (ou obter existente)
+// iniciar conversa
 router.post("/conversations/start", async (req, res) => {
   connectDB();
   try {

@@ -78,7 +78,7 @@ const NewPlace = () => {
   const [availableDates, setAvailableDates] = useState([]);
   const [bookingType, setBookingType] = useState("single");
 
-  const [location, setLocation] = useState(null); // { lat, lng } ou null
+  const [location, setLocation] = useState(null); 
   const [showMap, setShowMap] = useState(false); // toggle para mostrar/ocultar o mapa
 
   useEffect(() => {
@@ -151,7 +151,7 @@ const NewPlace = () => {
               guests,
               availableDates,
               isMultiDay,
-              location: locationField, // ✅ NOVO
+              location: locationField, 
             },
             {
               onUploadProgress: (progressEvent) => {
@@ -179,7 +179,7 @@ const NewPlace = () => {
               guests,
               availableDates,
               isMultiDay,
-              location: locationField, // ✅ NOVO
+              location: locationField, 
             },
             {
               onUploadProgress: (progressEvent) => {
@@ -232,7 +232,7 @@ const NewPlace = () => {
         />
       </div>
 
-      {/* ✅ NOVO – secção do mapa */}
+      {/* seção do mapa */}
       <div className="flex flex-col gap-2">
         <div className="flex items-center gap-4">
           <h2 className="ml-2 text-2xl font-bold">Localização</h2>

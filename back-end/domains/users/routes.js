@@ -22,11 +22,10 @@ router.get("/", async (req, res) => {
   }
 });
 
-// ==================== ROTA /profile CORRIGIDA ====================
 router.get("/profile", async (req, res) => {
   try {
     const userInfo = await JWTVerify(req);
-    // Verifica se o token é válido (JWTVerify pode retornar null ou lançar erro)
+    // Verifica se o token é válido
     if (!userInfo) {
       return res.status(401).json({ message: "Não autenticado" });
     }
@@ -40,7 +39,6 @@ router.get("/profile", async (req, res) => {
     res.status(500).json({ message: "Erro ao buscar perfil" });
   }
 });
-// ================================================================
 
 router.put("/profile", async (req, res) => {
   connectDB();

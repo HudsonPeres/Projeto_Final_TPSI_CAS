@@ -94,7 +94,7 @@ router.post("/", async (req, res) => {
         booking: bookingId,
         reviewer: userId,
         target: booking.user,
-        ratingHost, // aqui pode ser a nota para o hóspede (reutilizamos o campo)
+        ratingHost,
         comment,
         type,
         expiresAt: new Date(checkoutDate.getTime() + 7 * 24 * 60 * 60 * 1000),

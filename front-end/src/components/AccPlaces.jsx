@@ -170,7 +170,7 @@ const AccPlaces = () => {
             </div>
           </div>
 
-          {/* Lista de anúncios - card com 15% de redução */}
+          {/* Lista de anúncios  */}
           {paginatedPlaces.length === 0 ? (
             <p className="text-center text-gray-500">
               Nenhum anúncio encontrado com os filtros aplicados.

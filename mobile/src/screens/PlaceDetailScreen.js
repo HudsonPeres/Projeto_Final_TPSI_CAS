@@ -117,7 +117,6 @@ export default function PlaceDetailScreen({ route, navigation }) {
       const res = await api.get(`/reviews/place/${id}`);
       setReviewsData(res.data);
     } catch (err) {
-      // silencioso
     } finally {
       setReviewsLoading(false);
     }
@@ -376,7 +375,7 @@ export default function PlaceDetailScreen({ route, navigation }) {
       };
 
       const res = await api.post("/bookings", bookingData);
-      // Atualiza a reserva ativa para refletir a nova reserva
+      // Atualiza a reserva ativa para a nova reserva
       setActiveBooking(res.data);
       Alert.alert(
         "Reserva confirmada!",
@@ -446,7 +445,7 @@ export default function PlaceDetailScreen({ route, navigation }) {
   return (
     <View style={styles.fullScreen}>
       <ScrollView contentContainerStyle={styles.container}>
-        {/* Galeria com setas e indicadores */}
+        {/* Galeria */}
         {place.photos && place.photos.length > 0 && (
           <View style={styles.galleryWrapper}>
             {galleryIndex > 0 && (
@@ -640,7 +639,7 @@ export default function PlaceDetailScreen({ route, navigation }) {
             </View>
           )}
 
-          {/* Calendário (oculto se houver reserva ativa) */}
+          {/* Calendário  */}
           {!hasActiveBooking && (
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Disponibilidade</Text>

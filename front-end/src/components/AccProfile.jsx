@@ -25,7 +25,7 @@ export const AccProfile = () => {
     totalGuest: 0,
   });
 
-  // Estados para alteração de email/password (já existentes)
+  // alteração de email/password
   const [emailStep, setEmailStep] = useState("idle");
   const [emailOtp, setEmailOtp] = useState("");
   const [newEmail, setNewEmail] = useState("");
@@ -80,7 +80,7 @@ export const AccProfile = () => {
     }
   };
 
-  // --- Funções para Alterar Email ---
+  // Alterar Email
   const requestEmailChange = async () => {
     setEmailMessage("");
     try {
@@ -115,7 +115,7 @@ export const AccProfile = () => {
     }
   };
 
-  // --- Funções para Alterar Palavra-passe ---
+  // Alterar passe
   const validatePassword = (pwd) => {
     const hasUpper = /[A-Z]/.test(pwd);
     const hasSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(pwd);

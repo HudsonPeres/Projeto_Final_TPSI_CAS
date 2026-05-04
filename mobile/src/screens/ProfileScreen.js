@@ -22,7 +22,7 @@ export default function ProfileScreen({ navigation }) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  // Campo único para nome completo
+  // nome completo
   const [fullName, setFullName] = useState("");
 
   const [address, setAddress] = useState("");
@@ -45,7 +45,7 @@ export default function ProfileScreen({ navigation }) {
       const res = await api.get("/users/profile");
       const p = res.data;
       setProfile(p);
-      // Prioriza fullName; se vazio, usa name
+
       setFullName(p.fullName || p.name || "");
       setAddress(p.address || "");
       setPhoneCode(p.phoneCode || "+351");
@@ -65,7 +65,6 @@ export default function ProfileScreen({ navigation }) {
       const res = await api.get(`/reviews/user/${user._id}`);
       setReviews(res.data);
     } catch (error) {
-      // Silencioso
     } finally {
       setReviewsLoading(false);
     }
@@ -83,7 +82,7 @@ export default function ProfileScreen({ navigation }) {
     try {
       const payload = {
         name: fullName, // mantém o nome de exibição sincronizado
-        fullName, // atualiza também o campo fullName
+        fullName,
         address,
         phoneCode,
         phone,

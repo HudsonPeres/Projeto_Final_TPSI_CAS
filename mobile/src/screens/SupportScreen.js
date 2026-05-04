@@ -13,7 +13,7 @@ import {
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import api from "../services/api";
-import BackButton from "../components/BackButton"; // ✅ IMPORTADO
+import BackButton from "../components/BackButton";
 
 const COLORS = {
   primary: "#e53935",
@@ -38,7 +38,6 @@ export default function SupportScreen() {
       const res = await api.get("/demands/my");
       setDemands(res.data);
     } catch (error) {
-      // silencioso
     } finally {
       setLoading(false);
     }
@@ -108,7 +107,7 @@ export default function SupportScreen() {
       behavior={Platform.OS === "ios" ? "padding" : undefined}
       keyboardVerticalOffset={90}
     >
-      {/* ✅ HEADER COM BOTÃO */}
+      {/* HEADER COM BOTÃO */}
       <View style={styles.headerContainer}>
         <BackButton />
         <Text style={styles.header}>Suporte</Text>
@@ -175,7 +174,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
 
-  // ✅ NOVO
   headerContainer: {
     flexDirection: "row",
     alignItems: "center",

@@ -106,7 +106,7 @@ export default function HostReviewsScreen() {
 
   return (
     <View style={styles.container}>
-      {/* ✅ HEADER COM BOTÃO */}
+      {/* HEADER COM BOTÃO */}
       <View style={styles.headerContainer}>
         <BackButton />
         <Text style={styles.header}>Avaliações Pendentes</Text>
@@ -141,7 +141,6 @@ const styles = StyleSheet.create({
   },
   centered: { flex: 1, justifyContent: "center", alignItems: "center" },
 
-  // ✅ NOVO
   headerContainer: {
     flexDirection: "row",
     alignItems: "center",

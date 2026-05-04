@@ -59,12 +59,12 @@ router.post("/", async (req, res) => {
     req.body;
 
   try {
-    // 1. Buscar o lugar
+    // Buscar o lugar
     const placeDoc = await Place.findById(place);
     if (!placeDoc)
       return res.status(404).json({ message: "Lugar não encontrado" });
 
-    // 2. Validar número de participantes
+    // Validar número de participantes
     if (guests > placeDoc.guests) {
       return res
         .status(400)
@@ -83,7 +83,7 @@ router.post("/", async (req, res) => {
       }
     }
 
-    // 3. Verificar se todas as datas estão dentro de availableDates
+    //  Verificar se todas as datas estão dentro de availableDates
     if (placeDoc.availableDates && placeDoc.availableDates.length > 0) {
       let allAvailable = true;
       let current = new Date(startDate);
@@ -106,7 +106,7 @@ router.post("/", async (req, res) => {
         return res.status(409).json({ message: "Data não disponível" });
     }
 
-    // 4. Verificar conflito com outras reservas confirmadas
+    // Verificar conflito com outras reservas confirmadas
     const checkinMs = startDate.getTime();
     const checkoutMs = endDate.getTime();
 
@@ -145,7 +145,7 @@ router.post("/", async (req, res) => {
 
     const bookingCode = generateBookingCode();
 
-    // 5. Criar a reserva
+    // Criar a reserva
     const newBookingDoc = await Booking.create({
       place,
       user,
@@ -159,7 +159,7 @@ router.post("/", async (req, res) => {
       bookingCode,
     });
 
-    // 6. Enviar mensagem automática com código da reserva
+    // Enviar mensagem automática com código da reserva
     try {
       const placeInfo = await Place.findById(place);
       if (placeInfo && placeInfo.owner) {
@@ -206,7 +206,7 @@ router.post("/", async (req, res) => {
       );
     }
 
-    // 7. Enviar email com PDF de confirmação
+    //Enviar email com PDF de confirmação
     try {
       const guest = await User.findById(user);
       if (guest && guest.email) {
@@ -328,7 +328,6 @@ router.patch("/admin/:id/reactivate", isAdmin, async (req, res) => {
     const booking = await Booking.findById(id);
     if (!booking) return res.status(404).json("Reserva não encontrada");
     booking.status = "confirmed";
-    // Se for reativada, removemos o cancelledBy (opcional)
     booking.cancelledBy = null;
     await booking.save();
     res.json({ message: "Reserva reativada", status: booking.status });
@@ -620,18 +619,18 @@ router.get("/host", async (req, res) => {
   }
 });
 
-// REENVIO DE COMPROVATIVO
+// reenvia o comprovante
 router.post("/:id/resend-voucher", async (req, res) => {
   connectDB();
   const { id } = req.params;
   try {
-    // 1. Obter a reserva e o lugar associado
+    // Obter a reserva e o lugar associado
     const booking = await Booking.findById(id).populate("place");
     if (!booking) {
       return res.status(404).json({ message: "Reserva não encontrada" });
     }
 
-    // 2. Permitir apenas para reservas confirmadas
+    // Permitir apenas para reservas confirmadas
     if (booking.status !== "confirmed") {
       return res.status(400).json({
         message:
@@ -639,7 +638,7 @@ router.post("/:id/resend-voucher", async (req, res) => {
       });
     }
 
-    // 3. Obter o utilizador (hóspede)
+    // Obter o utilizador
     const guest = await User.findById(booking.user);
     if (!guest || !guest.email) {
       return res
@@ -647,10 +646,10 @@ router.post("/:id/resend-voucher", async (req, res) => {
         .json({ message: "Email do hóspede não encontrado." });
     }
 
-    // 4. Gerar o PDF
+    // Gerar o PDF
     const pdfBuffer = await generateBookingPDF(booking, booking.place);
 
-    // 5. Enviar email com o PDF em anexo
+    // Enviar email com o PDF em anexo
     await sendEmail({
       to: guest.email,
       subject: `Reenvio do comprovativo - ${booking.bookingCode}`,

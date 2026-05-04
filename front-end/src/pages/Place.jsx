@@ -49,7 +49,7 @@ const Place = () => {
     );
   };
 
-  // ✅ Função memoizada para buscar reserva ativa
+  //  buscar reserva ativa
   const checkActiveBooking = useCallback(
     async (placeId) => {
       if (!user) return;

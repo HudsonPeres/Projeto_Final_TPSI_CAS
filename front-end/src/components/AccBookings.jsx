@@ -35,12 +35,11 @@ const AccBookings = () => {
     return true;
   });
 
-  // Ordenação
   const sortedBookings = [...filteredBookings].sort((a, b) => {
     const getPriority = (status) => {
       if (status === "confirmed" || status === "checked_in") return 1;
       if (status === "completed") return 2;
-      return 3; // cancelled e outros
+      return 3;
     };
     const priorityA = getPriority(a.status);
     const priorityB = getPriority(b.status);
@@ -127,7 +126,7 @@ const AccBookings = () => {
         </div>
       </div>
 
-      {/* Lista de reservas ordenadas */}
+      {/* Lista de reservas  */}
       {sortedBookings.length === 0 ? (
         <p className="text-center text-gray-500">Nenhuma reserva encontrada.</p>
       ) : (

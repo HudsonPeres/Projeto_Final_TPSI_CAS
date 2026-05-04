@@ -37,19 +37,19 @@ const UserManager = () => {
     }
   };
 
-  // 1. Filtragem por nome
+  // Filtragem por nome
   const filteredUsers = users.filter(
     (user) =>
       user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       user.email.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
-  // 2. Ordenação Alfabética (padrão)
+  // Ordenação Alfabética
   const sortedUsers = [...filteredUsers].sort((a, b) =>
     a.name.localeCompare(b.name),
   );
 
-  // 3. Lógica de Paginação
+  // Lógica de Paginação
   const indexOfLastUser = currentPage * usersPerPage;
   const indexOfFirstUser = indexOfLastUser - usersPerPage;
   const currentUsers = sortedUsers.slice(indexOfFirstUser, indexOfLastUser);

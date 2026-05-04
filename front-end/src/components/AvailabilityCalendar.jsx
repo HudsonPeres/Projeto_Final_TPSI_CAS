@@ -4,7 +4,6 @@ import "react-calendar/dist/Calendar.css";
 
 const AvailabilityCalendar = ({ selectedDates, setSelectedDates }) => {
   const handleDateChange = (date) => {
-    // `date` é o valor selecionado (Date)
     const isSelected = selectedDates.some(
       (d) => d.toDateString() === date.toDateString(),
     );

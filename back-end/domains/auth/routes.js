@@ -77,7 +77,6 @@ router.post("/request-otp", async (req, res) => {
     used: false,
   });
 
-  // ✅ Envio do email com tratamento de erro (não bloqueia a resposta)
   try {
     await sendTokenEmail(email, type, otp);
     res.json({
@@ -85,10 +84,9 @@ router.post("/request-otp", async (req, res) => {
     });
   } catch (emailError) {
     console.error("Erro ao enviar email OTP:", emailError);
-    // Ainda assim devolve o OTP (para depuração, remover em produção)
     res.json({
       message: `Código gerado, mas o email falhou. Tente reenviar mais tarde.`,
-      otp, // ⚠️ Apenas para testes – retire em produção
+      otp,
     });
   }
 });
@@ -341,7 +339,7 @@ router.post("/google/mobile", async (req, res) => {
     // Reutilizar a mesma lógica de criação/login do Google
     const user = await findOrCreateUser(profile);
 
-    // Gerar JWT e devolver (sem cookie, o mobile guarda o token manualmente)
+    // Gerar JWT e devolver
     const token = jwt.sign(
       { _id: user._id, name: user.name, email: user.email, role: user.role },
       process.env.JWT_SECRET_KEY,

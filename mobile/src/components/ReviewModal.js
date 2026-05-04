@@ -73,7 +73,7 @@ export default function ReviewModal({
         await api.post("/reviews", {
           bookingId: booking._id,
           type: "guest",
-          ratingHost, // ratingHost usado como nota para o hóspede
+          ratingHost,
           comment,
         });
       }

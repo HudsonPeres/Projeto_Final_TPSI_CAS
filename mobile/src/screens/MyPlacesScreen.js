@@ -108,7 +108,7 @@ export default function MyPlacesScreen({ navigation }) {
         </TouchableOpacity>
       </View>
 
-      {/* Novo botão para as reservas recebidas */}
+      {/*  botão para as reservas recebidas */}
       <TouchableOpacity
         style={styles.hostBookingsButton}
         onPress={() =>

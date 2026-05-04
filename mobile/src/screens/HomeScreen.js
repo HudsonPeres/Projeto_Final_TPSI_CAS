@@ -131,7 +131,7 @@ export default function HomeScreen({ navigation }) {
     fetchPlaces();
   }, [fetchPlaces]);
 
-  // Atualiza a lista silenciosamente sempre que o ecrã ganha foco
+  // Atualiza a lista sempre que o ecrã ganha foco
   useFocusEffect(
     useCallback(() => {
       fetchPlaces({ silent: true });
@@ -143,7 +143,6 @@ export default function HomeScreen({ navigation }) {
     setModalVisible(false);
   };
 
-  // Função para pull-to-refresh
   const handleRefresh = () => {
     fetchPlaces({ silent: true });
   };
@@ -215,7 +214,7 @@ export default function HomeScreen({ navigation }) {
         />
       )}
 
-      {/* Modal dos Filtros (inalterado) */}
+      {/* Modal dos Filtros  */}
       <Modal
         visible={modalVisible}
         animationType="slide"
@@ -442,7 +441,6 @@ export default function HomeScreen({ navigation }) {
   );
 }
 
-// Estilos mantidos exatamente como no código anterior
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.backgroundLight },
   header: {

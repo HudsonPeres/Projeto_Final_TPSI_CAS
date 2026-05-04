@@ -29,7 +29,7 @@ export default function ChangePasswordScreen({ navigation }) {
       await api.post("/auth/request-otp", {
         email: user.email,
         type: "change_password",
-        password: newPassword, // será validada no backend
+        password: newPassword, // validado no backend
       });
       setStep(2);
     } catch (error) {

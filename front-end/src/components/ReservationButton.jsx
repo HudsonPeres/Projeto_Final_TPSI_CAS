@@ -40,7 +40,7 @@ const ReservationButton = ({ onClick, loading, progress, isSuccess }) => {
     );
   }
 
-  // Estado normal – botão vermelho com hover verde
+  // botão vermelho com hover verde
   return (
     <button
       onClick={onClick}

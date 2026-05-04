@@ -17,7 +17,6 @@ const Header = () => {
           <img className="h-11" src={logo} alt="Logo Viva Portugal" />
         </Link>
 
-        {/* Barra de pesquisa "falsa" (apenas para desktop) */}
         <button
           onClick={() => setIsSearchOpen(true)}
           className="hidden items-center gap-2 rounded-full border border-gray-300 py-2 pr-4 pl-6 shadow-md transition hover:shadow-lg lg:flex"
@@ -43,7 +42,6 @@ const Header = () => {
           </div>
         </button>
 
-        {/* Botão de pesquisa apenas para mobile */}
         <button
           onClick={() => setIsSearchOpen(true)}
           className="rounded-full p-2 text-gray-600 hover:bg-gray-100 lg:hidden"

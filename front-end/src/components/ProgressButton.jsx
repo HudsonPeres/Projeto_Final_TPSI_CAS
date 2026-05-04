@@ -3,9 +3,6 @@ import { useState } from "react";
 const ProgressButton = ({ text, onClick, isLoading, isSuccess, progress }) => {
   const [internalProgress, setInternalProgress] = useState(0);
 
-  // Se você quiser simular progresso (opcional), pode usar useEffect
-  // Mas o ideal é receber o progresso real do axios (onUploadProgress)
-
   if (isSuccess) {
     return (
       <button className="bg-secondary-400 flex cursor-pointer items-center justify-center gap-2 rounded-full px-4 py-2 text-white transition-all">
