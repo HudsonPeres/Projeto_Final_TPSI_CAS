@@ -43,7 +43,12 @@ export default function MyPlacesScreen({ navigation }) {
       </Text>
       <TouchableOpacity
         style={styles.editButton}
-        onPress={() => navigation.navigate("PlaceForm", { placeId: item._id })}
+        onPress={() =>
+          navigation.navigate("HomeTab", {
+            screen: "PlaceForm",
+            params: { placeId: item._id },
+          })
+        }
       >
         <Text style={styles.editText}>Editar</Text>
       </TouchableOpacity>
@@ -57,7 +62,12 @@ export default function MyPlacesScreen({ navigation }) {
         <Text style={styles.title}>Meus Anúncios</Text>
         <TouchableOpacity
           style={styles.addButton}
-          onPress={() => navigation.navigate("PlaceForm", { placeId: null })}
+          onPress={() =>
+            navigation.navigate("HomeTab", {
+              screen: "PlaceForm",
+              params: { placeId: null },
+            })
+          }
         >
           <Text style={styles.addButtonText}>+ Novo</Text>
         </TouchableOpacity>

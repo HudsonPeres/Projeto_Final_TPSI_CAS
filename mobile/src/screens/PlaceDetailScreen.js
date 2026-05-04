@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
   View,
   Text,
@@ -10,13 +10,15 @@ import {
   StyleSheet,
   ActivityIndicator,
   Dimensions,
+  Modal,
+  FlatList,
 } from "react-native";
 import { Calendar } from "react-native-calendars";
 import api from "../services/api";
 import { useAuth } from "../contexts/AuthContext";
 import StarRating from "../components/StarRating";
 
-const { width } = Dimensions.get("window");
+const { width, height } = Dimensions.get("window");
 
 const COLORS = {
   primary: "#e53935",
@@ -58,17 +60,26 @@ export default function PlaceDetailScreen({ route, navigation }) {
   // Chat
   const [chatLoading, setChatLoading] = useState(false);
 
-  const isMultiDay = place?.isMultiDay ?? true;
-  const isOwner = place?.owner?._id === user._id; // 🔹 Verifica se é o anfitrião
+  // Galeria principal
+  const [galleryIndex, setGalleryIndex] = useState(0);
+  const [galleryVisible, setGalleryVisible] = useState(false);
+  const flatListRef = useRef(null);
 
-  // 🔹 Limpa seleções (reutilizável)
+  // Galeria do ecrã completo
+  const [fullGalleryIndex, setFullGalleryIndex] = useState(0);
+  const fullFlatListRef = useRef(null);
+
+  const isMultiDay = place?.isMultiDay ?? true;
+  const isOwner = place?.owner?._id === user._id;
+
+  // Limpa seleções
   const resetSelection = () => {
     setSelectedStart(null);
     setSelectedEnd(null);
     setGuests(1);
   };
 
-  // 🔹 Limpar ao sair do ecrã
+  // Limpar ao sair do ecrã
   useEffect(() => {
     const unsubscribe = navigation.addListener("beforeRemove", () => {
       resetSelection();
@@ -109,6 +120,46 @@ export default function PlaceDetailScreen({ route, navigation }) {
     fetchReviews();
   }, [fetchData, fetchReviews]);
 
+  // Navegação da galeria principal
+  const goToNextPhoto = () => {
+    if (place?.photos && galleryIndex < place.photos.length - 1) {
+      const nextIndex = galleryIndex + 1;
+      flatListRef.current?.scrollToIndex({ index: nextIndex, animated: true });
+      setGalleryIndex(nextIndex);
+    }
+  };
+
+  const goToPrevPhoto = () => {
+    if (galleryIndex > 0) {
+      const prevIndex = galleryIndex - 1;
+      flatListRef.current?.scrollToIndex({ index: prevIndex, animated: true });
+      setGalleryIndex(prevIndex);
+    }
+  };
+
+  // Navegação do ecrã completo
+  const goToNextFullPhoto = () => {
+    if (place?.photos && fullGalleryIndex < place.photos.length - 1) {
+      const nextIndex = fullGalleryIndex + 1;
+      fullFlatListRef.current?.scrollToIndex({
+        index: nextIndex,
+        animated: true,
+      });
+      setFullGalleryIndex(nextIndex);
+    }
+  };
+
+  const goToPrevFullPhoto = () => {
+    if (fullGalleryIndex > 0) {
+      const prevIndex = fullGalleryIndex - 1;
+      fullFlatListRef.current?.scrollToIndex({
+        index: prevIndex,
+        animated: true,
+      });
+      setFullGalleryIndex(prevIndex);
+    }
+  };
+
   const handleContactHost = async () => {
     if (!place?.owner?._id) {
       Alert.alert("Erro", "Não foi possível identificar o anfitrião.");
@@ -133,7 +184,6 @@ export default function PlaceDetailScreen({ route, navigation }) {
     }
   };
 
-  // 🔹 Função auxiliar: verifica se uma data é "disponível"
   const isDateAvailable = (dateStr) => {
     if (availability.bookedDates.includes(dateStr)) return false;
     if (
@@ -285,7 +335,7 @@ export default function PlaceDetailScreen({ route, navigation }) {
           {
             text: "OK",
             onPress: () => {
-              resetSelection(); // 🔹 limpa seleção após reserva
+              resetSelection();
               navigation.navigate("Home");
             },
           },
@@ -298,6 +348,27 @@ export default function PlaceDetailScreen({ route, navigation }) {
       setBookingLoading(false);
     }
   };
+
+  const renderGalleryItem = ({ item }) => (
+    <TouchableOpacity
+      activeOpacity={0.9}
+      onPress={() => setGalleryVisible(true)}
+    >
+      <Image
+        source={{ uri: item }}
+        style={styles.galleryImage}
+        resizeMode="cover"
+      />
+    </TouchableOpacity>
+  );
+
+  const renderFullImage = ({ item }) => (
+    <Image
+      source={{ uri: item }}
+      style={styles.fullImage}
+      resizeMode="contain"
+    />
+  );
 
   if (loading) {
     return (
@@ -323,222 +394,356 @@ export default function PlaceDetailScreen({ route, navigation }) {
   const nights = calculateNights();
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      {/* Galeria de fotos */}
-      {place.photos && place.photos.length > 0 && (
-        <ScrollView
-          horizontal
-          pagingEnabled
-          showsHorizontalScrollIndicator={false}
-          style={styles.gallery}
-        >
-          {place.photos.map((uri, index) => (
-            <Image
-              key={index}
-              source={{ uri }}
-              style={styles.galleryImage}
-              resizeMode="cover"
+    <View style={styles.fullScreen}>
+      <ScrollView contentContainerStyle={styles.container}>
+        {/* Galeria com setas e indicadores */}
+        {place.photos && place.photos.length > 0 && (
+          <View style={styles.galleryWrapper}>
+            {/* Setas sobrepostas */}
+            {galleryIndex > 0 && (
+              <TouchableOpacity
+                style={styles.arrowLeft}
+                onPress={goToPrevPhoto}
+              >
+                <Text style={styles.arrowText}>‹</Text>
+              </TouchableOpacity>
+            )}
+            {galleryIndex < place.photos.length - 1 && (
+              <TouchableOpacity
+                style={styles.arrowRight}
+                onPress={goToNextPhoto}
+              >
+                <Text style={styles.arrowText}>›</Text>
+              </TouchableOpacity>
+            )}
+
+            <FlatList
+              ref={flatListRef}
+              data={place.photos}
+              renderItem={renderGalleryItem}
+              keyExtractor={(_, index) => index.toString()}
+              horizontal
+              pagingEnabled
+              showsHorizontalScrollIndicator={false}
+              onMomentumScrollEnd={(event) => {
+                const index = Math.round(
+                  event.nativeEvent.contentOffset.x / width,
+                );
+                setGalleryIndex(index);
+              }}
+              getItemLayout={(_, index) => ({
+                length: width,
+                offset: width * index,
+                index,
+              })}
+              initialScrollIndex={0}
             />
-          ))}
-        </ScrollView>
-      )}
 
-      <View style={styles.content}>
-        <Text style={styles.title}>{place.title}</Text>
-        <Text style={styles.address}>{place.address}</Text>
-        <Text style={styles.price}>
-          €{place.price} / {isMultiDay ? "diária" : "atividade"}
-        </Text>
-        <Text style={styles.description}>{place.description}</Text>
-
-        {/* Extras */}
-        {place.extras ? (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Extras</Text>
-            <Text style={styles.text}>{place.extras}</Text>
-          </View>
-        ) : null}
-
-        {/* Perks */}
-        {place.perks && place.perks.length > 0 && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Comodidades</Text>
-            {place.perks.map((perk, i) => (
-              <Text key={i} style={styles.perk}>
-                • {perk}
-              </Text>
-            ))}
+            {/* Indicadores */}
+            {place.photos.length > 1 && (
+              <View style={styles.dotsContainer}>
+                {place.photos.map((_, index) => (
+                  <View
+                    key={index}
+                    style={[
+                      styles.dot,
+                      index === galleryIndex
+                        ? styles.dotActive
+                        : styles.dotInactive,
+                    ]}
+                  />
+                ))}
+              </View>
+            )}
           </View>
         )}
 
-        {/* Botão Dúvidas? Me contacte */}
-        <TouchableOpacity
-          style={styles.contactButton}
-          onPress={handleContactHost}
-          disabled={chatLoading}
-        >
-          {chatLoading ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <Text style={styles.contactButtonText}>Dúvidas? Me contacte</Text>
-          )}
-        </TouchableOpacity>
+        <View style={styles.content}>
+          <Text style={styles.title}>{place.title}</Text>
+          <Text style={styles.address}>{place.address}</Text>
+          <Text style={styles.price}>
+            €{place.price} / {isMultiDay ? "diária" : "atividade"}
+          </Text>
+          <Text style={styles.description}>{place.description}</Text>
 
-        {/* Avaliações */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Avaliações</Text>
-          {reviewsLoading ? (
-            <ActivityIndicator size="small" color={COLORS.primary} />
-          ) : reviewsData.reviews.length > 0 ? (
-            <>
-              <View style={styles.avgRatingRow}>
-                <StarRating rating={Math.round(reviewsData.avg)} size={20} />
-                <Text style={styles.avgText}>
-                  {reviewsData.avg.toFixed(1)} ({reviewsData.total}{" "}
-                  {reviewsData.total === 1 ? "avaliação" : "avaliações"})
-                </Text>
-              </View>
-              {reviewsData.reviews.map((review) => (
-                <View key={review._id} style={styles.reviewCard}>
-                  <View style={styles.reviewHeader}>
-                    <Text style={styles.reviewerName}>
-                      {review.reviewer?.name || "Anónimo"}
-                    </Text>
-                    <StarRating rating={review.ratingExperience} size={16} />
-                  </View>
-                  {review.comment ? (
-                    <Text style={styles.reviewComment}>{review.comment}</Text>
-                  ) : null}
-                </View>
-              ))}
-            </>
-          ) : (
-            <Text style={styles.noReviews}>Nenhuma avaliação ainda.</Text>
-          )}
-        </View>
-
-        {/* Calendário */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Disponibilidade</Text>
-          <Calendar
-            markingType={isMultiDay ? "period" : "simple"}
-            markedDates={getMarkedDates()}
-            onDayPress={handleDayPress}
-            minDate={new Date().toISOString().split("T")[0]}
-            theme={{
-              todayTextColor: COLORS.accent,
-              selectedDayBackgroundColor: COLORS.accent,
-              arrowColor: COLORS.primary,
-            }}
-          />
-          <View style={styles.legend}>
-            <View
-              style={[styles.legendItem, { backgroundColor: COLORS.secondary }]}
-            />
-            <Text style={styles.legendText}>Disponível</Text>
-            <View
-              style={[styles.legendItem, { backgroundColor: COLORS.primary }]}
-            />
-            <Text style={styles.legendText}>Reservado</Text>
-            <View
-              style={[styles.legendItem, { backgroundColor: COLORS.accent }]}
-            />
-            <Text style={styles.legendText}>Selecionado</Text>
-          </View>
-        </View>
-
-        {/* 🔹 Se for o dono, mostra mensagem de bloqueio; caso contrário, mostra a área de reserva */}
-        {isOwner ? (
-          <View style={styles.ownerMessage}>
-            <Text style={styles.ownerMessageText}>
-              Você é o anfitrião deste anúncio e não pode reservar a sua própria
-              experiência.
-            </Text>
-          </View>
-        ) : (
-          <>
-            {/* Datas escolhidas */}
-            {selectedStart && (
-              <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Datas escolhidas</Text>
-                <Text style={styles.text}>
-                  Check‑in: {selectedStart}
-                  {isMultiDay
-                    ? `\nCheck‑out: ${selectedEnd || "não definida"}`
-                    : ""}
-                </Text>
-                {isMultiDay && selectedEnd && (
-                  <Text style={styles.text}>Noites: {nights}</Text>
-                )}
-                {isMultiDay && selectedStart && !selectedEnd && (
-                  <Text style={styles.hint}>Toque na data de saída</Text>
-                )}
-              </View>
-            )}
-
-            {/* Participantes */}
+          {/* Extras */}
+          {place.extras ? (
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>
-                Participantes (máx {place.guests})
-              </Text>
-              <TextInput
-                style={styles.input}
-                value={String(guests)}
-                onChangeText={(text) => {
-                  const num = parseInt(text, 10);
-                  if (!isNaN(num) && num >= 1 && num <= place.guests)
-                    setGuests(num);
-                  else if (text === "") setGuests("");
-                }}
-                keyboardType="numeric"
-                placeholder="Número de pessoas"
-              />
+              <Text style={styles.sectionTitle}>Extras</Text>
+              <Text style={styles.text}>{place.extras}</Text>
             </View>
+          ) : null}
 
-            {/* Total */}
-            {selectedStart && selectedEnd && nights > 0 && (
-              <View style={styles.section}>
-                <Text style={styles.total}>
-                  Total estimado: €{place.price * nights}
+          {/* Perks */}
+          {place.perks && place.perks.length > 0 && (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Comodidades</Text>
+              {place.perks.map((perk, i) => (
+                <Text key={i} style={styles.perk}>
+                  • {perk}
                 </Text>
-              </View>
-            )}
+              ))}
+            </View>
+          )}
 
-            {/* Reservar */}
-            <TouchableOpacity
-              style={[
-                styles.reserveButton,
-                (bookingLoading ||
+          {/* Botão Dúvidas? Me contacte */}
+          <TouchableOpacity
+            style={styles.contactButton}
+            onPress={handleContactHost}
+            disabled={chatLoading}
+          >
+            {chatLoading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.contactButtonText}>Dúvidas? Me contacte</Text>
+            )}
+          </TouchableOpacity>
+
+          {/* Avaliações */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Avaliações</Text>
+            {reviewsLoading ? (
+              <ActivityIndicator size="small" color={COLORS.primary} />
+            ) : reviewsData.reviews.length > 0 ? (
+              <>
+                <View style={styles.avgRatingRow}>
+                  <StarRating rating={Math.round(reviewsData.avg)} size={20} />
+                  <Text style={styles.avgText}>
+                    {reviewsData.avg.toFixed(1)} ({reviewsData.total}{" "}
+                    {reviewsData.total === 1 ? "avaliação" : "avaliações"})
+                  </Text>
+                </View>
+                {reviewsData.reviews.map((review) => (
+                  <View key={review._id} style={styles.reviewCard}>
+                    <View style={styles.reviewHeader}>
+                      <Text style={styles.reviewerName}>
+                        {review.reviewer?.name || "Anónimo"}
+                      </Text>
+                      <StarRating rating={review.ratingExperience} size={16} />
+                    </View>
+                    {review.comment ? (
+                      <Text style={styles.reviewComment}>{review.comment}</Text>
+                    ) : null}
+                  </View>
+                ))}
+              </>
+            ) : (
+              <Text style={styles.noReviews}>Nenhuma avaliação ainda.</Text>
+            )}
+          </View>
+
+          {/* Calendário */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Disponibilidade</Text>
+            <Calendar
+              markingType={isMultiDay ? "period" : "simple"}
+              markedDates={getMarkedDates()}
+              onDayPress={handleDayPress}
+              minDate={new Date().toISOString().split("T")[0]}
+              theme={{
+                todayTextColor: COLORS.accent,
+                selectedDayBackgroundColor: COLORS.accent,
+                arrowColor: COLORS.primary,
+              }}
+            />
+            <View style={styles.legend}>
+              <View
+                style={[
+                  styles.legendItem,
+                  { backgroundColor: COLORS.secondary },
+                ]}
+              />
+              <Text style={styles.legendText}>Disponível</Text>
+              <View
+                style={[styles.legendItem, { backgroundColor: COLORS.primary }]}
+              />
+              <Text style={styles.legendText}>Reservado</Text>
+              <View
+                style={[styles.legendItem, { backgroundColor: COLORS.accent }]}
+              />
+              <Text style={styles.legendText}>Selecionado</Text>
+            </View>
+          </View>
+
+          {/* Bloqueio para anfitrião */}
+          {isOwner ? (
+            <View style={styles.ownerMessage}>
+              <Text style={styles.ownerMessageText}>
+                Você é o anfitrião deste anúncio e não pode reservar a sua
+                própria experiência.
+              </Text>
+            </View>
+          ) : (
+            <>
+              {/* Datas escolhidas */}
+              {selectedStart && (
+                <View style={styles.section}>
+                  <Text style={styles.sectionTitle}>Datas escolhidas</Text>
+                  <Text style={styles.text}>
+                    Check‑in: {selectedStart}
+                    {isMultiDay
+                      ? `\nCheck‑out: ${selectedEnd || "não definida"}`
+                      : ""}
+                  </Text>
+                  {isMultiDay && selectedEnd && (
+                    <Text style={styles.text}>Noites: {nights}</Text>
+                  )}
+                  {isMultiDay && selectedStart && !selectedEnd && (
+                    <Text style={styles.hint}>Toque na data de saída</Text>
+                  )}
+                </View>
+              )}
+
+              {/* Participantes */}
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>
+                  Participantes (máx {place.guests})
+                </Text>
+                <TextInput
+                  style={styles.input}
+                  value={String(guests)}
+                  onChangeText={(text) => {
+                    const num = parseInt(text, 10);
+                    if (!isNaN(num) && num >= 1 && num <= place.guests)
+                      setGuests(num);
+                    else if (text === "") setGuests("");
+                  }}
+                  keyboardType="numeric"
+                  placeholder="Número de pessoas"
+                />
+              </View>
+
+              {/* Total */}
+              {selectedStart && selectedEnd && nights > 0 && (
+                <View style={styles.section}>
+                  <Text style={styles.total}>
+                    Total estimado: €{place.price * nights}
+                  </Text>
+                </View>
+              )}
+
+              {/* Reservar */}
+              <TouchableOpacity
+                style={[
+                  styles.reserveButton,
+                  (bookingLoading ||
+                    !selectedStart ||
+                    (isMultiDay && !selectedEnd) ||
+                    !place) &&
+                    styles.disabledButton,
+                ]}
+                onPress={handleReserve}
+                disabled={
+                  bookingLoading ||
                   !selectedStart ||
                   (isMultiDay && !selectedEnd) ||
-                  !place) &&
-                  styles.disabledButton,
-              ]}
-              onPress={handleReserve}
-              disabled={
-                bookingLoading ||
-                !selectedStart ||
-                (isMultiDay && !selectedEnd) ||
-                !place
-              }
-            >
-              {bookingLoading ? (
-                <ActivityIndicator color="#fff" />
-              ) : (
-                <Text style={styles.reserveButtonText}>Reservar</Text>
+                  !place
+                }
+              >
+                {bookingLoading ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text style={styles.reserveButtonText}>Reservar</Text>
+                )}
+              </TouchableOpacity>
+            </>
+          )}
+        </View>
+      </ScrollView>
+
+      {/* Modal do carrossel de fotos (ecrã completo com setas) */}
+      <Modal
+        visible={galleryVisible}
+        animationType="fade"
+        transparent={true}
+        onRequestClose={() => setGalleryVisible(false)}
+      >
+        <TouchableOpacity
+          style={styles.galleryOverlay}
+          activeOpacity={1}
+          onPress={() => setGalleryVisible(false)}
+        >
+          <TouchableOpacity
+            style={styles.galleryCloseButton}
+            onPress={() => setGalleryVisible(false)}
+          >
+            <Text style={styles.galleryCloseText}>✕</Text>
+          </TouchableOpacity>
+
+          {/* Setas no ecrã completo */}
+          {place?.photos && place.photos.length > 1 && (
+            <>
+              {fullGalleryIndex > 0 && (
+                <TouchableOpacity
+                  style={styles.fullArrowLeft}
+                  onPress={goToPrevFullPhoto}
+                >
+                  <Text style={styles.fullArrowText}>‹</Text>
+                </TouchableOpacity>
               )}
-            </TouchableOpacity>
-          </>
-        )}
-      </View>
-    </ScrollView>
+              {fullGalleryIndex < place.photos.length - 1 && (
+                <TouchableOpacity
+                  style={styles.fullArrowRight}
+                  onPress={goToNextFullPhoto}
+                >
+                  <Text style={styles.fullArrowText}>›</Text>
+                </TouchableOpacity>
+              )}
+            </>
+          )}
+
+          <FlatList
+            ref={fullFlatListRef}
+            data={place?.photos || []}
+            renderItem={renderFullImage}
+            keyExtractor={(_, index) => index.toString()}
+            horizontal
+            pagingEnabled
+            showsHorizontalScrollIndicator={false}
+            onMomentumScrollEnd={(event) => {
+              const index = Math.round(
+                event.nativeEvent.contentOffset.x / width,
+              );
+              setFullGalleryIndex(index);
+            }}
+            getItemLayout={(_, index) => ({
+              length: width,
+              offset: width * index,
+              index,
+            })}
+            initialScrollIndex={0}
+          />
+
+          {/* Indicadores no ecrã completo */}
+          {place?.photos && place.photos.length > 1 && (
+            <View style={styles.fullDotsContainer}>
+              {place.photos.map((_, index) => (
+                <View
+                  key={index}
+                  style={[
+                    styles.dot,
+                    index === fullGalleryIndex
+                      ? styles.dotActive
+                      : styles.fullDotInactive,
+                  ]}
+                />
+              ))}
+            </View>
+          )}
+        </TouchableOpacity>
+      </Modal>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  fullScreen: {
+    flex: 1,
+    backgroundColor: COLORS.backgroundLight,
+  },
   container: {
     flexGrow: 1,
-    backgroundColor: COLORS.backgroundLight,
+    paddingBottom: 20,
   },
   centered: {
     flex: 1,
@@ -556,12 +761,64 @@ const styles = StyleSheet.create({
     color: COLORS.accent,
     fontSize: 16,
   },
-  gallery: {
+  galleryWrapper: {
     height: 240,
+    position: "relative",
   },
   galleryImage: {
     width: width,
     height: 240,
+  },
+  arrowLeft: {
+    position: "absolute",
+    left: 10,
+    top: "50%",
+    transform: [{ translateY: -20 }],
+    zIndex: 10,
+    backgroundColor: "rgba(255,255,255,0.8)",
+    borderRadius: 20,
+    width: 40,
+    height: 40,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  arrowRight: {
+    position: "absolute",
+    right: 10,
+    top: "50%",
+    transform: [{ translateY: -20 }],
+    zIndex: 10,
+    backgroundColor: "rgba(255,255,255,0.8)",
+    borderRadius: 20,
+    width: 40,
+    height: 40,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  arrowText: {
+    fontSize: 28,
+    color: "#e53935",
+    fontWeight: "bold",
+  },
+  dotsContainer: {
+    position: "absolute",
+    bottom: 10,
+    left: 0,
+    right: 0,
+    flexDirection: "row",
+    justifyContent: "center",
+  },
+  dot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginHorizontal: 4,
+  },
+  dotActive: {
+    backgroundColor: COLORS.primary,
+  },
+  dotInactive: {
+    backgroundColor: "rgba(0,0,0,0.3)",
   },
   content: {
     padding: 20,
@@ -710,7 +967,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "bold",
   },
-  // 🔹 Estilos para a mensagem de bloqueio do anfitrião
   ownerMessage: {
     backgroundColor: "#f0f0f0",
     padding: 16,
@@ -721,5 +977,72 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#666",
     textAlign: "center",
+  },
+  // Modal do carrossel
+  galleryOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.9)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  galleryCloseButton: {
+    position: "absolute",
+    top: 50,
+    right: 20,
+    zIndex: 20,
+    padding: 8,
+  },
+  galleryCloseText: {
+    fontSize: 28,
+    color: "#fff",
+    fontWeight: "bold",
+  },
+  fullImage: {
+    width: width,
+    height: height * 0.7,
+    resizeMode: "contain",
+  },
+  // Setas no ecrã completo
+  fullArrowLeft: {
+    position: "absolute",
+    left: 10,
+    top: "50%",
+    transform: [{ translateY: -20 }],
+    zIndex: 20,
+    backgroundColor: "rgba(255,255,255,0.3)",
+    borderRadius: 20,
+    width: 40,
+    height: 40,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  fullArrowRight: {
+    position: "absolute",
+    right: 10,
+    top: "50%",
+    transform: [{ translateY: -20 }],
+    zIndex: 20,
+    backgroundColor: "rgba(255,255,255,0.3)",
+    borderRadius: 20,
+    width: 40,
+    height: 40,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  fullArrowText: {
+    fontSize: 28,
+    color: "#fff",
+    fontWeight: "bold",
+  },
+  fullDotsContainer: {
+    position: "absolute",
+    bottom: 40,
+    left: 0,
+    right: 0,
+    flexDirection: "row",
+    justifyContent: "center",
+  },
+  fullDotInactive: {
+    backgroundColor: "rgba(255,255,255,0.5)",
   },
 });

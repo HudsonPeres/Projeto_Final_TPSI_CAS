@@ -1,699 +1,405 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
+  TextInput,
+  TouchableOpacity,
   ScrollView,
   Image,
-  TouchableOpacity,
-  TextInput,
   Alert,
   StyleSheet,
   ActivityIndicator,
-  Dimensions,
+  Switch,
 } from "react-native";
+import * as ImagePicker from "expo-image-picker";
 import { Calendar } from "react-native-calendars";
 import api from "../services/api";
-import { useAuth } from "../contexts/AuthContext";
-import StarRating from "../components/StarRating";
+import BackButton from "../components/BackButton";
 
-const { width } = Dimensions.get("window");
+export default function PlaceFormScreen({ route, navigation }) {
+  const placeId = route.params?.placeId; // se existir, é edição
+  const [title, setTitle] = useState("");
+  const [address, setAddress] = useState("");
+  const [description, setDescription] = useState("");
+  const [extras, setExtras] = useState("");
+  const [perks, setPerks] = useState("");
+  const [price, setPrice] = useState("");
+  const [checkin, setCheckin] = useState("");
+  const [checkout, setCheckout] = useState("");
+  const [guests, setGuests] = useState("");
+  const [isMultiDay, setIsMultiDay] = useState(true);
+  const [selectedDates, setSelectedDates] = useState({});
+  const [photos, setPhotos] = useState([]); // URLs existentes (edição)
+  const [newPhotos, setNewPhotos] = useState([]); // ficheiros locais para upload
+  const [loading, setLoading] = useState(false);
+  const [fetching, setFetching] = useState(!!placeId);
 
-const COLORS = {
-  primary: "#e53935",
-  secondary: "#43a047",
-  accent: "#4a90e2",
-  backgroundLight: "#fefefe",
-  textLight: "#1b1b1b",
-  border: "#e0e0e0",
-  cardBackground: "#ffffff",
-  disabled: "#ccc",
-};
+  // Buscar dados do anúncio se for edição
+  useEffect(() => {
+    if (placeId) {
+      (async () => {
+        try {
+          const res = await api.get(`/places/${placeId}`);
+          const p = res.data;
+          setTitle(p.title);
+          setAddress(p.address);
+          setDescription(p.description);
+          setExtras(p.extras || "");
+          setPerks((p.perks || []).join(", "));
+          setPrice(String(p.price));
+          setCheckin(p.checkin || "");
+          setCheckout(p.checkout || "");
+          setGuests(String(p.guests));
+          setIsMultiDay(p.isMultiDay);
+          setPhotos(p.photos || []);
+          // Marcar datas existentes
+          if (p.availableDates) {
+            const marked = {};
+            p.availableDates.forEach((d) => {
+              const dateStr =
+                d instanceof Date
+                  ? d.toISOString().split("T")[0]
+                  : d.split("T")[0];
+              marked[dateStr] = { selected: true, selectedColor: "#4a90e2" };
+            });
+            setSelectedDates(marked);
+          }
+        } catch (err) {
+          Alert.alert("Erro", "Falha ao carregar anúncio.");
+        } finally {
+          setFetching(false);
+        }
+      })();
+    }
+  }, [placeId]);
 
-export default function PlaceDetailScreen({ route, navigation }) {
-  const { id } = route.params;
-  const { user } = useAuth();
-
-  const [place, setPlace] = useState(null);
-  const [availability, setAvailability] = useState({
-    availableDates: [],
-    bookedDates: [],
-  });
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  // Avaliações
-  const [reviewsData, setReviewsData] = useState({
-    reviews: [],
-    avg: 0,
-    total: 0,
-  });
-  const [reviewsLoading, setReviewsLoading] = useState(false);
-
-  // Seleção de datas
-  const [selectedStart, setSelectedStart] = useState(null);
-  const [selectedEnd, setSelectedEnd] = useState(null);
-  const [guests, setGuests] = useState(1);
-  const [bookingLoading, setBookingLoading] = useState(false);
-
-  // Chat
-  const [chatLoading, setChatLoading] = useState(false);
-
-  const isMultiDay = place?.isMultiDay ?? true;
-
-  // 🔹 Limpa seleções (reutilizável)
-  const resetSelection = () => {
-    setSelectedStart(null);
-    setSelectedEnd(null);
-    setGuests(1);
+  // Selecionar imagens da galeria
+  const pickImages = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsMultipleSelection: true,
+      quality: 0.8,
+    });
+    if (!result.canceled) {
+      setNewPhotos([...newPhotos, ...result.assets]);
+    }
   };
 
-  // 🔹 Limpar ao sair do ecrã
-  useEffect(() => {
-    const unsubscribe = navigation.addListener("beforeRemove", () => {
-      resetSelection();
-    });
-    return unsubscribe;
-  }, [navigation]);
+  // Tirar foto com a câmara
+  const takePhoto = async () => {
+    const perm = await ImagePicker.requestCameraPermissionsAsync();
+    if (perm.status !== "granted") {
+      Alert.alert("Permissão", "Precisa de conceder acesso à câmara.");
+      return;
+    }
+    const result = await ImagePicker.launchCameraAsync({ quality: 0.8 });
+    if (!result.canceled) {
+      setNewPhotos([...newPhotos, result.assets[0]]);
+    }
+  };
 
-  const fetchData = useCallback(async () => {
+  // Remover uma nova foto (antes do upload)
+  const removeNewPhoto = (index) => {
+    setNewPhotos(newPhotos.filter((_, i) => i !== index));
+  };
+
+  // Upload das novas fotos e obter URLs
+  const uploadNewPhotos = async () => {
+    if (newPhotos.length === 0) return [];
+    const formData = new FormData();
+    newPhotos.forEach((asset) => {
+      formData.append("files", {
+        uri: asset.uri,
+        type: asset.mimeType || "image/jpeg",
+        name: asset.fileName || "photo.jpg",
+      });
+    });
+    const res = await api.post("/places/upload", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    return res.data; // array de URLs
+  };
+
+  const handleSave = async () => {
+    if (!title || !address || !description || !price || !guests) {
+      Alert.alert("Erro", "Preencha os campos obrigatórios.");
+      return;
+    }
+
     setLoading(true);
     try {
-      const [placeRes, availRes] = await Promise.all([
-        api.get(`/places/${id}`),
-        api.get(`/places/${id}/availability`),
-      ]);
-      setPlace(placeRes.data);
-      setAvailability(availRes.data);
-    } catch (err) {
-      setError("Erro ao carregar detalhes do anúncio.");
+      // Upload das novas imagens
+      const uploadedUrls = await uploadNewPhotos();
+      const allPhotos = [...photos, ...uploadedUrls];
+
+      // Datas selecionadas
+      const availableDates = Object.keys(selectedDates).filter(
+        (d) => selectedDates[d]?.selected,
+      );
+
+      const payload = {
+        title,
+        address,
+        photos: allPhotos,
+        description,
+        extras,
+        perks: perks
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean),
+        price: Number(price),
+        checkin,
+        checkout,
+        guests: Number(guests),
+        isMultiDay,
+        availableDates,
+        // location pode ser adicionado posteriormente via geocoding; por agora não enviamos
+      };
+
+      if (placeId) {
+        await api.put(`/places/${placeId}`, payload);
+        Alert.alert("Sucesso", "Anúncio atualizado.");
+      } else {
+        await api.post("/places", payload);
+        Alert.alert("Sucesso", "Anúncio criado.");
+      }
+      navigation.goBack();
+    } catch (error) {
+      const msg = error.response?.data?.message || "Erro ao guardar.";
+      Alert.alert("Erro", msg);
     } finally {
       setLoading(false);
     }
-  }, [id]);
-
-  const fetchReviews = useCallback(async () => {
-    setReviewsLoading(true);
-    try {
-      const res = await api.get(`/reviews/place/${id}`);
-      setReviewsData(res.data);
-    } catch (err) {
-      // Silencioso
-    } finally {
-      setReviewsLoading(false);
-    }
-  }, [id]);
-
-  useEffect(() => {
-    fetchData();
-    fetchReviews();
-  }, [fetchData, fetchReviews]);
-
-  const handleContactHost = async () => {
-    if (!place?.owner?._id) {
-      Alert.alert("Erro", "Não foi possível identificar o anfitrião.");
-      return;
-    }
-    setChatLoading(true);
-    try {
-      const res = await api.post("/chat/conversations/start", {
-        otherUserId: place.owner._id,
-        placeId: place._id,
-      });
-      const conversation = res.data;
-      navigation.navigate("Conversation", {
-        conversationId: conversation._id,
-        otherUserName: place.owner.name || "Anfitrião",
-      });
-    } catch (error) {
-      const msg = error.response?.data?.message || "Erro ao iniciar conversa.";
-      Alert.alert("Erro", msg);
-    } finally {
-      setChatLoading(false);
-    }
   };
 
-  const isDateAvailable = (dateStr) => {
-    if (availability.bookedDates.includes(dateStr)) return false;
-    if (
-      !availability.availableDates ||
-      availability.availableDates.length === 0
-    )
-      return true;
-    return availability.availableDates.includes(dateStr);
-  };
-
-  const getMarkedDates = () => {
-    const marked = {};
-
-    if (availability.availableDates && availability.availableDates.length > 0) {
-      availability.availableDates.forEach((date) => {
-        marked[date] = { color: COLORS.secondary, textColor: "white" };
-      });
-    }
-
-    availability.bookedDates.forEach((date) => {
-      marked[date] = {
-        color: COLORS.primary,
-        textColor: "white",
-        disabled: true,
-      };
-    });
-
-    if (selectedStart) {
-      const start = new Date(selectedStart);
-      const end = selectedEnd ? new Date(selectedEnd) : start;
-
-      if (isMultiDay) {
-        for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-          const dateStr = d.toISOString().split("T")[0];
-          if (!availability.bookedDates.includes(dateStr)) {
-            marked[dateStr] = {
-              color: COLORS.accent,
-              textColor: "white",
-              startingDay: d.getTime() === start.getTime(),
-              endingDay: d.getTime() === end.getTime(),
-            };
-          }
-        }
-      } else {
-        const dateStr = selectedStart;
-        if (!availability.bookedDates.includes(dateStr)) {
-          marked[dateStr] = {
-            selected: true,
-            color: COLORS.accent,
-            textColor: "white",
-          };
-        }
-      }
-    }
-
-    return marked;
-  };
-
-  const handleDayPress = (day) => {
-    const dateStr = day.dateString;
-
-    if (availability.bookedDates.includes(dateStr)) {
-      return;
-    }
-
-    if (isMultiDay) {
-      if (!selectedStart || (selectedStart && selectedEnd)) {
-        setSelectedStart(dateStr);
-        setSelectedEnd(null);
-      } else {
-        const start = new Date(selectedStart);
-        const end = new Date(dateStr);
-        if (end < start) {
-          setSelectedStart(dateStr);
-          setSelectedEnd(null);
-        } else {
-          let allAvailable = true;
-          const current = new Date(start);
-          while (current <= end) {
-            const curStr = current.toISOString().split("T")[0];
-            if (!isDateAvailable(curStr)) {
-              allAvailable = false;
-              break;
-            }
-            current.setDate(current.getDate() + 1);
-          }
-          if (allAvailable) {
-            setSelectedEnd(dateStr);
-          } else {
-            Alert.alert(
-              "Datas indisponíveis",
-              "O intervalo contém datas reservadas ou não disponíveis.",
-            );
-          }
-        }
-      }
-    } else {
-      if (isDateAvailable(dateStr)) {
-        setSelectedStart(dateStr);
-        setSelectedEnd(dateStr);
-      }
-    }
-  };
-
-  const calculateNights = () => {
-    if (!selectedStart || !selectedEnd) return 0;
-    const start = new Date(selectedStart);
-    const end = new Date(selectedEnd);
-    if (isMultiDay) {
-      return Math.max(1, Math.ceil((end - start) / (1000 * 60 * 60 * 24)));
-    }
-    return 1;
-  };
-
-  const handleReserve = async () => {
-    if (!selectedStart || (!isMultiDay && !selectedEnd)) {
-      Alert.alert("Erro", "Selecione a(s) data(s).");
-      return;
-    }
-    if (guests < 1 || guests > place.guests) {
-      Alert.alert(
-        "Erro",
-        `Número de participantes deve ser entre 1 e ${place.guests}.`,
-      );
-      return;
-    }
-
-    const nights = calculateNights();
-    const total = place.price * nights;
-
-    setBookingLoading(true);
-    try {
-      const bookingData = {
-        place: place._id,
-        user: user._id,
-        price: place.price,
-        total,
-        checkin: selectedStart,
-        checkout: selectedEnd || selectedStart,
-        guests,
-        nights,
-      };
-
-      const res = await api.post("/bookings", bookingData);
-      Alert.alert(
-        "Reserva confirmada!",
-        `Código: ${res.data.bookingCode}\nUm email com o comprovativo foi enviado.`,
-        [
-          {
-            text: "OK",
-            onPress: () => {
-              resetSelection(); // 🔹 limpa seleção após reserva
-              navigation.navigate("Home");
-            },
-          },
-        ],
-      );
-    } catch (error) {
-      const msg = error.response?.data?.message || "Erro ao efetuar reserva.";
-      Alert.alert("Erro", msg);
-    } finally {
-      setBookingLoading(false);
-    }
-  };
-
-  if (loading) {
+  if (fetching) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator size="large" color={COLORS.primary} />
+        <ActivityIndicator size="large" color="#e53935" />
       </View>
     );
   }
-
-  if (error || !place) {
-    return (
-      <View style={styles.centered}>
-        <Text style={styles.errorText}>
-          {error || "Anúncio não encontrado."}
-        </Text>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={styles.link}>Voltar</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
-
-  const nights = calculateNights();
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      {/* Galeria de fotos */}
-      {place.photos && place.photos.length > 0 && (
-        <ScrollView
-          horizontal
-          pagingEnabled
-          showsHorizontalScrollIndicator={false}
-          style={styles.gallery}
-        >
-          {place.photos.map((uri, index) => (
-            <Image
-              key={index}
-              source={{ uri }}
-              style={styles.galleryImage}
-              resizeMode="cover"
-            />
-          ))}
-        </ScrollView>
+    <ScrollView
+      contentContainerStyle={styles.container}
+      keyboardShouldPersistTaps="handled"
+    >
+      <View style={styles.header}>
+        <BackButton />
+        <Text style={styles.title}>
+          {placeId ? "Editar anúncio" : "Novo anúncio"}
+        </Text>
+      </View>
+
+      <Text style={styles.label}>Título *</Text>
+      <TextInput style={styles.input} value={title} onChangeText={setTitle} />
+
+      <Text style={styles.label}>Endereço *</Text>
+      <TextInput
+        style={styles.input}
+        value={address}
+        onChangeText={setAddress}
+      />
+
+      <Text style={styles.label}>Descrição *</Text>
+      <TextInput
+        style={[styles.input, styles.textArea]}
+        value={description}
+        onChangeText={setDescription}
+        multiline
+      />
+
+      <Text style={styles.label}>Extras (ex: alimentação, transporte)</Text>
+      <TextInput style={styles.input} value={extras} onChangeText={setExtras} />
+
+      <Text style={styles.label}>Comodidades (separadas por vírgula)</Text>
+      <TextInput
+        style={styles.input}
+        value={perks}
+        onChangeText={setPerks}
+        placeholder="ex: wifi, parking"
+      />
+
+      <Text style={styles.label}>Preço (€) *</Text>
+      <TextInput
+        style={styles.input}
+        value={price}
+        onChangeText={setPrice}
+        keyboardType="numeric"
+      />
+
+      <Text style={styles.label}>Check‑in (hora)</Text>
+      <TextInput
+        style={styles.input}
+        value={checkin}
+        onChangeText={setCheckin}
+        placeholder="14:00"
+      />
+
+      <Text style={styles.label}>Check‑out (hora)</Text>
+      <TextInput
+        style={styles.input}
+        value={checkout}
+        onChangeText={setCheckout}
+        placeholder="11:00"
+      />
+
+      <Text style={styles.label}>Nº máximo de participantes *</Text>
+      <TextInput
+        style={styles.input}
+        value={guests}
+        onChangeText={setGuests}
+        keyboardType="numeric"
+      />
+
+      <View style={styles.switchRow}>
+        <Text style={styles.label}>Permite vários dias</Text>
+        <Switch value={isMultiDay} onValueChange={setIsMultiDay} />
+      </View>
+
+      <Text style={styles.label}>Datas disponíveis (toque no dia)</Text>
+      <Calendar
+        markingType="multi-dot"
+        markedDates={selectedDates}
+        onDayPress={(day) => {
+          const updated = { ...selectedDates };
+          if (updated[day.dateString]?.selected) {
+            delete updated[day.dateString];
+          } else {
+            updated[day.dateString] = {
+              selected: true,
+              selectedColor: "#4a90e2",
+            };
+          }
+          setSelectedDates(updated);
+        }}
+        minDate={new Date().toISOString().split("T")[0]}
+        theme={{
+          selectedDayBackgroundColor: "#4a90e2",
+          todayTextColor: "#4a90e2",
+        }}
+      />
+
+      {/* Fotos existentes (edição) */}
+      {photos.length > 0 && (
+        <View style={styles.photoSection}>
+          <Text style={styles.label}>Fotos atuais</Text>
+          <ScrollView horizontal>
+            {photos.map((uri, idx) => (
+              <Image key={idx} source={{ uri }} style={styles.photoThumb} />
+            ))}
+          </ScrollView>
+        </View>
       )}
 
-      <View style={styles.content}>
-        <Text style={styles.title}>{place.title}</Text>
-        <Text style={styles.address}>{place.address}</Text>
-        <Text style={styles.price}>
-          €{place.price} / {isMultiDay ? "diária" : "atividade"}
-        </Text>
-        <Text style={styles.description}>{place.description}</Text>
-
-        {/* Extras */}
-        {place.extras ? (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Extras</Text>
-            <Text style={styles.text}>{place.extras}</Text>
-          </View>
-        ) : null}
-
-        {/* Perks */}
-        {place.perks && place.perks.length > 0 && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Comodidades</Text>
-            {place.perks.map((perk, i) => (
-              <Text key={i} style={styles.perk}>
-                • {perk}
-              </Text>
-            ))}
-          </View>
-        )}
-
-        {/* Botão Dúvidas? Me contacte */}
-        <TouchableOpacity
-          style={styles.contactButton}
-          onPress={handleContactHost}
-          disabled={chatLoading}
-        >
-          {chatLoading ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <Text style={styles.contactButtonText}>Dúvidas? Me contacte</Text>
-          )}
-        </TouchableOpacity>
-
-        {/* Avaliações */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Avaliações</Text>
-          {reviewsLoading ? (
-            <ActivityIndicator size="small" color={COLORS.primary} />
-          ) : reviewsData.reviews.length > 0 ? (
-            <>
-              <View style={styles.avgRatingRow}>
-                <StarRating rating={Math.round(reviewsData.avg)} size={20} />
-                <Text style={styles.avgText}>
-                  {reviewsData.avg.toFixed(1)} ({reviewsData.total}{" "}
-                  {reviewsData.total === 1 ? "avaliação" : "avaliações"})
-                </Text>
+      {/* Novas fotos (pré-upload) */}
+      {newPhotos.length > 0 && (
+        <View style={styles.photoSection}>
+          <Text style={styles.label}>Novas fotos</Text>
+          <ScrollView horizontal>
+            {newPhotos.map((asset, idx) => (
+              <View key={idx} style={styles.newPhotoContainer}>
+                <Image source={{ uri: asset.uri }} style={styles.photoThumb} />
+                <TouchableOpacity
+                  style={styles.removePhotoBtn}
+                  onPress={() => removeNewPhoto(idx)}
+                >
+                  <Text style={styles.removePhotoText}>✕</Text>
+                </TouchableOpacity>
               </View>
-              {reviewsData.reviews.map((review) => (
-                <View key={review._id} style={styles.reviewCard}>
-                  <View style={styles.reviewHeader}>
-                    <Text style={styles.reviewerName}>
-                      {review.reviewer?.name || "Anónimo"}
-                    </Text>
-                    <StarRating rating={review.ratingExperience} size={16} />
-                  </View>
-                  {review.comment ? (
-                    <Text style={styles.reviewComment}>{review.comment}</Text>
-                  ) : null}
-                </View>
-              ))}
-            </>
-          ) : (
-            <Text style={styles.noReviews}>Nenhuma avaliação ainda.</Text>
-          )}
+            ))}
+          </ScrollView>
         </View>
+      )}
 
-        {/* Calendário */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Disponibilidade</Text>
-          <Calendar
-            markingType={isMultiDay ? "period" : "simple"}
-            markedDates={getMarkedDates()}
-            onDayPress={handleDayPress}
-            minDate={new Date().toISOString().split("T")[0]}
-            theme={{
-              todayTextColor: COLORS.accent,
-              selectedDayBackgroundColor: COLORS.accent,
-              arrowColor: COLORS.primary,
-            }}
-          />
-          <View style={styles.legend}>
-            <View
-              style={[styles.legendItem, { backgroundColor: COLORS.secondary }]}
-            />
-            <Text style={styles.legendText}>Disponível</Text>
-            <View
-              style={[styles.legendItem, { backgroundColor: COLORS.primary }]}
-            />
-            <Text style={styles.legendText}>Reservado</Text>
-            <View
-              style={[styles.legendItem, { backgroundColor: COLORS.accent }]}
-            />
-            <Text style={styles.legendText}>Selecionado</Text>
-          </View>
-        </View>
-
-        {/* Datas escolhidas */}
-        {selectedStart && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Datas escolhidas</Text>
-            <Text style={styles.text}>
-              Check‑in: {selectedStart}
-              {isMultiDay
-                ? `\nCheck‑out: ${selectedEnd || "não definida"}`
-                : ""}
-            </Text>
-            {isMultiDay && selectedEnd && (
-              <Text style={styles.text}>Noites: {nights}</Text>
-            )}
-            {isMultiDay && selectedStart && !selectedEnd && (
-              <Text style={styles.hint}>Toque na data de saída</Text>
-            )}
-          </View>
-        )}
-
-        {/* Participantes */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>
-            Participantes (máx {place.guests})
-          </Text>
-          <TextInput
-            style={styles.input}
-            value={String(guests)}
-            onChangeText={(text) => {
-              const num = parseInt(text, 10);
-              if (!isNaN(num) && num >= 1 && num <= place.guests)
-                setGuests(num);
-              else if (text === "") setGuests("");
-            }}
-            keyboardType="numeric"
-            placeholder="Número de pessoas"
-          />
-        </View>
-
-        {/* Total */}
-        {selectedStart && selectedEnd && nights > 0 && (
-          <View style={styles.section}>
-            <Text style={styles.total}>
-              Total estimado: €{place.price * nights}
-            </Text>
-          </View>
-        )}
-
-        {/* Reservar */}
-        <TouchableOpacity
-          style={[
-            styles.reserveButton,
-            (bookingLoading ||
-              !selectedStart ||
-              (isMultiDay && !selectedEnd) ||
-              !place) &&
-              styles.disabledButton,
-          ]}
-          onPress={handleReserve}
-          disabled={
-            bookingLoading ||
-            !selectedStart ||
-            (isMultiDay && !selectedEnd) ||
-            !place
-          }
-        >
-          {bookingLoading ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <Text style={styles.reserveButtonText}>Reservar</Text>
-          )}
+      <View style={styles.photoButtons}>
+        <TouchableOpacity style={styles.secondaryButton} onPress={pickImages}>
+          <Text style={styles.secondaryButtonText}>Galeria</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.secondaryButton} onPress={takePhoto}>
+          <Text style={styles.secondaryButtonText}>Câmara</Text>
         </TouchableOpacity>
       </View>
+
+      <TouchableOpacity
+        style={styles.saveButton}
+        onPress={handleSave}
+        disabled={loading}
+      >
+        {loading ? (
+          <ActivityIndicator color="#fff" />
+        ) : (
+          <Text style={styles.saveButtonText}>Salvar anúncio</Text>
+        )}
+      </TouchableOpacity>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flexGrow: 1,
-    backgroundColor: COLORS.backgroundLight,
-  },
-  centered: {
-    flex: 1,
-    justifyContent: "center",
+  container: { padding: 20, backgroundColor: "#fefefe", paddingBottom: 40 },
+  centered: { flex: 1, justifyContent: "center", alignItems: "center" },
+  header: {
+    flexDirection: "row",
     alignItems: "center",
-    padding: 20,
-  },
-  errorText: {
-    fontSize: 18,
-    color: COLORS.primary,
-    marginBottom: 12,
-    textAlign: "center",
-  },
-  link: {
-    color: COLORS.accent,
-    fontSize: 16,
-  },
-  gallery: {
-    height: 240,
-  },
-  galleryImage: {
-    width: width,
-    height: 240,
-  },
-  content: {
-    padding: 20,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: COLORS.textLight,
-    marginBottom: 8,
-  },
-  address: {
-    fontSize: 16,
-    color: "#666",
-    marginBottom: 12,
-  },
-  price: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: COLORS.primary,
     marginBottom: 16,
+    marginTop: 40,
   },
-  description: {
+  title: { fontSize: 24, fontWeight: "bold", color: "#1b1b1b", marginLeft: 8 },
+  label: {
     fontSize: 16,
-    color: COLORS.textLight,
-    lineHeight: 22,
-    marginBottom: 16,
-  },
-  section: {
-    marginBottom: 20,
-  },
-  sectionTitle: {
-    fontSize: 18,
     fontWeight: "600",
-    color: COLORS.textLight,
-    marginBottom: 8,
-  },
-  text: {
-    fontSize: 16,
-    color: COLORS.textLight,
-    lineHeight: 22,
-  },
-  perk: {
-    fontSize: 14,
-    color: COLORS.textLight,
-    marginLeft: 8,
+    marginTop: 16,
     marginBottom: 4,
-  },
-  contactButton: {
-    backgroundColor: COLORS.accent,
-    paddingVertical: 14,
-    borderRadius: 30,
-    alignItems: "center",
-    marginBottom: 20,
-  },
-  contactButtonText: {
-    color: "#fff",
-    fontWeight: "bold",
-    fontSize: 16,
-  },
-  avgRatingRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 12,
-  },
-  avgText: {
-    fontSize: 14,
-    color: "#666",
-    marginLeft: 8,
-  },
-  reviewCard: {
-    backgroundColor: "#f9f9f9",
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 8,
-  },
-  reviewHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 4,
-  },
-  reviewerName: {
-    fontSize: 14,
-    fontWeight: "bold",
-    color: COLORS.textLight,
-  },
-  reviewComment: {
-    fontSize: 14,
-    color: "#555",
-    marginTop: 4,
-    lineHeight: 20,
-  },
-  noReviews: {
-    fontSize: 14,
-    color: "#999",
-    fontStyle: "italic",
-  },
-  legend: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: 12,
-    gap: 4,
-  },
-  legendItem: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-    marginRight: 4,
-  },
-  legendText: {
-    fontSize: 12,
-    color: COLORS.textLight,
-    marginRight: 12,
+    color: "#1b1b1b",
   },
   input: {
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: "#ddd",
     borderRadius: 12,
     padding: 12,
     fontSize: 16,
-    marginTop: 8,
+    backgroundColor: "#f9f9f9",
   },
-  total: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: COLORS.textLight,
-    marginBottom: 16,
+  textArea: { minHeight: 80, textAlignVertical: "top" },
+  switchRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginTop: 16,
   },
-  hint: {
-    fontSize: 14,
-    color: COLORS.accent,
-    marginTop: 4,
+  photoSection: { marginTop: 16 },
+  photoThumb: { width: 80, height: 80, borderRadius: 8, marginRight: 8 },
+  newPhotoContainer: { position: "relative" },
+  removePhotoBtn: {
+    position: "absolute",
+    top: -4,
+    right: -4,
+    backgroundColor: "#e53935",
+    borderRadius: 12,
+    width: 24,
+    height: 24,
+    justifyContent: "center",
+    alignItems: "center",
   },
-  reserveButton: {
-    backgroundColor: COLORS.primary,
+  removePhotoText: { color: "#fff", fontSize: 14, fontWeight: "bold" },
+  photoButtons: { flexDirection: "row", gap: 12, marginTop: 12 },
+  secondaryButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#e53935",
+    alignItems: "center",
+  },
+  secondaryButtonText: { color: "#e53935", fontWeight: "bold" },
+  saveButton: {
+    backgroundColor: "#e53935",
     paddingVertical: 16,
     borderRadius: 30,
     alignItems: "center",
-    marginTop: 20,
+    marginTop: 30,
   },
-  disabledButton: {
-    backgroundColor: COLORS.disabled,
-  },
-  reserveButtonText: {
-    color: "#fff",
-    fontSize: 18,
-    fontWeight: "bold",
-  },
+  saveButtonText: { color: "#fff", fontWeight: "bold", fontSize: 18 },
 });

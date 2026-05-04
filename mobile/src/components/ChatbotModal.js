@@ -10,27 +10,25 @@ import {
   Platform,
   ActivityIndicator,
   Dimensions,
+  Modal,
 } from "react-native";
-import Constants from "expo-constants";
-import api from "../services/api"; // usamos axios já configurado
+import { useChatbot } from "../contexts/ChatbotContext";
 
 const { height } = Dimensions.get("window");
 
+// Modelo atualizado para gemini-2.5-flash-lite
 const GEMINI_URL =
-  "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent";
+  "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent";
 
 const SYSTEM_PROMPT = `És a MarIA, a assistente virtual do Viva Portugal, uma plataforma de turismo rural.
 O teu objetivo é ajudar os utilizadores a descobrir experiências autênticas em Portugal: vindimas, passeios de bicicleta, produção de azeite, caminhadas, etc.
-Responde sempre em português de Portugal, de forma calorosa, útil e turística.
-Se te perguntarem algo fora do contexto do turismo rural português, guia a conversa de volta para as experiências disponíveis na plataforma. Se pedirem algum link, não forneça nada que leve para fora da aplicação`;
+Responde sempre em português, adaptando ao que o utilizador falar, se for portuguÊs do brasil, deverá responder igual, se for português de portugal, deverá ser da mesma forma, de forma calorosa, útil e turística.
+Se te perguntarem algo fora do contexto do turismo rural português, guia a conversa de volta para as experiências disponíveis na plataforma.
+- Responde de forma breve (máximo 3 frases), a não ser que estejas a listar resultados.
+- **NUNCA** (absolutamente nunca) incluas links externos (ex: Google Maps, Wikipedia, sites de terceiros). Apenas usa os links que estão nos dados da pesquisa, se fornecidos (todos começam com /place/).`;
 
-export default function ChatbotModal({ visible, onClose }) {
-  const [messages, setMessages] = useState([
-    {
-      role: "system",
-      text: "Olá! 👋 Sou a MarIA, a sua assistente virtual. Em que posso ajudar?",
-    },
-  ]);
+export default function ChatbotModal() {
+  const { visible, hideChatbot, messages, setMessages } = useChatbot();
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const flatListRef = useRef(null);
@@ -52,23 +50,37 @@ export default function ChatbotModal({ visible, onClose }) {
           parts: [{ text: m.text }],
         }));
 
-      const response = await api.post(
-        `${GEMINI_URL}?key=${Constants.expoConfig.extra.GEMINI_API_KEY}`,
-        {
+      const apiKey = process.env.EXPO_PUBLIC_GEMINI_API_KEY;
+      if (!apiKey) {
+        throw new Error("Chave da API Gemini não configurada.");
+      }
+
+      const response = await fetch(`${GEMINI_URL}?key=${apiKey}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
           system_instruction: { parts: { text: SYSTEM_PROMPT } },
           contents: [
             ...history,
             { role: "user", parts: [{ text: userMsg.text }] },
           ],
-        },
-      );
+        }),
+      });
 
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error("Gemini API Error:", errorData);
+        throw new Error("Falha na comunicação com a MarIA.");
+      }
+
+      const data = await response.json();
       const botText =
-        response.data.candidates?.[0]?.content?.parts?.[0]?.text ||
+        data.candidates?.[0]?.content?.parts?.[0]?.text ||
         "Desculpe, ocorreu um erro. Pode tentar novamente?";
 
       setMessages((prev) => [...prev, { role: "bot", text: botText }]);
     } catch (error) {
+      console.error("Chatbot error:", error);
       setMessages((prev) => [
         ...prev,
         {
@@ -90,73 +102,84 @@ export default function ChatbotModal({ visible, onClose }) {
   if (!visible) return null;
 
   return (
-    <KeyboardAvoidingView
-      style={styles.overlay}
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
-    >
-      <View style={styles.container}>
-        {/* Cabeçalho */}
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>MarIA</Text>
-          <TouchableOpacity onPress={onClose}>
-            <Text style={styles.closeButton}>✕</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Mensagens */}
-        <FlatList
-          ref={flatListRef}
-          data={messages}
-          keyExtractor={(_, index) => index.toString()}
-          contentContainerStyle={styles.messagesList}
-          renderItem={({ item }) => (
-            <View
-              style={[
-                styles.messageBubble,
-                item.role === "user" ? styles.userBubble : styles.botBubble,
-              ]}
-            >
-              <Text style={styles.messageText}>{item.text}</Text>
+    <Modal visible={visible} animationType="fade" transparent>
+      <TouchableOpacity
+        style={styles.overlay}
+        activeOpacity={1}
+        onPress={hideChatbot}
+      >
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+          style={styles.container}
+        >
+          <View style={styles.modalContent}>
+            {/* Cabeçalho */}
+            <View style={styles.header}>
+              <Text style={styles.headerTitle}>MarIA</Text>
+              <TouchableOpacity onPress={hideChatbot}>
+                <Text style={styles.closeButton}>✕</Text>
+              </TouchableOpacity>
             </View>
-          )}
-        />
 
-        {/* Input */}
-        <View style={styles.inputContainer}>
-          <TextInput
-            style={styles.input}
-            placeholder="Escreva a sua mensagem..."
-            value={input}
-            onChangeText={setInput}
-            multiline
-          />
-          <TouchableOpacity
-            style={[
-              styles.sendButton,
-              (!input.trim() || loading) && { opacity: 0.5 },
-            ]}
-            onPress={sendMessage}
-            disabled={!input.trim() || loading}
-          >
-            {loading ? (
-              <ActivityIndicator color="#fff" size="small" />
-            ) : (
-              <Text style={styles.sendButtonText}>Enviar</Text>
-            )}
-          </TouchableOpacity>
-        </View>
-      </View>
-    </KeyboardAvoidingView>
+            {/* Mensagens */}
+            <FlatList
+              ref={flatListRef}
+              data={messages}
+              keyExtractor={(_, index) => index.toString()}
+              contentContainerStyle={styles.messagesList}
+              renderItem={({ item }) => (
+                <View
+                  style={[
+                    styles.messageBubble,
+                    item.role === "user" ? styles.userBubble : styles.botBubble,
+                  ]}
+                >
+                  <Text style={styles.messageText}>{item.text}</Text>
+                </View>
+              )}
+            />
+
+            {/* Input */}
+            <View style={styles.inputContainer}>
+              <TextInput
+                style={styles.input}
+                placeholder="Escreva a sua mensagem..."
+                value={input}
+                onChangeText={setInput}
+                multiline
+              />
+              <TouchableOpacity
+                style={[
+                  styles.sendButton,
+                  (!input.trim() || loading) && { opacity: 0.5 },
+                ]}
+                onPress={sendMessage}
+                disabled={!input.trim() || loading}
+              >
+                {loading ? (
+                  <ActivityIndicator color="#fff" size="small" />
+                ) : (
+                  <Text style={styles.sendButtonText}>Enviar</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </TouchableOpacity>
+    </Modal>
   );
 }
 
 const styles = StyleSheet.create({
   overlay: {
-    ...StyleSheet.absoluteFillObject,
+    flex: 1,
     backgroundColor: "rgba(0,0,0,0.4)",
     justifyContent: "flex-end",
   },
   container: {
+    justifyContent: "flex-end",
+  },
+  modalContent: {
     height: height * 0.65,
     backgroundColor: "#fff",
     borderTopLeftRadius: 24,

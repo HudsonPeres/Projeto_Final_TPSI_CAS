@@ -5,6 +5,10 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../contexts/AuthContext";
 
+import { ChatbotProvider } from "../contexts/ChatbotContext";
+import ChatbotModal from "../components/ChatbotModal";
+import FloatingChatButton from "../components/FloatingChatButton";
+
 import LoginScreen from "../screens/LoginScreen";
 import RegisterScreen from "../screens/RegisterScreen";
 import ForgotPasswordScreen from "../screens/ForgotPasswordScreen";
@@ -26,7 +30,8 @@ import ChangePasswordScreen from "../screens/ChangePasswordScreen";
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
-// Stacks de cada aba
+// ---------- Stacks de cada aba ----------
+
 function HomeStack() {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
@@ -68,6 +73,77 @@ function ProfileStack() {
   );
 }
 
+// ✅ Nova stack para "Meus Anúncios" como aba independente
+function MyPlacesStack() {
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="MyPlacesMain" component={MyPlacesScreen} />
+      {/* Se mais tarde quiser adicionar um ecrã de detalhe do anúncio a partir daqui, pode fazê‑lo */}
+    </Stack.Navigator>
+  );
+}
+
+// ---------- Tab Navigator ----------
+
+function TabNavigator() {
+  return (
+    <Tab.Navigator
+      screenOptions={({ route }) => ({
+        headerShown: false,
+        tabBarIcon: ({ focused, color, size }) => {
+          let iconName;
+
+          if (route.name === "HomeTab") {
+            iconName = focused ? "home" : "home-outline";
+          } else if (route.name === "BookingsTab") {
+            iconName = focused ? "calendar" : "calendar-outline";
+          } else if (route.name === "MessagesTab") {
+            iconName = focused ? "chatbubbles" : "chatbubbles-outline";
+          } else if (route.name === "MyPlacesTab") {
+            iconName = focused ? "albums" : "albums-outline";
+          } else if (route.name === "ProfileTab") {
+            iconName = focused ? "person" : "person-outline";
+          }
+
+          return <Ionicons name={iconName} size={size} color={color} />;
+        },
+        tabBarActiveTintColor: "#e53935",
+        tabBarInactiveTintColor: "gray",
+        tabBarStyle: { paddingBottom: 5, height: 60 },
+      })}
+    >
+      <Tab.Screen
+        name="HomeTab"
+        component={HomeStack}
+        options={{ tabBarLabel: "Início" }}
+      />
+      <Tab.Screen
+        name="BookingsTab"
+        component={BookingsStack}
+        options={{ tabBarLabel: "Reservas" }}
+      />
+      {/* ✅ Nova aba Meus Anúncios */}
+      <Tab.Screen
+        name="MyPlacesTab"
+        component={MyPlacesStack}
+        options={{ tabBarLabel: "Anúncios" }}
+      />
+      <Tab.Screen
+        name="MessagesTab"
+        component={MessagesStack}
+        options={{ tabBarLabel: "Mensagens" }}
+      />
+      <Tab.Screen
+        name="ProfileTab"
+        component={ProfileStack}
+        options={{ tabBarLabel: "Perfil" }}
+      />
+    </Tab.Navigator>
+  );
+}
+
+// ---------- Autenticação ----------
+
 const AuthStack = () => (
   <Stack.Navigator screenOptions={{ headerShown: false }}>
     <Stack.Screen name="Login" component={LoginScreen} />
@@ -77,61 +153,24 @@ const AuthStack = () => (
   </Stack.Navigator>
 );
 
+function MainApp() {
+  return (
+    <ChatbotProvider>
+      <TabNavigator />
+      <FloatingChatButton />
+      <ChatbotModal />
+    </ChatbotProvider>
+  );
+}
+
 export default function AppNavigator() {
   const { user, loading } = useAuth();
 
-  if (loading) {
-    return null;
-  }
+  if (loading) return null;
 
   return (
     <NavigationContainer>
-      {user ? (
-        <Tab.Navigator
-          screenOptions={({ route }) => ({
-            headerShown: false,
-            tabBarIcon: ({ focused, color, size }) => {
-              let iconName;
-              if (route.name === "HomeTab") {
-                iconName = focused ? "home" : "home-outline";
-              } else if (route.name === "BookingsTab") {
-                iconName = focused ? "calendar" : "calendar-outline";
-              } else if (route.name === "MessagesTab") {
-                iconName = focused ? "chatbubbles" : "chatbubbles-outline";
-              } else if (route.name === "ProfileTab") {
-                iconName = focused ? "person" : "person-outline";
-              }
-              return <Ionicons name={iconName} size={size} color={color} />;
-            },
-            tabBarActiveTintColor: "#e53935",
-            tabBarInactiveTintColor: "gray",
-            tabBarStyle: { paddingBottom: 5, height: 60 },
-          })}
-        >
-          <Tab.Screen
-            name="HomeTab"
-            component={HomeStack}
-            options={{ tabBarLabel: "Início" }}
-          />
-          <Tab.Screen
-            name="BookingsTab"
-            component={BookingsStack}
-            options={{ tabBarLabel: "Reservas" }}
-          />
-          <Tab.Screen
-            name="MessagesTab"
-            component={MessagesStack}
-            options={{ tabBarLabel: "Mensagens" }}
-          />
-          <Tab.Screen
-            name="ProfileTab"
-            component={ProfileStack}
-            options={{ tabBarLabel: "Perfil" }}
-          />
-        </Tab.Navigator>
-      ) : (
-        <AuthStack />
-      )}
+      {user ? <MainApp /> : <AuthStack />}
     </NavigationContainer>
   );
 }

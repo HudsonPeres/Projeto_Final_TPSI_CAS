@@ -1,6 +1,4 @@
 import React, { useState, useEffect, useCallback } from "react";
-import ChatbotModal from "../components/ChatbotModal";
-
 import {
   View,
   Text,
@@ -44,7 +42,6 @@ export default function HomeScreen({ navigation }) {
   const [loading, setLoading] = useState(true);
   const [modalVisible, setModalVisible] = useState(false);
   const [menuVisible, setMenuVisible] = useState(false);
-  const [chatbotVisible, setChatbotVisible] = useState(false);
 
   const [minPrice, setMinPrice] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
@@ -340,60 +337,73 @@ export default function HomeScreen({ navigation }) {
           onPress={() => setMenuVisible(false)}
         >
           <View style={styles.menuContainer}>
+            {/* Perfil – navega para a aba de perfil (ecrã principal) */}
             <TouchableOpacity
               style={styles.menuItem}
               onPress={() => {
                 setMenuVisible(false);
-                navigation.navigate("Profile");
+                navigation.navigate("ProfileTab");
               }}
             >
               <Text style={styles.menuItemText}>Perfil</Text>
             </TouchableOpacity>
+
+            {/* Reservas – aba própria */}
             <TouchableOpacity
               style={styles.menuItem}
               onPress={() => {
                 setMenuVisible(false);
-                navigation.navigate("Bookings");
+                navigation.navigate("BookingsTab");
               }}
             >
               <Text style={styles.menuItemText}>Reservas</Text>
             </TouchableOpacity>
+
+            {/* Meus anúncios – tela dentro do ProfileStack */}
             <TouchableOpacity
               style={styles.menuItem}
               onPress={() => {
                 setMenuVisible(false);
-                navigation.navigate("MyPlaces");
+                navigation.navigate("MyPlacesTab");
               }}
             >
               <Text style={styles.menuItemText}>Meus anúncios</Text>
             </TouchableOpacity>
+
+            {/* Mensagens – aba própria */}
             <TouchableOpacity
               style={styles.menuItem}
               onPress={() => {
                 setMenuVisible(false);
-                navigation.navigate("Messages");
+                navigation.navigate("MessagesTab");
               }}
             >
               <Text style={styles.menuItemText}>Mensagens</Text>
             </TouchableOpacity>
+
+            {/* Avaliar hóspedes – tela dentro do ProfileStack */}
             <TouchableOpacity
               style={styles.menuItem}
               onPress={() => {
                 setMenuVisible(false);
-                navigation.navigate("HostReviews");
+                navigation.navigate("ProfileTab", { screen: "HostReviews" });
               }}
             >
               <Text style={styles.menuItemText}>Avaliar hóspedes</Text>
             </TouchableOpacity>
+
+            {/* Suporte – tela dentro do ProfileStack */}
             <TouchableOpacity
               style={styles.menuItem}
               onPress={() => {
                 setMenuVisible(false);
-                navigation.navigate("Support");
+                navigation.navigate("ProfileTab", { screen: "Support" });
               }}
             >
               <Text style={styles.menuItemText}>Suporte</Text>
             </TouchableOpacity>
+
+            {/* Encerrar sessão */}
             <TouchableOpacity
               style={[styles.menuItem, styles.logoutItem]}
               onPress={() => {
@@ -408,24 +418,6 @@ export default function HomeScreen({ navigation }) {
           </View>
         </TouchableOpacity>
       </Modal>
-
-      {/* FAB do Chatbot */}
-      <TouchableOpacity
-        style={styles.chatbotFab}
-        onPress={() => setChatbotVisible(true)}
-        activeOpacity={0.8}
-      >
-        <Image
-          source={require("../../assets/MarIA.png")}
-          style={styles.chatbotFabImage}
-          resizeMode="contain"
-        />
-      </TouchableOpacity>
-
-      <ChatbotModal
-        visible={chatbotVisible}
-        onClose={() => setChatbotVisible(false)}
-      />
     </View>
   );
 }
@@ -574,28 +566,4 @@ const styles = StyleSheet.create({
   },
   menuItemText: { fontSize: 16, color: "#1b1b1b" },
   logoutItem: { borderBottomWidth: 0, marginTop: 8 },
-  chatbotFab: {
-    position: "absolute",
-    bottom: 24,
-    right: 24,
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: "#43a047",
-    justifyContent: "center",
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-    elevation: 8,
-  },
-  chatbotFabImage: {
-    width: 38,
-    height: 38,
-  },
-  /* chatbotFabText: {
-    fontSize: 28,
-    color: "#fff",
-  }, */
 });
