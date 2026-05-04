@@ -55,6 +55,10 @@ export default function PlaceDetailScreen({ route, navigation }) {
   // Avaliações do anfitrião
   const [hostRatings, setHostRatings] = useState({ avgHost: 0, totalHost: 0 });
 
+  // Reserva ativa do utilizador para este lugar
+  const [activeBooking, setActiveBooking] = useState(null);
+  const [checkingBooking, setCheckingBooking] = useState(false);
+
   // Seleção de datas
   const [selectedStart, setSelectedStart] = useState(null);
   const [selectedEnd, setSelectedEnd] = useState(null);
@@ -75,6 +79,7 @@ export default function PlaceDetailScreen({ route, navigation }) {
 
   const isMultiDay = place?.isMultiDay ?? true;
   const isOwner = place?.owner?._id === user._id;
+  const hasActiveBooking = activeBooking !== null;
 
   // Limpa seleções
   const resetSelection = () => {
@@ -133,6 +138,25 @@ export default function PlaceDetailScreen({ route, navigation }) {
     }
   }, [place]);
 
+  // Verificar se o hóspede já tem uma reserva ativa para este lugar
+  const checkActiveBooking = useCallback(async () => {
+    if (!user || !place?._id) return;
+    setCheckingBooking(true);
+    try {
+      const res = await api.get("/bookings/owner");
+      const active = res.data.find(
+        (b) =>
+          b.place?._id === place._id &&
+          (b.status === "confirmed" || b.status === "checked_in"),
+      );
+      setActiveBooking(active || null);
+    } catch (err) {
+      console.error("Erro ao verificar reserva ativa:", err);
+    } finally {
+      setCheckingBooking(false);
+    }
+  }, [user, place?._id]);
+
   useEffect(() => {
     fetchData();
     fetchReviews();
@@ -141,6 +165,10 @@ export default function PlaceDetailScreen({ route, navigation }) {
   useEffect(() => {
     fetchHostRatings();
   }, [fetchHostRatings]);
+
+  useEffect(() => {
+    checkActiveBooking();
+  }, [checkActiveBooking]);
 
   const goToNextPhoto = () => {
     if (place?.photos && galleryIndex < place.photos.length - 1) {
@@ -214,18 +242,15 @@ export default function PlaceDetailScreen({ route, navigation }) {
     return availability.availableDates.includes(dateStr);
   };
 
-  // ✅ getMarkedDates corrigido
   const getMarkedDates = () => {
     const marked = {};
 
-    // Datas disponíveis (verde)
     if (availability.availableDates && availability.availableDates.length > 0) {
       availability.availableDates.forEach((date) => {
         marked[date] = { selected: true, selectedColor: COLORS.secondary };
       });
     }
 
-    // Datas reservadas (vermelho, bloqueadas)
     availability.bookedDates.forEach((date) => {
       marked[date] = {
         selected: true,
@@ -234,7 +259,6 @@ export default function PlaceDetailScreen({ route, navigation }) {
       };
     });
 
-    // Seleção do utilizador (período)
     if (selectedStart) {
       const start = new Date(selectedStart);
       const end = selectedEnd ? new Date(selectedEnd) : start;
@@ -352,6 +376,8 @@ export default function PlaceDetailScreen({ route, navigation }) {
       };
 
       const res = await api.post("/bookings", bookingData);
+      // Atualiza a reserva ativa para refletir a nova reserva
+      setActiveBooking(res.data);
       Alert.alert(
         "Reserva confirmada!",
         `Código: ${res.data.bookingCode}\nUm email com o comprovativo foi enviado.`,
@@ -394,7 +420,7 @@ export default function PlaceDetailScreen({ route, navigation }) {
     />
   );
 
-  if (loading) {
+  if (loading || checkingBooking) {
     return (
       <View style={styles.centered}>
         <ActivityIndicator size="large" color={COLORS.primary} />
@@ -614,41 +640,84 @@ export default function PlaceDetailScreen({ route, navigation }) {
             </View>
           )}
 
-          {/* Calendário */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Disponibilidade</Text>
-            <Calendar
-              markingType={isMultiDay ? "period" : "simple"}
-              markedDates={getMarkedDates()}
-              onDayPress={handleDayPress}
-              minDate={new Date().toISOString().split("T")[0]}
-              theme={{
-                todayTextColor: COLORS.accent,
-                selectedDayBackgroundColor: COLORS.accent,
-                arrowColor: COLORS.primary,
-              }}
-            />
-            <View style={styles.legend}>
-              <View
-                style={[
-                  styles.legendItem,
-                  { backgroundColor: COLORS.secondary },
-                ]}
+          {/* Calendário (oculto se houver reserva ativa) */}
+          {!hasActiveBooking && (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Disponibilidade</Text>
+              <Calendar
+                markingType={isMultiDay ? "period" : "simple"}
+                markedDates={getMarkedDates()}
+                onDayPress={handleDayPress}
+                minDate={new Date().toISOString().split("T")[0]}
+                theme={{
+                  todayTextColor: COLORS.accent,
+                  selectedDayBackgroundColor: COLORS.accent,
+                  arrowColor: COLORS.primary,
+                }}
               />
-              <Text style={styles.legendText}>Disponível</Text>
-              <View
-                style={[styles.legendItem, { backgroundColor: COLORS.primary }]}
-              />
-              <Text style={styles.legendText}>Reservado</Text>
-              <View
-                style={[styles.legendItem, { backgroundColor: COLORS.accent }]}
-              />
-              <Text style={styles.legendText}>Selecionado</Text>
+              <View style={styles.legend}>
+                <View
+                  style={[
+                    styles.legendItem,
+                    { backgroundColor: COLORS.secondary },
+                  ]}
+                />
+                <Text style={styles.legendText}>Disponível</Text>
+                <View
+                  style={[
+                    styles.legendItem,
+                    { backgroundColor: COLORS.primary },
+                  ]}
+                />
+                <Text style={styles.legendText}>Reservado</Text>
+                <View
+                  style={[
+                    styles.legendItem,
+                    { backgroundColor: COLORS.accent },
+                  ]}
+                />
+                <Text style={styles.legendText}>Selecionado</Text>
+              </View>
             </View>
-          </View>
+          )}
 
-          {/* Bloqueio para anfitrião */}
-          {isOwner ? (
+          {/* Mensagem de reserva ativa ou formulário de reserva */}
+          {hasActiveBooking ? (
+            <View style={styles.activeBookingCard}>
+              <Text style={styles.activeBookingTitle}>
+                Você já tem uma reserva para esta experiência:
+              </Text>
+              <View style={styles.activeBookingDetails}>
+                <Text style={styles.detailText}>
+                  Código: {activeBooking.bookingCode}
+                </Text>
+                <Text style={styles.detailText}>
+                  Check‑in: {activeBooking.checkin}
+                  {place?.checkin ? ` às ${place.checkin}` : ""}
+                </Text>
+                <Text style={styles.detailText}>
+                  Check‑out: {activeBooking.checkout}
+                  {place?.checkout ? ` às ${place.checkout}` : ""}
+                </Text>
+                <Text style={styles.detailText}>
+                  Noites: {activeBooking.nights}
+                </Text>
+                <Text style={styles.detailText}>
+                  Participantes: {activeBooking.guests}
+                </Text>
+                <Text style={styles.detailText}>
+                  Total: €{activeBooking.total}
+                </Text>
+                <View style={styles.statusBadge}>
+                  <Text style={styles.statusText}>
+                    {activeBooking.status === "confirmed"
+                      ? "Confirmada"
+                      : "Check‑in realizado"}
+                  </Text>
+                </View>
+              </View>
+            </View>
+          ) : isOwner ? (
             <View style={styles.ownerMessage}>
               <Text style={styles.ownerMessageText}>
                 Você é o anfitrião deste anúncio e não pode reservar a sua
@@ -1096,6 +1165,42 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#666",
     textAlign: "center",
+  },
+  // Card de reserva ativa
+  activeBookingCard: {
+    backgroundColor: COLORS.cardBackground,
+    borderRadius: 16,
+    padding: 16,
+    marginTop: 20,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  activeBookingTitle: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: COLORS.textLight,
+    marginBottom: 12,
+  },
+  activeBookingDetails: {
+    gap: 6,
+  },
+  detailText: {
+    fontSize: 14,
+    color: COLORS.textLight,
+    lineHeight: 20,
+  },
+  statusBadge: {
+    alignSelf: "flex-start",
+    backgroundColor: COLORS.secondary,
+    paddingVertical: 4,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    marginTop: 6,
+  },
+  statusText: {
+    color: "#fff",
+    fontSize: 13,
+    fontWeight: "bold",
   },
   galleryOverlay: {
     flex: 1,
