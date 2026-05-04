@@ -16,6 +16,7 @@ import ChatBot from "./components/ChatBot.jsx";
 import Footer from "./components/Footer";
 import HelpCenter from "./pages/HelpCenter";
 import About from "./pages/About";
+import "leaflet/dist/leaflet.css";
 
 axios.defaults.baseURL = import.meta.env.VITE_AXIOS_BASE_URL;
 axios.defaults.withCredentials = true;

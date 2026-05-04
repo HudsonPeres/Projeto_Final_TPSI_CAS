@@ -8,6 +8,19 @@ import BookingCalendar from "../components/BookingCalendar";
 import StarRating from "../components/StarRating";
 import ReservationButton from "../components/ReservationButton";
 
+// ✅ NOVO – Mapa
+import { MapContainer, TileLayer, Marker } from "react-leaflet";
+import L from "leaflet";
+
+// Corrigir ícones (necessário para Vite + react-leaflet)
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl:
+    "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
+  iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
+  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+});
+
 const Place = () => {
   const { id } = useParams();
   const { user } = useUserContext();
@@ -23,13 +36,11 @@ const Place = () => {
   const [bookingProgress, setBookingProgress] = useState(0);
   const [bookingSuccess, setBookingSuccess] = useState(false);
 
-  // Estado para avaliações da experiência
   const [placeRatings, setPlaceRatings] = useState({
     avg: 0,
     total: 0,
     reviews: [],
   });
-  // Estado para avaliações do anfitrião
   const [hostRatings, setHostRatings] = useState({ avgHost: 0, totalHost: 0 });
 
   const numberofDays = (date1, date2) => {
@@ -65,7 +76,6 @@ const Place = () => {
     }
   }, [id]);
 
-  // Buscar avaliações da experiência
   useEffect(() => {
     const fetchPlaceRatings = async () => {
       try {
@@ -78,7 +88,6 @@ const Place = () => {
     if (id) fetchPlaceRatings();
   }, [id]);
 
-  // Buscar avaliações do anfitrião
   useEffect(() => {
     if (place?.owner?._id) {
       axios
@@ -102,6 +111,7 @@ const Place = () => {
   }, [overlay]);
 
   const handleBooking = async (e) => {
+    // ... (mantido igual ao original, sem alterações)
     e.preventDefault();
     if (checkin && checkout && guests) {
       setBookingLoading(true);
@@ -183,7 +193,6 @@ const Place = () => {
       <div className="mx-auto flex grid max-w-7xl flex-col gap-4 p-4 sm:gap-6 sm:p-8">
         <div className="flex flex-col sm:gap-1">
           <div className="text-2xl font-bold sm:text-3xl">{place.title}</div>
-
           <div className="flex items-center gap-1">
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -206,8 +215,6 @@ const Place = () => {
             </svg>
             <p>{place.address}</p>
           </div>
-
-          {/* Exibição da média da experiência */}
           <div className="mt-1 flex items-center gap-2">
             <StarRating
               value={Math.round(placeRatings.avg)}
@@ -220,10 +227,9 @@ const Place = () => {
           </div>
         </div>
 
-        {/* mostra se tem ou não reserva */}
         {booking ? <Booking booking={booking} place={true} /> : ""}
 
-        {/* grade */}
+        {/* grade de imagens */}
         <div className="relative grid aspect-[3/2] gap-4 overflow-hidden rounded-2xl sm:grid-cols-[2fr_1fr] sm:grid-rows-2">
           {place.photos
             .filter((photo, index) => index < 3)
@@ -390,6 +396,7 @@ const Place = () => {
           )}
         </div>
 
+        {/* Horários e restrições */}
         <div className="gap flex flex-col gap-5 p-4">
           <p className="text-2xl font-bold">Horários e restrições</p>
           <div>
@@ -405,6 +412,7 @@ const Place = () => {
           </div>
         </div>
 
+        {/* Comodidades */}
         <div className="flex flex-col gap-5 p-4">
           <p className="text-2xl font-bold">Comodidades</p>
           <div className="flex flex-col gap-2">
@@ -416,7 +424,36 @@ const Place = () => {
           </div>
         </div>
 
-        {/* extras */}
+        {/* ✅ SECÇÃO NOVA – Localização no mapa */}
+        {place.location && place.location.coordinates && (
+          <div className="p-4">
+            <p className="text-2xl font-bold">Localização</p>
+            <div className="mt-2 h-64 w-full overflow-hidden rounded-2xl border border-gray-300">
+              <MapContainer
+                center={[
+                  place.location.coordinates[1],
+                  place.location.coordinates[0],
+                ]}
+                zoom={15}
+                scrollWheelZoom={false}
+                style={{ height: "100%", width: "100%" }}
+              >
+                <TileLayer
+                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                />
+                <Marker
+                  position={[
+                    place.location.coordinates[1],
+                    place.location.coordinates[0],
+                  ]}
+                />
+              </MapContainer>
+            </div>
+          </div>
+        )}
+
+        {/* Informações Extras */}
         <div className="gap-2 rounded-2xl bg-gray-100 p-4">
           <p className="text-2xl font-bold">Informações Extras</p>
           <p>{place.extras}</p>
@@ -447,7 +484,7 @@ const Place = () => {
           </div>
         )}
 
-        {/* overlay */}
+        {/* overlay de imagens */}
         <div
           className={`${overlay ? "flex" : "hidden"} fixed inset-0 items-start overflow-y-auto bg-black text-white`}
         >

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import Perks from "./Perks";
 import axios from "axios";
 import { Navigate, useParams } from "react-router-dom";
@@ -6,6 +6,56 @@ import { useUserContext } from "../contexts/UserContext.jsx";
 import PhotoUploader from "./PhotoUploader.jsx";
 import ProgressButton from "./ProgressButton.jsx";
 import AvailabilityCalendar from "./AvailabilityCalendar";
+
+// ✅ NOVO – mapa
+import {
+  MapContainer,
+  TileLayer,
+  Marker,
+  useMapEvents,
+  useMap,
+} from "react-leaflet";
+import L from "leaflet";
+
+// Corrigir o ícone padrão (react-leaflet + Vite)
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl:
+    "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
+  iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
+  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+});
+
+// Componente para capturar cliques no mapa e atualizar a posição
+function LocationMarker({ position, setPosition }) {
+  // Atualiza o marcador quando o mapa é clicado
+  useMapEvents({
+    click(e) {
+      setPosition({ lat: e.latlng.lat, lng: e.latlng.lng });
+    },
+  });
+
+  return position === null ? null : (
+    <Marker
+      position={[position.lat, position.lng]}
+      draggable={true}
+      eventHandlers={{
+        dragend: (e) => {
+          const marker = e.target;
+          const newPos = marker.getLatLng();
+          setPosition({ lat: newPos.lat, lng: newPos.lng });
+        },
+      }}
+    />
+  );
+}
+
+// Componente auxiliar para centrar o mapa quando a posição mudar (ex.: ao carregar dados)
+function ChangeView({ center, zoom }) {
+  const map = useMap();
+  map.setView(center, zoom);
+  return null;
+}
 
 const NewPlace = () => {
   const { id } = useParams();
@@ -27,6 +77,11 @@ const NewPlace = () => {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [availableDates, setAvailableDates] = useState([]);
   const [bookingType, setBookingType] = useState("single");
+
+  // ✅ NOVO – estado da localização
+  const [location, setLocation] = useState(null); // { lat, lng } ou null
+  const [showMap, setShowMap] = useState(false); // toggle para mostrar/ocultar o mapa
+
   useEffect(() => {
     if (id) {
       const axiosGet = async () => {
@@ -46,6 +101,13 @@ const NewPlace = () => {
         setAvailableDates(data.availableDates || []);
         setBookingType(data.isMultiDay === true ? "multi" : "single");
         setAvailableDates((data.availableDates || []).map((d) => new Date(d)));
+
+        // ✅ NOVO – carregar coordenadas existentes, se houver
+        if (data.location && data.location.coordinates) {
+          const [lng, lat] = data.location.coordinates;
+          setLocation({ lat, lng });
+          setShowMap(true); // mostrar o mapa se já existir localização
+        }
       };
       axiosGet();
     }
@@ -70,6 +132,11 @@ const NewPlace = () => {
 
       const isMultiDay = bookingType === "multi";
 
+      // ✅ NOVO – construir objeto de localização apenas se o utilizador definiu coordenadas
+      const locationField = location
+        ? { type: "Point", coordinates: [location.lng, location.lat] }
+        : null;
+
       try {
         if (id) {
           await axios.put(
@@ -87,6 +154,7 @@ const NewPlace = () => {
               guests,
               availableDates,
               isMultiDay,
+              location: locationField, // ✅ NOVO
             },
             {
               onUploadProgress: (progressEvent) => {
@@ -114,6 +182,7 @@ const NewPlace = () => {
               guests,
               availableDates,
               isMultiDay,
+              location: locationField, // ✅ NOVO
             },
             {
               onUploadProgress: (progressEvent) => {
@@ -164,6 +233,44 @@ const NewPlace = () => {
           value={address}
           onChange={(e) => setAddress(e.target.value)}
         />
+      </div>
+
+      {/* ✅ NOVO – secção do mapa */}
+      <div className="flex flex-col gap-2">
+        <div className="flex items-center gap-4">
+          <h2 className="ml-2 text-2xl font-bold">Localização</h2>
+          <button
+            type="button"
+            className="text-sm text-blue-600 underline"
+            onClick={() => setShowMap(!showMap)}
+          >
+            {showMap ? "Ocultar mapa" : "Adicionar localização"}
+          </button>
+        </div>
+        {showMap && (
+          <div className="h-64 w-full overflow-hidden rounded-2xl border border-gray-300">
+            <MapContainer
+              center={location ? [location.lat, location.lng] : [39.5, -8.0]} // centro de Portugal como fallback
+              zoom={location ? 15 : 7}
+              scrollWheelZoom={true}
+              style={{ height: "100%", width: "100%" }}
+            >
+              <TileLayer
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              />
+              <LocationMarker position={location} setPosition={setLocation} />
+              {location && (
+                <ChangeView center={[location.lat, location.lng]} zoom={15} />
+              )}
+            </MapContainer>
+          </div>
+        )}
+        {location && (
+          <p className="text-xs text-gray-500">
+            Coordenadas: {location.lat.toFixed(5)}, {location.lng.toFixed(5)}
+          </p>
+        )}
       </div>
 
       <PhotoUploader {...{ photolink, setPhotolink, setPhotos, photos }} />
