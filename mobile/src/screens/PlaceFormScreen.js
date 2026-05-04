@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -10,14 +10,18 @@ import {
   StyleSheet,
   ActivityIndicator,
   Switch,
+  Dimensions,
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { Calendar } from "react-native-calendars";
+import MapView, { Marker } from "react-native-maps"; // ✅ novo
 import api from "../services/api";
 import BackButton from "../components/BackButton";
 
+const { width } = Dimensions.get("window");
+
 export default function PlaceFormScreen({ route, navigation }) {
-  const placeId = route.params?.placeId; // se existir, é edição
+  const placeId = route.params?.placeId;
   const [title, setTitle] = useState("");
   const [address, setAddress] = useState("");
   const [description, setDescription] = useState("");
@@ -29,10 +33,14 @@ export default function PlaceFormScreen({ route, navigation }) {
   const [guests, setGuests] = useState("");
   const [isMultiDay, setIsMultiDay] = useState(true);
   const [selectedDates, setSelectedDates] = useState({});
-  const [photos, setPhotos] = useState([]); // URLs existentes (edição)
-  const [newPhotos, setNewPhotos] = useState([]); // ficheiros locais para upload
+  const [photos, setPhotos] = useState([]);
+  const [newPhotos, setNewPhotos] = useState([]);
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(!!placeId);
+
+  // ✅ Estado da localização
+  const [location, setLocation] = useState(null); // { lat, lng } ou null
+  const mapRef = useRef(null);
 
   // Buscar dados do anúncio se for edição
   useEffect(() => {
@@ -52,7 +60,14 @@ export default function PlaceFormScreen({ route, navigation }) {
           setGuests(String(p.guests));
           setIsMultiDay(p.isMultiDay);
           setPhotos(p.photos || []);
-          // Marcar datas existentes
+
+          // ✅ Carregar coordenadas existentes
+          if (p.location && p.location.coordinates) {
+            const [lng, lat] = p.location.coordinates;
+            setLocation({ lat, lng });
+          }
+
+          // Marcar datas
           if (p.availableDates) {
             const marked = {};
             p.availableDates.forEach((d) => {
@@ -73,7 +88,21 @@ export default function PlaceFormScreen({ route, navigation }) {
     }
   }, [placeId]);
 
-  // Selecionar imagens da galeria
+  // ✅ Centrar o mapa quando a localização é carregada ou mudada
+  useEffect(() => {
+    if (location && mapRef.current) {
+      mapRef.current.animateToRegion(
+        {
+          latitude: location.lat,
+          longitude: location.lng,
+          latitudeDelta: 0.01,
+          longitudeDelta: 0.01,
+        },
+        500,
+      );
+    }
+  }, [location]);
+
   const pickImages = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
@@ -85,7 +114,6 @@ export default function PlaceFormScreen({ route, navigation }) {
     }
   };
 
-  // Tirar foto com a câmara
   const takePhoto = async () => {
     const perm = await ImagePicker.requestCameraPermissionsAsync();
     if (perm.status !== "granted") {
@@ -98,12 +126,10 @@ export default function PlaceFormScreen({ route, navigation }) {
     }
   };
 
-  // Remover uma nova foto (antes do upload)
   const removeNewPhoto = (index) => {
     setNewPhotos(newPhotos.filter((_, i) => i !== index));
   };
 
-  // Upload das novas fotos e obter URLs
   const uploadNewPhotos = async () => {
     if (newPhotos.length === 0) return [];
     const formData = new FormData();
@@ -117,7 +143,7 @@ export default function PlaceFormScreen({ route, navigation }) {
     const res = await api.post("/places/upload", formData, {
       headers: { "Content-Type": "multipart/form-data" },
     });
-    return res.data; // array de URLs
+    return res.data;
   };
 
   const handleSave = async () => {
@@ -128,14 +154,17 @@ export default function PlaceFormScreen({ route, navigation }) {
 
     setLoading(true);
     try {
-      // Upload das novas imagens
       const uploadedUrls = await uploadNewPhotos();
       const allPhotos = [...photos, ...uploadedUrls];
 
-      // Datas selecionadas
       const availableDates = Object.keys(selectedDates).filter(
         (d) => selectedDates[d]?.selected,
       );
+
+      // ✅ Incluir localização se definida
+      const locationField = location
+        ? { type: "Point", coordinates: [location.lng, location.lat] }
+        : null;
 
       const payload = {
         title,
@@ -153,7 +182,7 @@ export default function PlaceFormScreen({ route, navigation }) {
         guests: Number(guests),
         isMultiDay,
         availableDates,
-        // location pode ser adicionado posteriormente via geocoding; por agora não enviamos
+        location: locationField, // ✅
       };
 
       if (placeId) {
@@ -170,6 +199,18 @@ export default function PlaceFormScreen({ route, navigation }) {
     } finally {
       setLoading(false);
     }
+  };
+
+  // ✅ Handler para toque no mapa (muda localização)
+  const handleMapPress = (event) => {
+    const { coordinate } = event.nativeEvent;
+    setLocation({ lat: coordinate.latitude, lng: coordinate.longitude });
+  };
+
+  // ✅ Handler para arraste do marcador
+  const handleMarkerDragEnd = (event) => {
+    const { coordinate } = event.nativeEvent;
+    setLocation({ lat: coordinate.latitude, lng: coordinate.longitude });
   };
 
   if (fetching) {
@@ -201,6 +242,38 @@ export default function PlaceFormScreen({ route, navigation }) {
         value={address}
         onChangeText={setAddress}
       />
+
+      {/* ✅ Mapa interativo */}
+      <Text style={styles.label}>Localização (toque no mapa para marcar)</Text>
+      <View style={styles.mapContainer}>
+        <MapView
+          ref={mapRef}
+          style={styles.map}
+          initialRegion={{
+            latitude: location ? location.lat : 39.5, // centro de Portugal como fallback
+            longitude: location ? location.lng : -8.0,
+            latitudeDelta: location ? 0.005 : 5,
+            longitudeDelta: location ? 0.005 : 5,
+          }}
+          onPress={handleMapPress}
+          scrollEnabled={true}
+          zoomEnabled={true}
+        >
+          {location && (
+            <Marker
+              coordinate={{ latitude: location.lat, longitude: location.lng }}
+              draggable
+              onDragEnd={handleMarkerDragEnd}
+              title="Local da experiência"
+            />
+          )}
+        </MapView>
+      </View>
+      {location && (
+        <Text style={styles.coordsText}>
+          Coordenadas: {location.lat.toFixed(5)}, {location.lng.toFixed(5)}
+        </Text>
+      )}
 
       <Text style={styles.label}>Descrição *</Text>
       <TextInput
@@ -281,7 +354,7 @@ export default function PlaceFormScreen({ route, navigation }) {
         }}
       />
 
-      {/* Fotos existentes (edição) */}
+      {/* Fotos existentes */}
       {photos.length > 0 && (
         <View style={styles.photoSection}>
           <Text style={styles.label}>Fotos atuais</Text>
@@ -293,7 +366,7 @@ export default function PlaceFormScreen({ route, navigation }) {
         </View>
       )}
 
-      {/* Novas fotos (pré-upload) */}
+      {/* Novas fotos */}
       {newPhotos.length > 0 && (
         <View style={styles.photoSection}>
           <Text style={styles.label}>Novas fotos</Text>
@@ -368,6 +441,23 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     marginTop: 16,
+  },
+  // ✅ Estilos do mapa
+  mapContainer: {
+    height: 200,
+    borderRadius: 12,
+    overflow: "hidden",
+    marginTop: 4,
+    borderWidth: 1,
+    borderColor: "#ddd",
+  },
+  map: {
+    flex: 1,
+  },
+  coordsText: {
+    fontSize: 12,
+    color: "#666",
+    marginTop: 4,
   },
   photoSection: { marginTop: 16 },
   photoThumb: { width: 80, height: 80, borderRadius: 8, marginRight: 8 },
