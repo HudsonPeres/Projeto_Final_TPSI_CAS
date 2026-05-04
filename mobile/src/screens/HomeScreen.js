@@ -14,6 +14,7 @@ import {
   Keyboard,
   TouchableWithoutFeedback,
 } from "react-native";
+import { useFocusEffect } from "@react-navigation/native";
 import * as Location from "expo-location";
 import api from "../services/api";
 import { useAuth } from "../contexts/AuthContext";
@@ -40,6 +41,7 @@ export default function HomeScreen({ navigation }) {
   const { user, logout } = useAuth();
   const [places, setPlaces] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [menuVisible, setMenuVisible] = useState(false);
 
@@ -91,35 +93,59 @@ export default function HomeScreen({ navigation }) {
     return params;
   };
 
-  const fetchPlaces = useCallback(async () => {
-    setLoading(true);
-    try {
-      const params = buildQueryParams();
-      const res = await api.get("/places", { params });
-      setPlaces(res.data);
-    } catch (error) {
-      Alert.alert("Erro", "Falha ao carregar anúncios.");
-    } finally {
-      setLoading(false);
-    }
-  }, [
-    minPrice,
-    maxPrice,
-    minGuests,
-    maxGuests,
-    locationText,
-    selectedDistance,
-    userLat,
-    userLng,
-  ]);
+  const fetchPlaces = useCallback(
+    async ({ silent = false } = {}) => {
+      if (silent) {
+        setRefreshing(true);
+      } else {
+        setLoading(true);
+      }
+      try {
+        const params = buildQueryParams();
+        const res = await api.get("/places", { params });
+        setPlaces(res.data);
+      } catch (error) {
+        Alert.alert("Erro", "Falha ao carregar anúncios.");
+      } finally {
+        if (silent) {
+          setRefreshing(false);
+        } else {
+          setLoading(false);
+        }
+      }
+    },
+    [
+      minPrice,
+      maxPrice,
+      minGuests,
+      maxGuests,
+      locationText,
+      selectedDistance,
+      userLat,
+      userLng,
+    ],
+  );
 
+  // Atualiza a lista quando os filtros mudam
   useEffect(() => {
     fetchPlaces();
   }, [fetchPlaces]);
 
+  // Atualiza a lista silenciosamente sempre que o ecrã ganha foco
+  useFocusEffect(
+    useCallback(() => {
+      fetchPlaces({ silent: true });
+    }, [fetchPlaces]),
+  );
+
   const closeModal = () => {
     Keyboard.dismiss();
     setModalVisible(false);
+  };
+
+  // Função para pull-to-refresh
+  const handleRefresh = () => {
+    fetchPlaces({ silent: true });
   };
 
   const renderItem = ({ item }) => (
@@ -184,9 +210,12 @@ export default function HomeScreen({ navigation }) {
           ListEmptyComponent={
             <Text style={styles.emptyText}>Nenhum anúncio encontrado.</Text>
           }
+          refreshing={refreshing}
+          onRefresh={handleRefresh}
         />
       )}
 
+      {/* Modal dos Filtros (inalterado) */}
       <Modal
         visible={modalVisible}
         animationType="slide"
@@ -213,7 +242,6 @@ export default function HomeScreen({ navigation }) {
               >
                 <Text style={styles.modalTitle}>Filtrar anúncios</Text>
 
-                {/* Preço */}
                 <Text style={styles.filterLabel}>Preço (€)</Text>
                 <View style={styles.row}>
                   <TextInput
@@ -232,7 +260,6 @@ export default function HomeScreen({ navigation }) {
                   />
                 </View>
 
-                {/* Número de pessoas */}
                 <Text style={styles.filterLabel}>Nº de pessoas</Text>
                 <View style={styles.row}>
                   <TextInput
@@ -324,7 +351,7 @@ export default function HomeScreen({ navigation }) {
         </TouchableOpacity>
       </Modal>
 
-      {/* Modal do Menu Principal */}
+      {/* Modal do Menu Principal (inalterado) */}
       <Modal
         visible={menuVisible}
         animationType="fade"
@@ -337,7 +364,6 @@ export default function HomeScreen({ navigation }) {
           onPress={() => setMenuVisible(false)}
         >
           <View style={styles.menuContainer}>
-            {/* Perfil – navega para a aba de perfil (ecrã principal) */}
             <TouchableOpacity
               style={styles.menuItem}
               onPress={() => {
@@ -348,7 +374,6 @@ export default function HomeScreen({ navigation }) {
               <Text style={styles.menuItemText}>Perfil</Text>
             </TouchableOpacity>
 
-            {/* Reservas – aba própria */}
             <TouchableOpacity
               style={styles.menuItem}
               onPress={() => {
@@ -359,7 +384,6 @@ export default function HomeScreen({ navigation }) {
               <Text style={styles.menuItemText}>Reservas</Text>
             </TouchableOpacity>
 
-            {/* Meus anúncios – tela dentro do ProfileStack */}
             <TouchableOpacity
               style={styles.menuItem}
               onPress={() => {
@@ -370,7 +394,6 @@ export default function HomeScreen({ navigation }) {
               <Text style={styles.menuItemText}>Meus anúncios</Text>
             </TouchableOpacity>
 
-            {/* Mensagens – aba própria */}
             <TouchableOpacity
               style={styles.menuItem}
               onPress={() => {
@@ -381,7 +404,6 @@ export default function HomeScreen({ navigation }) {
               <Text style={styles.menuItemText}>Mensagens</Text>
             </TouchableOpacity>
 
-            {/* Avaliar hóspedes – tela dentro do ProfileStack */}
             <TouchableOpacity
               style={styles.menuItem}
               onPress={() => {
@@ -392,7 +414,6 @@ export default function HomeScreen({ navigation }) {
               <Text style={styles.menuItemText}>Avaliar hóspedes</Text>
             </TouchableOpacity>
 
-            {/* Suporte – tela dentro do ProfileStack */}
             <TouchableOpacity
               style={styles.menuItem}
               onPress={() => {
@@ -403,7 +424,6 @@ export default function HomeScreen({ navigation }) {
               <Text style={styles.menuItemText}>Suporte</Text>
             </TouchableOpacity>
 
-            {/* Encerrar sessão */}
             <TouchableOpacity
               style={[styles.menuItem, styles.logoutItem]}
               onPress={() => {
@@ -422,6 +442,7 @@ export default function HomeScreen({ navigation }) {
   );
 }
 
+// Estilos mantidos exatamente como no código anterior
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.backgroundLight },
   header: {
@@ -538,7 +559,6 @@ const styles = StyleSheet.create({
   clearButtonText: { color: "#666", fontWeight: "600" },
   applyButton: { backgroundColor: COLORS.primary },
   applyButtonText: { color: "#fff", fontWeight: "bold" },
-  // Menu Lateral
   menuOverlay: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.4)",

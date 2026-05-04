@@ -78,7 +78,6 @@ const NewPlace = () => {
   const [availableDates, setAvailableDates] = useState([]);
   const [bookingType, setBookingType] = useState("single");
 
-  // ✅ NOVO – estado da localização
   const [location, setLocation] = useState(null); // { lat, lng } ou null
   const [showMap, setShowMap] = useState(false); // toggle para mostrar/ocultar o mapa
 
@@ -102,7 +101,6 @@ const NewPlace = () => {
         setBookingType(data.isMultiDay === true ? "multi" : "single");
         setAvailableDates((data.availableDates || []).map((d) => new Date(d)));
 
-        // ✅ NOVO – carregar coordenadas existentes, se houver
         if (data.location && data.location.coordinates) {
           const [lng, lat] = data.location.coordinates;
           setLocation({ lat, lng });
@@ -132,7 +130,6 @@ const NewPlace = () => {
 
       const isMultiDay = bookingType === "multi";
 
-      // ✅ NOVO – construir objeto de localização apenas se o utilizador definiu coordenadas
       const locationField = location
         ? { type: "Point", coordinates: [location.lng, location.lat] }
         : null;

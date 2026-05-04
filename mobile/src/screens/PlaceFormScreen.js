@@ -14,11 +14,20 @@ import {
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { Calendar } from "react-native-calendars";
-import MapView, { Marker } from "react-native-maps"; // ✅ novo
+import MapView, { Marker } from "react-native-maps";
 import api from "../services/api";
 import BackButton from "../components/BackButton";
 
 const { width } = Dimensions.get("window");
+
+// Lista fixa de comodidades (mesma da web)
+const PERKS_OPTIONS = [
+  { key: "wifi", label: "Wifi" },
+  { key: "parking", label: "Estacionamento gratuito" },
+  { key: "tv", label: "TV" },
+  { key: "pets", label: "Pets" },
+  { key: "accessible", label: "Local acessível" },
+];
 
 export default function PlaceFormScreen({ route, navigation }) {
   const placeId = route.params?.placeId;
@@ -26,7 +35,7 @@ export default function PlaceFormScreen({ route, navigation }) {
   const [address, setAddress] = useState("");
   const [description, setDescription] = useState("");
   const [extras, setExtras] = useState("");
-  const [perks, setPerks] = useState("");
+  const [perks, setPerks] = useState([]); // agora array de strings
   const [price, setPrice] = useState("");
   const [checkin, setCheckin] = useState("");
   const [checkout, setCheckout] = useState("");
@@ -38,11 +47,9 @@ export default function PlaceFormScreen({ route, navigation }) {
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(!!placeId);
 
-  // ✅ Estado da localização
-  const [location, setLocation] = useState(null); // { lat, lng } ou null
+  const [location, setLocation] = useState(null);
   const mapRef = useRef(null);
 
-  // Buscar dados do anúncio se for edição
   useEffect(() => {
     if (placeId) {
       (async () => {
@@ -53,7 +60,7 @@ export default function PlaceFormScreen({ route, navigation }) {
           setAddress(p.address);
           setDescription(p.description);
           setExtras(p.extras || "");
-          setPerks((p.perks || []).join(", "));
+          setPerks(p.perks || []); // array direto
           setPrice(String(p.price));
           setCheckin(p.checkin || "");
           setCheckout(p.checkout || "");
@@ -61,13 +68,11 @@ export default function PlaceFormScreen({ route, navigation }) {
           setIsMultiDay(p.isMultiDay);
           setPhotos(p.photos || []);
 
-          // ✅ Carregar coordenadas existentes
           if (p.location && p.location.coordinates) {
             const [lng, lat] = p.location.coordinates;
             setLocation({ lat, lng });
           }
 
-          // Marcar datas
           if (p.availableDates) {
             const marked = {};
             p.availableDates.forEach((d) => {
@@ -88,7 +93,6 @@ export default function PlaceFormScreen({ route, navigation }) {
     }
   }, [placeId]);
 
-  // ✅ Centrar o mapa quando a localização é carregada ou mudada
   useEffect(() => {
     if (location && mapRef.current) {
       mapRef.current.animateToRegion(
@@ -146,6 +150,14 @@ export default function PlaceFormScreen({ route, navigation }) {
     return res.data;
   };
 
+  const togglePerk = (perkKey) => {
+    setPerks((prev) =>
+      prev.includes(perkKey)
+        ? prev.filter((p) => p !== perkKey)
+        : [...prev, perkKey],
+    );
+  };
+
   const handleSave = async () => {
     if (!title || !address || !description || !price || !guests) {
       Alert.alert("Erro", "Preencha os campos obrigatórios.");
@@ -161,7 +173,6 @@ export default function PlaceFormScreen({ route, navigation }) {
         (d) => selectedDates[d]?.selected,
       );
 
-      // ✅ Incluir localização se definida
       const locationField = location
         ? { type: "Point", coordinates: [location.lng, location.lat] }
         : null;
@@ -172,17 +183,14 @@ export default function PlaceFormScreen({ route, navigation }) {
         photos: allPhotos,
         description,
         extras,
-        perks: perks
-          .split(",")
-          .map((s) => s.trim())
-          .filter(Boolean),
+        perks, // já é array
         price: Number(price),
         checkin,
         checkout,
         guests: Number(guests),
         isMultiDay,
         availableDates,
-        location: locationField, // ✅
+        location: locationField,
       };
 
       if (placeId) {
@@ -201,13 +209,11 @@ export default function PlaceFormScreen({ route, navigation }) {
     }
   };
 
-  // ✅ Handler para toque no mapa (muda localização)
   const handleMapPress = (event) => {
     const { coordinate } = event.nativeEvent;
     setLocation({ lat: coordinate.latitude, lng: coordinate.longitude });
   };
 
-  // ✅ Handler para arraste do marcador
   const handleMarkerDragEnd = (event) => {
     const { coordinate } = event.nativeEvent;
     setLocation({ lat: coordinate.latitude, lng: coordinate.longitude });
@@ -243,14 +249,14 @@ export default function PlaceFormScreen({ route, navigation }) {
         onChangeText={setAddress}
       />
 
-      {/* ✅ Mapa interativo */}
+      {/* Mapa interativo */}
       <Text style={styles.label}>Localização (toque no mapa para marcar)</Text>
       <View style={styles.mapContainer}>
         <MapView
           ref={mapRef}
           style={styles.map}
           initialRegion={{
-            latitude: location ? location.lat : 39.5, // centro de Portugal como fallback
+            latitude: location ? location.lat : 39.5,
             longitude: location ? location.lng : -8.0,
             latitudeDelta: location ? 0.005 : 5,
             longitudeDelta: location ? 0.005 : 5,
@@ -286,13 +292,26 @@ export default function PlaceFormScreen({ route, navigation }) {
       <Text style={styles.label}>Extras (ex: alimentação, transporte)</Text>
       <TextInput style={styles.input} value={extras} onChangeText={setExtras} />
 
-      <Text style={styles.label}>Comodidades (separadas por vírgula)</Text>
-      <TextInput
-        style={styles.input}
-        value={perks}
-        onChangeText={setPerks}
-        placeholder="ex: wifi, parking"
-      />
+      {/* ✅ Novo seletor de comodidades */}
+      <Text style={styles.label}>Comodidades</Text>
+      <View style={styles.perksContainer}>
+        {PERKS_OPTIONS.map((perk) => {
+          const selected = perks.includes(perk.key);
+          return (
+            <TouchableOpacity
+              key={perk.key}
+              style={[styles.perkItem, selected && styles.perkItemSelected]}
+              onPress={() => togglePerk(perk.key)}
+            >
+              <Text
+                style={[styles.perkText, selected && styles.perkTextSelected]}
+              >
+                {perk.label}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
 
       <Text style={styles.label}>Preço (€) *</Text>
       <TextInput
@@ -354,7 +373,6 @@ export default function PlaceFormScreen({ route, navigation }) {
         }}
       />
 
-      {/* Fotos existentes */}
       {photos.length > 0 && (
         <View style={styles.photoSection}>
           <Text style={styles.label}>Fotos atuais</Text>
@@ -366,7 +384,6 @@ export default function PlaceFormScreen({ route, navigation }) {
         </View>
       )}
 
-      {/* Novas fotos */}
       {newPhotos.length > 0 && (
         <View style={styles.photoSection}>
           <Text style={styles.label}>Novas fotos</Text>
@@ -442,7 +459,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginTop: 16,
   },
-  // ✅ Estilos do mapa
   mapContainer: {
     height: 200,
     borderRadius: 12,
@@ -451,13 +467,34 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#ddd",
   },
-  map: {
-    flex: 1,
-  },
-  coordsText: {
-    fontSize: 12,
-    color: "#666",
+  map: { flex: 1 },
+  coordsText: { fontSize: 12, color: "#666", marginTop: 4 },
+  // ✅ Novos estilos de perks
+  perksContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
     marginTop: 4,
+  },
+  perkItem: {
+    borderWidth: 1,
+    borderColor: "#ddd",
+    borderRadius: 20,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    backgroundColor: "#f9f9f9",
+  },
+  perkItemSelected: {
+    backgroundColor: "#e53935",
+    borderColor: "#e53935",
+  },
+  perkText: {
+    fontSize: 14,
+    color: "#1b1b1b",
+  },
+  perkTextSelected: {
+    color: "#fff",
+    fontWeight: "bold",
   },
   photoSection: { marginTop: 16 },
   photoThumb: { width: 80, height: 80, borderRadius: 8, marginRight: 8 },
