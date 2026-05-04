@@ -360,7 +360,7 @@ export default function PlaceDetailScreen({ route, navigation }) {
             text: "OK",
             onPress: () => {
               resetSelection();
-              navigation.navigate("Home");
+              navigation.navigate("HomeTab", { screen: "HomeMain" });
             },
           },
         ],

@@ -1,5 +1,5 @@
 import axios from "axios";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
 
@@ -31,8 +31,7 @@ const BookingCalendar = ({ placeId, onDateChange, isMultiDay = true }) => {
 
     if (selectedDates) {
       if (Array.isArray(selectedDates) && selectedDates.length === 2) {
-        let start = new Date(selectedDates[0]);
-        let end = new Date(selectedDates[1]);
+        const [start, end] = selectedDates;
         let current = new Date(date);
         if (current >= start && current <= end) return "selected-date";
       } else if (
@@ -48,18 +47,35 @@ const BookingCalendar = ({ placeId, onDateChange, isMultiDay = true }) => {
     return null;
   };
 
-  const handleDateSelect = (value) => {
-    setSelectedDates(value);
-    if (onDateChange) {
-      if (Array.isArray(value) && value.length === 2) {
-        onDateChange({ startDate: value[0], endDate: value[1] });
-      } else if (value instanceof Date) {
-        onDateChange({ startDate: value, endDate: value });
+  const handleDateSelect = useCallback(
+    (value) => {
+      if (isMultiDay) {
+        // Se for multiday, value é array [start, end]
+        if (Array.isArray(value) && value.length === 2) {
+          setSelectedDates(value);
+          onDateChange({ startDate: value[0], endDate: value[1] });
+        } else if (value instanceof Date) {
+          // selecionou uma única data (modo range mas só clicou uma)
+          setSelectedDates([value, value]);
+          onDateChange({ startDate: value, endDate: value });
+        }
       } else {
-        onDateChange(null);
+        // Modo dia único: value é uma única data
+        if (value instanceof Date) {
+          setSelectedDates(value);
+          onDateChange({ startDate: value, endDate: value });
+        } else {
+          // pode ser array se clicar duas vezes? forçar start = end
+          if (Array.isArray(value) && value.length > 0) {
+            const single = value[0];
+            setSelectedDates(single);
+            onDateChange({ startDate: single, endDate: single });
+          }
+        }
       }
-    }
-  };
+    },
+    [isMultiDay, onDateChange],
+  );
 
   if (loading) return <p>Carregando disponibilidade...</p>;
 

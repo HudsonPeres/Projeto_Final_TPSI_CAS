@@ -1,5 +1,5 @@
 import axios from "axios";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useParams, Link, Navigate, useNavigate } from "react-router-dom";
 import { useUserContext } from "../contexts/UserContext";
 import Perk from "../components/Perk";
@@ -8,11 +8,9 @@ import BookingCalendar from "../components/BookingCalendar";
 import StarRating from "../components/StarRating";
 import ReservationButton from "../components/ReservationButton";
 
-// ✅ NOVO – Mapa
 import { MapContainer, TileLayer, Marker } from "react-leaflet";
 import L from "leaflet";
 
-// Corrigir ícones (necessário para Vite + react-leaflet)
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl:
@@ -51,30 +49,40 @@ const Place = () => {
     );
   };
 
-  useEffect(() => {
-    if (place) {
-      const axiosGet = async () => {
+  // ✅ Função memoizada para buscar reserva ativa
+  const checkActiveBooking = useCallback(
+    async (placeId) => {
+      if (!user) return;
+      try {
         const { data } = await axios.get("/bookings/owner");
-        const activeBooking = data.find(
-          (booking) =>
-            booking.place._id === place._id &&
-            (booking.status === "confirmed" || booking.status === "checked_in"),
+        const active = data.find(
+          (b) =>
+            b.place._id === placeId &&
+            (b.status === "confirmed" || b.status === "checked_in"),
         );
-        setBooking(activeBooking);
-      };
-      axiosGet();
-    }
-  }, [place]);
+        setBooking(active || null);
+      } catch (error) {
+        console.error("Erro ao verificar reserva ativa", error);
+      }
+    },
+    [user],
+  );
 
   useEffect(() => {
     if (id) {
-      const axiosGet = async () => {
+      const fetchPlace = async () => {
         const { data } = await axios.get(`/places/${id}`);
         setPlace(data);
       };
-      axiosGet();
+      fetchPlace();
     }
   }, [id]);
+
+  useEffect(() => {
+    if (place) {
+      checkActiveBooking(place._id);
+    }
+  }, [place, checkActiveBooking]);
 
   useEffect(() => {
     const fetchPlaceRatings = async () => {
@@ -111,7 +119,6 @@ const Place = () => {
   }, [overlay]);
 
   const handleBooking = async (e) => {
-    // ... (mantido igual ao original, sem alterações)
     e.preventDefault();
     if (checkin && checkout && guests) {
       setBookingLoading(true);
@@ -424,7 +431,7 @@ const Place = () => {
           </div>
         </div>
 
-        {/* ✅ SECÇÃO NOVA – Localização no mapa */}
+        {/* Localização no mapa */}
         {place.location && place.location.coordinates && (
           <div className="p-4">
             <p className="text-2xl font-bold">Localização</p>

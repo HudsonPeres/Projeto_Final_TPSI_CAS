@@ -1,5 +1,5 @@
 import axios from "axios";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import Booking from "./Booking";
 
@@ -10,14 +10,18 @@ const AccBookings = () => {
   const [endDate, setEndDate] = useState("");
   const [filterPlace, setFilterPlace] = useState("");
 
-  const fetchBookings = async () => {
-    const { data } = await axios.get("/bookings/owner");
-    setBookings(data);
-  };
+  const fetchBookings = useCallback(async () => {
+    try {
+      const { data } = await axios.get("/bookings/owner");
+      setBookings(data);
+    } catch (error) {
+      console.error("Erro ao carregar reservas", error);
+    }
+  }, []);
 
   useEffect(() => {
     fetchBookings();
-  }, []);
+  }, [fetchBookings]);
 
   const filteredBookings = bookings.filter((booking) => {
     const checkin = booking.checkin;

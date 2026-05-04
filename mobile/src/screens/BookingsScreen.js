@@ -38,12 +38,20 @@ const statusColors = {
   completed: "#888",
 };
 
+const FILTER_OPTIONS = [
+  { key: "all", label: "Todas" },
+  { key: "active", label: "Ativas" },
+  { key: "completed", label: "Concluídas" },
+  { key: "cancelled", label: "Canceladas" },
+];
+
 export default function BookingsScreen({ navigation }) {
   const { user } = useAuth();
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [reviewModalVisible, setReviewModalVisible] = useState(false);
+  const [filterStatus, setFilterStatus] = useState("all");
 
   const fetchBookings = useCallback(async () => {
     setLoading(true);
@@ -85,7 +93,6 @@ export default function BookingsScreen({ navigation }) {
     fetchBookings();
   };
 
-  // ✅ NOVO – Cancelamento da reserva
   const handleCancel = (booking) => {
     const checkin = new Date(booking.checkin);
     const now = new Date();
@@ -143,6 +150,14 @@ export default function BookingsScreen({ navigation }) {
     );
   };
 
+  // Aplicar filtro
+  const filteredBookings = bookings.filter((booking) => {
+    if (filterStatus === "all") return true;
+    if (filterStatus === "active")
+      return booking.status === "confirmed" || booking.status === "checked_in";
+    return booking.status === filterStatus;
+  });
+
   const renderItem = ({ item }) => {
     const canReview = item.status === "completed" && !item.hasReviewed;
 
@@ -180,7 +195,6 @@ export default function BookingsScreen({ navigation }) {
               >
                 <Text style={styles.actionText}>Reenviar comprovativo</Text>
               </TouchableOpacity>
-              {/* ✅ Botão Cancelar reserva */}
               <TouchableOpacity
                 style={styles.actionButton}
                 onPress={() => handleCancel(item)}
@@ -221,13 +235,36 @@ export default function BookingsScreen({ navigation }) {
         <Text style={styles.header}>As Minhas Reservas</Text>
       </View>
 
+      {/* Filtros */}
+      <View style={styles.filterContainer}>
+        {FILTER_OPTIONS.map((opt) => (
+          <TouchableOpacity
+            key={opt.key}
+            style={[
+              styles.filterChip,
+              filterStatus === opt.key && styles.filterChipActive,
+            ]}
+            onPress={() => setFilterStatus(opt.key)}
+          >
+            <Text
+              style={[
+                styles.filterChipText,
+                filterStatus === opt.key && styles.filterChipTextActive,
+              ]}
+            >
+              {opt.label}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
       <FlatList
-        data={bookings}
+        data={filteredBookings}
         renderItem={renderItem}
         keyExtractor={(item) => item._id}
         contentContainerStyle={styles.list}
         ListEmptyComponent={
-          <Text style={styles.empty}>Ainda não tem reservas.</Text>
+          <Text style={styles.empty}>Nenhuma reserva neste filtro.</Text>
         }
       />
 
@@ -259,6 +296,33 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: "bold",
     color: COLORS.textLight,
+  },
+  // Filtros
+  filterContainer: {
+    flexDirection: "row",
+    paddingHorizontal: 20,
+    marginBottom: 12,
+    gap: 8,
+  },
+  filterChip: {
+    paddingVertical: 6,
+    paddingHorizontal: 14,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    backgroundColor: COLORS.cardBackground,
+  },
+  filterChipActive: {
+    backgroundColor: COLORS.primary,
+    borderColor: COLORS.primary,
+  },
+  filterChipText: {
+    fontSize: 14,
+    color: COLORS.textLight,
+  },
+  filterChipTextActive: {
+    color: "#fff",
+    fontWeight: "600",
   },
   list: { paddingHorizontal: 16, paddingBottom: 20 },
   card: {
