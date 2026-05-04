@@ -1,4 +1,5 @@
 import React from "react";
+import HostBookingsScreen from "../screens/HostBookingsScreen";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
@@ -29,8 +30,6 @@ import ChangePasswordScreen from "../screens/ChangePasswordScreen";
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
-
-// ---------- Stacks de cada aba ----------
 
 function HomeStack() {
   return (
@@ -69,6 +68,7 @@ function ProfileStack() {
       <Stack.Screen name="MyPlaces" component={MyPlacesScreen} />
       <Stack.Screen name="HostReviews" component={HostReviewsScreen} />
       <Stack.Screen name="Support" component={SupportScreen} />
+      <Stack.Screen name="HostBookings" component={HostBookingsScreen} />
     </Stack.Navigator>
   );
 }

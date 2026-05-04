@@ -12,7 +12,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import api from "../services/api";
 import { useAuth } from "../contexts/AuthContext";
 import ReviewModal from "../components/ReviewModal";
-import BackButton from "../components/BackButton"; // ✅ IMPORTADO
+import BackButton from "../components/BackButton";
 
 const COLORS = {
   primary: "#e53935",
@@ -85,6 +85,64 @@ export default function BookingsScreen({ navigation }) {
     fetchBookings();
   };
 
+  // ✅ NOVO – Cancelamento da reserva
+  const handleCancel = (booking) => {
+    const checkin = new Date(booking.checkin);
+    const now = new Date();
+    const hoursDiff = (checkin - now) / (1000 * 60 * 60);
+
+    if (hoursDiff < 48) {
+      Alert.alert(
+        "Cancelamento não permitido",
+        "Não é possível cancelar com menos de 48h de antecedência. Deseja contactar o suporte?",
+        [
+          { text: "Fechar", style: "cancel" },
+          {
+            text: "Ir para Suporte",
+            onPress: () =>
+              navigation.navigate("ProfileTab", { screen: "Support" }),
+          },
+        ],
+      );
+      return;
+    }
+
+    Alert.alert(
+      "Confirmar cancelamento",
+      "Tem a certeza que deseja cancelar esta reserva?",
+      [
+        { text: "Não", style: "cancel" },
+        {
+          text: "Sim, cancelar",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await api.patch(`/bookings/${booking._id}/cancel/self`);
+              Alert.alert("Sucesso", "Reserva cancelada com sucesso.");
+              fetchBookings();
+            } catch (error) {
+              const data = error.response?.data;
+              const msg = data?.message || "Erro ao cancelar reserva.";
+              Alert.alert("Erro", msg);
+              if (data?.contactSupport) {
+                Alert.alert("Contactar Suporte", "Deseja ir para o suporte?", [
+                  { text: "Fechar", style: "cancel" },
+                  {
+                    text: "Suporte",
+                    onPress: () =>
+                      navigation.navigate("ProfileTab", {
+                        screen: "Support",
+                      }),
+                  },
+                ]);
+              }
+            }
+          },
+        },
+      ],
+    );
+  };
+
   const renderItem = ({ item }) => {
     const canReview = item.status === "completed" && !item.hasReviewed;
 
@@ -115,12 +173,23 @@ export default function BookingsScreen({ navigation }) {
 
         <View style={styles.actions}>
           {item.status === "confirmed" && (
-            <TouchableOpacity
-              style={styles.actionButton}
-              onPress={() => handleResend(item._id)}
-            >
-              <Text style={styles.actionText}>Reenviar comprovativo</Text>
-            </TouchableOpacity>
+            <>
+              <TouchableOpacity
+                style={styles.actionButton}
+                onPress={() => handleResend(item._id)}
+              >
+                <Text style={styles.actionText}>Reenviar comprovativo</Text>
+              </TouchableOpacity>
+              {/* ✅ Botão Cancelar reserva */}
+              <TouchableOpacity
+                style={styles.actionButton}
+                onPress={() => handleCancel(item)}
+              >
+                <Text style={[styles.actionText, { color: COLORS.primary }]}>
+                  Cancelar reserva
+                </Text>
+              </TouchableOpacity>
+            </>
           )}
           {canReview && (
             <TouchableOpacity
@@ -147,7 +216,6 @@ export default function BookingsScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
-      {/* ✅ NOVO HEADER COM BOTÃO */}
       <View style={styles.headerContainer}>
         <BackButton />
         <Text style={styles.header}>As Minhas Reservas</Text>
@@ -180,8 +248,6 @@ const styles = StyleSheet.create({
     paddingTop: 60,
   },
   centered: { flex: 1, justifyContent: "center", alignItems: "center" },
-
-  // ✅ NOVO
   headerContainer: {
     flexDirection: "row",
     alignItems: "center",
@@ -189,13 +255,11 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     gap: 12,
   },
-
   header: {
     fontSize: 24,
     fontWeight: "bold",
     color: COLORS.textLight,
   },
-
   list: { paddingHorizontal: 16, paddingBottom: 20 },
   card: {
     backgroundColor: COLORS.cardBackground,

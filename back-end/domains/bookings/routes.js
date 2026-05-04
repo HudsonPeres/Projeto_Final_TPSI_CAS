@@ -647,10 +647,10 @@ router.post("/:id/resend-voucher", async (req, res) => {
         .json({ message: "Email do hóspede não encontrado." });
     }
 
-    // 4. Gerar o PDF (função já existente, usada no POST /bookings)
+    // 4. Gerar o PDF
     const pdfBuffer = await generateBookingPDF(booking, booking.place);
 
-    // 5. Enviar email com o PDF em anexo (função já existente)
+    // 5. Enviar email com o PDF em anexo
     await sendEmail({
       to: guest.email,
       subject: `Reenvio do comprovativo - ${booking.bookingCode}`,
@@ -678,6 +678,70 @@ router.post("/:id/resend-voucher", async (req, res) => {
   } catch (error) {
     console.error("Erro ao reenviar comprovativo:", error);
     res.status(500).json({ message: "Erro ao reenviar comprovativo." });
+  }
+});
+
+//cancelamento pelo próprio turista
+router.patch("/:id/cancel/self", async (req, res) => {
+  connectDB();
+  const { id } = req.params;
+  try {
+    const { _id: userId } = await JWTVerify(req);
+    const booking = await Booking.findById(id).populate("place user");
+    if (!booking)
+      return res.status(404).json({ message: "Reserva não encontrada" });
+    // Só o dono da reserva pode cancelar
+    if (booking.user._id.toString() !== userId.toString()) {
+      return res.status(403).json({ message: "Não autorizado" });
+    }
+    if (booking.status !== "confirmed") {
+      return res
+        .status(400)
+        .json({ message: "Apenas reservas confirmadas podem ser canceladas" });
+    }
+
+    // Verificar antecedência de 48h
+    const checkin = new Date(booking.checkin);
+    const now = new Date();
+    const hoursDiff = (checkin - now) / (1000 * 60 * 60);
+    if (hoursDiff < 48) {
+      return res.status(400).json({
+        message:
+          "Não é possível cancelar automaticamente com menos de 48h de antecedência. Contacte o suporte.",
+        contactSupport: true,
+      });
+    }
+
+    booking.status = "cancelled";
+    booking.cancelledBy = "guest";
+    await booking.save();
+
+    // Notificação no chat
+    try {
+      const conversation = await Conversation.findOne({
+        participants: {
+          $all: [booking.user._id, booking.place.owner],
+          $size: 2,
+        },
+        place: booking.place._id,
+      });
+      if (conversation) {
+        await Message.create({
+          conversation: conversation._id,
+          sender: null,
+          text: `⚠️ O hóspede cancelou a reserva para "${booking.place.title}".`,
+          isSystem: true,
+          read: false,
+        });
+      }
+    } catch (err) {
+      console.error("Erro ao notificar cancelamento:", err);
+    }
+
+    res.json({ message: "Reserva cancelada com sucesso", booking });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Erro ao cancelar reserva" });
   }
 });
 

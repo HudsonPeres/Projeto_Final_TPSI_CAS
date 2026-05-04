@@ -34,6 +34,33 @@ export default function MyPlacesScreen({ navigation }) {
     }, [fetchMyPlaces]),
   );
 
+  const handleDelete = (placeId, title) => {
+    Alert.alert(
+      "Apagar anúncio",
+      `Tem a certeza que deseja apagar "${title}"? Esta ação é irreversível.`,
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: "Apagar",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await api.delete(`/places/${placeId}`, {
+                data: { reason: "Removido pelo proprietário" },
+              });
+              Alert.alert("Sucesso", "Anúncio apagado.");
+              fetchMyPlaces();
+            } catch (error) {
+              const msg =
+                error.response?.data?.message || "Erro ao apagar anúncio.";
+              Alert.alert("Erro", msg);
+            }
+          },
+        },
+      ],
+    );
+  };
+
   const renderItem = ({ item }) => (
     <View style={styles.card}>
       <Text style={styles.cardTitle}>{item.title}</Text>
@@ -41,17 +68,25 @@ export default function MyPlacesScreen({ navigation }) {
       <Text style={styles.cardPrice}>
         €{item.price} / {item.isMultiDay ? "diária" : "atividade"}
       </Text>
-      <TouchableOpacity
-        style={styles.editButton}
-        onPress={() =>
-          navigation.navigate("HomeTab", {
-            screen: "PlaceForm",
-            params: { placeId: item._id },
-          })
-        }
-      >
-        <Text style={styles.editText}>Editar</Text>
-      </TouchableOpacity>
+      <View style={styles.cardActions}>
+        <TouchableOpacity
+          style={styles.editButton}
+          onPress={() =>
+            navigation.navigate("HomeTab", {
+              screen: "PlaceForm",
+              params: { placeId: item._id },
+            })
+          }
+        >
+          <Text style={styles.editText}>Editar</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.deleteButton}
+          onPress={() => handleDelete(item._id, item.title)}
+        >
+          <Text style={styles.deleteText}>Apagar</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 
@@ -72,6 +107,17 @@ export default function MyPlacesScreen({ navigation }) {
           <Text style={styles.addButtonText}>+ Novo</Text>
         </TouchableOpacity>
       </View>
+
+      {/* Novo botão para as reservas recebidas */}
+      <TouchableOpacity
+        style={styles.hostBookingsButton}
+        onPress={() =>
+          navigation.navigate("ProfileTab", { screen: "HostBookings" })
+        }
+      >
+        <Text style={styles.hostBookingsButtonText}>Reservas Recebidas</Text>
+      </TouchableOpacity>
+
       {loading ? (
         <ActivityIndicator
           size="large"
@@ -114,6 +160,18 @@ const styles = StyleSheet.create({
     borderRadius: 20,
   },
   addButtonText: { color: "#fff", fontWeight: "bold" },
+  hostBookingsButton: {
+    backgroundColor: "#e53935",
+    paddingVertical: 10,
+    borderRadius: 30,
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  hostBookingsButtonText: {
+    color: "#fff",
+    fontWeight: "bold",
+    fontSize: 16,
+  },
   list: { paddingBottom: 20 },
   card: {
     backgroundColor: "#fff",
@@ -126,7 +184,14 @@ const styles = StyleSheet.create({
   cardTitle: { fontSize: 18, fontWeight: "bold" },
   cardAddress: { color: "#666", marginBottom: 4 },
   cardPrice: { color: "#e53935", fontWeight: "bold", marginBottom: 8 },
+  cardActions: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 8,
+  },
   editButton: { alignSelf: "flex-start" },
   editText: { color: "#4a90e2", fontWeight: "600" },
+  deleteButton: { alignSelf: "flex-start" },
+  deleteText: { color: "#e53935", fontWeight: "600" },
   empty: { textAlign: "center", marginTop: 40, color: "#999" },
 });

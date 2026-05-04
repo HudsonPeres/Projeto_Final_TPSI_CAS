@@ -14,7 +14,7 @@ import {
   FlatList,
 } from "react-native";
 import { Calendar } from "react-native-calendars";
-import MapView, { Marker } from "react-native-maps"; // ✅ novo
+import MapView, { Marker } from "react-native-maps";
 import api from "../services/api";
 import { useAuth } from "../contexts/AuthContext";
 import StarRating from "../components/StarRating";
@@ -44,13 +44,16 @@ export default function PlaceDetailScreen({ route, navigation }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Avaliações
+  // Avaliações da experiência
   const [reviewsData, setReviewsData] = useState({
     reviews: [],
     avg: 0,
     total: 0,
   });
   const [reviewsLoading, setReviewsLoading] = useState(false);
+
+  // Avaliações do anfitrião
+  const [hostRatings, setHostRatings] = useState({ avgHost: 0, totalHost: 0 });
 
   // Seleção de datas
   const [selectedStart, setSelectedStart] = useState(null);
@@ -80,7 +83,6 @@ export default function PlaceDetailScreen({ route, navigation }) {
     setGuests(1);
   };
 
-  // Limpar ao sair do ecrã
   useEffect(() => {
     const unsubscribe = navigation.addListener("beforeRemove", () => {
       resetSelection();
@@ -110,18 +112,38 @@ export default function PlaceDetailScreen({ route, navigation }) {
       const res = await api.get(`/reviews/place/${id}`);
       setReviewsData(res.data);
     } catch (err) {
-      // Silencioso
+      // silencioso
     } finally {
       setReviewsLoading(false);
     }
   }, [id]);
+
+  // Buscar avaliações do anfitrião
+  const fetchHostRatings = useCallback(async () => {
+    if (place?.owner?._id) {
+      try {
+        const res = await api.get(`/reviews/user/${place.owner._id}`);
+        setHostRatings({
+          avgHost: res.data.avgHost,
+          totalHost: res.data.totalHost,
+        });
+      } catch (err) {
+        console.error("Erro ao carregar avaliações do host:", err);
+      }
+    }
+  }, [place]);
 
   useEffect(() => {
     fetchData();
     fetchReviews();
   }, [fetchData, fetchReviews]);
 
-  // Navegação da galeria principal
+  useEffect(() => {
+    fetchHostRatings();
+  }, [fetchHostRatings]);
+
+  // ... resto das funções (navegação galeria, contacto, calendário, reserva) mantidas iguais ...
+
   const goToNextPhoto = () => {
     if (place?.photos && galleryIndex < place.photos.length - 1) {
       const nextIndex = galleryIndex + 1;
@@ -138,7 +160,6 @@ export default function PlaceDetailScreen({ route, navigation }) {
     }
   };
 
-  // Navegação do ecrã completo
   const goToNextFullPhoto = () => {
     if (place?.photos && fullGalleryIndex < place.photos.length - 1) {
       const nextIndex = fullGalleryIndex + 1;
@@ -400,7 +421,6 @@ export default function PlaceDetailScreen({ route, navigation }) {
         {/* Galeria com setas e indicadores */}
         {place.photos && place.photos.length > 0 && (
           <View style={styles.galleryWrapper}>
-            {/* Setas sobrepostas */}
             {galleryIndex > 0 && (
               <TouchableOpacity
                 style={styles.arrowLeft}
@@ -440,7 +460,6 @@ export default function PlaceDetailScreen({ route, navigation }) {
               initialScrollIndex={0}
             />
 
-            {/* Indicadores */}
             {place.photos.length > 1 && (
               <View style={styles.dotsContainer}>
                 {place.photos.map((_, index) => (
@@ -467,7 +486,6 @@ export default function PlaceDetailScreen({ route, navigation }) {
           </Text>
           <Text style={styles.description}>{place.description}</Text>
 
-          {/* Extras */}
           {place.extras ? (
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Extras</Text>
@@ -475,7 +493,6 @@ export default function PlaceDetailScreen({ route, navigation }) {
             </View>
           ) : null}
 
-          {/* Perks */}
           {place.perks && place.perks.length > 0 && (
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Comodidades</Text>
@@ -487,7 +504,6 @@ export default function PlaceDetailScreen({ route, navigation }) {
             </View>
           )}
 
-          {/* Botão Dúvidas? Me contacte */}
           <TouchableOpacity
             style={styles.contactButton}
             onPress={handleContactHost}
@@ -499,6 +515,42 @@ export default function PlaceDetailScreen({ route, navigation }) {
               <Text style={styles.contactButtonText}>Dúvidas? Me contacte</Text>
             )}
           </TouchableOpacity>
+
+          {/* ✅ Card do anfitrião */}
+          {place.owner && (
+            <View style={styles.hostCard}>
+              <Text style={styles.hostCardTitle}>Anfitrião</Text>
+              <Text style={styles.hostName}>
+                {place.owner.name || "Anfitrião"}
+              </Text>
+              <View style={styles.hostRatingRow}>
+                <Text style={styles.hostRatingLabel}>Anfitrião</Text>
+                <View style={styles.hostStars}>
+                  <StarRating
+                    rating={Math.round(hostRatings.avgHost)}
+                    readonly
+                    size={18}
+                  />
+                  <Text style={styles.hostRatingCount}>
+                    ({hostRatings.totalHost} avaliações)
+                  </Text>
+                </View>
+              </View>
+              <View style={styles.hostRatingRow}>
+                <Text style={styles.hostRatingLabel}>Experiência</Text>
+                <View style={styles.hostStars}>
+                  <StarRating
+                    rating={Math.round(reviewsData.avg)}
+                    readonly
+                    size={18}
+                  />
+                  <Text style={styles.hostRatingCount}>
+                    ({reviewsData.total} avaliações)
+                  </Text>
+                </View>
+              </View>
+            </View>
+          )}
 
           {/* Avaliações */}
           <View style={styles.section}>
@@ -533,7 +585,7 @@ export default function PlaceDetailScreen({ route, navigation }) {
             )}
           </View>
 
-          {/* ✅ Mapa da localização (após avaliações, antes da disponibilidade) */}
+          {/* Mapa */}
           {place.location && place.location.coordinates && (
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Localização</Text>
@@ -603,7 +655,6 @@ export default function PlaceDetailScreen({ route, navigation }) {
             </View>
           ) : (
             <>
-              {/* Datas escolhidas */}
               {selectedStart && (
                 <View style={styles.section}>
                   <Text style={styles.sectionTitle}>Datas escolhidas</Text>
@@ -622,7 +673,6 @@ export default function PlaceDetailScreen({ route, navigation }) {
                 </View>
               )}
 
-              {/* Participantes */}
               <View style={styles.section}>
                 <Text style={styles.sectionTitle}>
                   Participantes (máx {place.guests})
@@ -641,7 +691,6 @@ export default function PlaceDetailScreen({ route, navigation }) {
                 />
               </View>
 
-              {/* Total */}
               {selectedStart && selectedEnd && nights > 0 && (
                 <View style={styles.section}>
                   <Text style={styles.total}>
@@ -650,7 +699,6 @@ export default function PlaceDetailScreen({ route, navigation }) {
                 </View>
               )}
 
-              {/* Reservar */}
               <TouchableOpacity
                 style={[
                   styles.reserveButton,
@@ -679,7 +727,7 @@ export default function PlaceDetailScreen({ route, navigation }) {
         </View>
       </ScrollView>
 
-      {/* Modal do carrossel de fotos (ecrã completo com setas) */}
+      {/* Modal do carrossel */}
       <Modal
         visible={galleryVisible}
         animationType="fade"
@@ -698,7 +746,6 @@ export default function PlaceDetailScreen({ route, navigation }) {
             <Text style={styles.galleryCloseText}>✕</Text>
           </TouchableOpacity>
 
-          {/* Setas no ecrã completo */}
           {place?.photos && place.photos.length > 1 && (
             <>
               {fullGalleryIndex > 0 && (
@@ -742,7 +789,6 @@ export default function PlaceDetailScreen({ route, navigation }) {
             initialScrollIndex={0}
           />
 
-          {/* Indicadores no ecrã completo */}
           {place?.photos && place.photos.length > 1 && (
             <View style={styles.fullDotsContainer}>
               {place.photos.map((_, index) => (
@@ -895,7 +941,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   contactButton: {
-    backgroundColor: COLORS.accent,
+    backgroundColor: COLORS.primary,
     paddingVertical: 14,
     borderRadius: 30,
     alignItems: "center",
@@ -944,7 +990,45 @@ const styles = StyleSheet.create({
     color: "#999",
     fontStyle: "italic",
   },
-  // Novo estilo para o mapa
+  // ✅ Novos estilos do card do anfitrião
+  hostCard: {
+    backgroundColor: COLORS.cardBackground,
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  hostCardTitle: {
+    fontSize: 14,
+    color: "#666",
+    marginBottom: 4,
+  },
+  hostName: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: COLORS.textLight,
+    marginBottom: 12,
+  },
+  hostRatingRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  hostRatingLabel: {
+    fontSize: 14,
+    color: COLORS.textLight,
+  },
+  hostStars: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  hostRatingCount: {
+    fontSize: 12,
+    color: "#666",
+    marginLeft: 6,
+  },
   map: {
     width: "100%",
     height: 200,
@@ -1012,7 +1096,6 @@ const styles = StyleSheet.create({
     color: "#666",
     textAlign: "center",
   },
-  // Modal do carrossel
   galleryOverlay: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.9)",
@@ -1036,7 +1119,6 @@ const styles = StyleSheet.create({
     height: height * 0.7,
     resizeMode: "contain",
   },
-  // Setas no ecrã completo
   fullArrowLeft: {
     position: "absolute",
     left: 10,
