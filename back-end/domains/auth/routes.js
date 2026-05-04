@@ -18,7 +18,6 @@ const { JWT_SECRET_KEY } = process.env;
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 router.post("/request-otp", async (req, res) => {
-  // ... código original mantido igual ...
   connectDB();
   const { email, type, password } = req.body;
 
@@ -78,10 +77,20 @@ router.post("/request-otp", async (req, res) => {
     used: false,
   });
 
-  // Enviar email
-  await sendTokenEmail(email, type, otp);
-
-  res.json({ message: `Código enviado para ${email}. Válido por 10 minutos.` });
+  // ✅ Envio do email com tratamento de erro (não bloqueia a resposta)
+  try {
+    await sendTokenEmail(email, type, otp);
+    res.json({
+      message: `Código enviado para ${email}. Válido por 10 minutos.`,
+    });
+  } catch (emailError) {
+    console.error("Erro ao enviar email OTP:", emailError);
+    // Ainda assim devolve o OTP (para depuração, remover em produção)
+    res.json({
+      message: `Código gerado, mas o email falhou. Tente reenviar mais tarde.`,
+      otp, // ⚠️ Apenas para testes – retire em produção
+    });
+  }
 });
 
 router.post("/verify-otp", async (req, res) => {

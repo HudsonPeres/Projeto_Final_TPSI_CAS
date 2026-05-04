@@ -14,6 +14,7 @@ import {
   FlatList,
 } from "react-native";
 import { Calendar } from "react-native-calendars";
+import MapView, { Marker } from "react-native-maps"; // ✅ novo
 import api from "../services/api";
 import { useAuth } from "../contexts/AuthContext";
 import StarRating from "../components/StarRating";
@@ -532,6 +533,33 @@ export default function PlaceDetailScreen({ route, navigation }) {
             )}
           </View>
 
+          {/* ✅ Mapa da localização (após avaliações, antes da disponibilidade) */}
+          {place.location && place.location.coordinates && (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Localização</Text>
+              <MapView
+                style={styles.map}
+                initialRegion={{
+                  latitude: place.location.coordinates[1],
+                  longitude: place.location.coordinates[0],
+                  latitudeDelta: 0.01,
+                  longitudeDelta: 0.01,
+                }}
+                scrollEnabled={false}
+                zoomEnabled={false}
+              >
+                <Marker
+                  coordinate={{
+                    latitude: place.location.coordinates[1],
+                    longitude: place.location.coordinates[0],
+                  }}
+                  title={place.title}
+                  description={place.address}
+                />
+              </MapView>
+            </View>
+          )}
+
           {/* Calendário */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Disponibilidade</Text>
@@ -915,6 +943,12 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#999",
     fontStyle: "italic",
+  },
+  // Novo estilo para o mapa
+  map: {
+    width: "100%",
+    height: 200,
+    borderRadius: 12,
   },
   legend: {
     flexDirection: "row",

@@ -4,6 +4,6 @@ import { app } from "./server.js";
 
 const { PORT } = process.env;
 
-app.listen(PORT, () => {
+app.listen(PORT, "0.0.0.0", () => {
   console.log(`servidor está rodando na porta ${PORT}`);
 });
