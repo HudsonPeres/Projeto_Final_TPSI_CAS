@@ -142,8 +142,6 @@ export default function PlaceDetailScreen({ route, navigation }) {
     fetchHostRatings();
   }, [fetchHostRatings]);
 
-  // ... resto das funções (navegação galeria, contacto, calendário, reserva) mantidas iguais ...
-
   const goToNextPhoto = () => {
     if (place?.photos && galleryIndex < place.photos.length - 1) {
       const nextIndex = galleryIndex + 1;
@@ -216,23 +214,27 @@ export default function PlaceDetailScreen({ route, navigation }) {
     return availability.availableDates.includes(dateStr);
   };
 
+  // ✅ getMarkedDates corrigido
   const getMarkedDates = () => {
     const marked = {};
 
+    // Datas disponíveis (verde)
     if (availability.availableDates && availability.availableDates.length > 0) {
       availability.availableDates.forEach((date) => {
-        marked[date] = { color: COLORS.secondary, textColor: "white" };
+        marked[date] = { selected: true, selectedColor: COLORS.secondary };
       });
     }
 
+    // Datas reservadas (vermelho, bloqueadas)
     availability.bookedDates.forEach((date) => {
       marked[date] = {
-        color: COLORS.primary,
-        textColor: "white",
+        selected: true,
+        selectedColor: COLORS.primary,
         disabled: true,
       };
     });
 
+    // Seleção do utilizador (período)
     if (selectedStart) {
       const start = new Date(selectedStart);
       const end = selectedEnd ? new Date(selectedEnd) : start;
@@ -516,7 +518,7 @@ export default function PlaceDetailScreen({ route, navigation }) {
             )}
           </TouchableOpacity>
 
-          {/* ✅ Card do anfitrião */}
+          {/* Card do anfitrião */}
           {place.owner && (
             <View style={styles.hostCard}>
               <Text style={styles.hostCardTitle}>Anfitrião</Text>
@@ -990,7 +992,6 @@ const styles = StyleSheet.create({
     color: "#999",
     fontStyle: "italic",
   },
-  // ✅ Novos estilos do card do anfitrião
   hostCard: {
     backgroundColor: COLORS.cardBackground,
     borderRadius: 16,
