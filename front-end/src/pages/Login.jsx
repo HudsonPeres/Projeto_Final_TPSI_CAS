@@ -139,7 +139,7 @@ export const Login = () => {
         </div>
 
         <a
-          href="http://localhost:3000/auth/google"
+          href={`${import.meta.env.VITE_AXIOS_BASE_URL}/auth/google`}
           className="flex w-full items-center justify-center gap-2 rounded-full border border-gray-300 bg-white px-4 py-2 text-gray-700 transition hover:bg-gray-50"
         >
           <svg width="20" height="20" viewBox="0 0 24 24">
