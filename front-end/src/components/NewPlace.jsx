@@ -78,8 +78,37 @@ const NewPlace = () => {
   const [availableDates, setAvailableDates] = useState([]);
   const [bookingType, setBookingType] = useState("single");
 
-  const [location, setLocation] = useState(null); 
+  const [location, setLocation] = useState(null);
   const [showMap, setShowMap] = useState(false); // toggle para mostrar/ocultar o mapa
+
+  // 🔍 NOVO – pesquisa de localização
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isSearching, setIsSearching] = useState(false);
+
+  const handleSearch = async () => {
+    if (!searchQuery.trim()) return;
+    setIsSearching(true);
+    try {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}&limit=1`,
+      );
+      const data = await res.json();
+      if (data.length > 0) {
+        const { lat, lon, display_name } = data[0];
+        const newPos = { lat: parseFloat(lat), lng: parseFloat(lon) };
+        setLocation(newPos);
+        setAddress(display_name || searchQuery); // opcional: atualiza o endereço
+        setShowMap(true); // garante que o mapa está visível
+      } else {
+        alert("Local não encontrado. Tente outro termo de pesquisa.");
+      }
+    } catch (error) {
+      console.error("Erro na geocodificação:", error);
+      alert("Erro ao pesquisar o local. Verifique a sua ligação.");
+    } finally {
+      setIsSearching(false);
+    }
+  };
 
   useEffect(() => {
     if (id) {
@@ -151,7 +180,7 @@ const NewPlace = () => {
               guests,
               availableDates,
               isMultiDay,
-              location: locationField, 
+              location: locationField,
             },
             {
               onUploadProgress: (progressEvent) => {
@@ -179,7 +208,7 @@ const NewPlace = () => {
               guests,
               availableDates,
               isMultiDay,
-              location: locationField, 
+              location: locationField,
             },
             {
               onUploadProgress: (progressEvent) => {
@@ -232,7 +261,7 @@ const NewPlace = () => {
         />
       </div>
 
-      {/* seção do mapa */}
+      {/* 🔍 seção do mapa COM PESQUISA */}
       <div className="flex flex-col gap-2">
         <div className="flex items-center gap-4">
           <h2 className="ml-2 text-2xl font-bold">Localização</h2>
@@ -244,6 +273,27 @@ const NewPlace = () => {
             {showMap ? "Ocultar mapa" : "Adicionar localização"}
           </button>
         </div>
+
+        {/* Barra de pesquisa */}
+        <div className="flex gap-2">
+          <input
+            type="text"
+            placeholder="Pesquisar local (ex: Covilhã, Rua X)"
+            className="flex-1 rounded-full border border-gray-300 px-4 py-2"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyPress={(e) => e.key === "Enter" && handleSearch()}
+          />
+          <button
+            type="button"
+            className="rounded-full bg-blue-600 px-4 py-2 font-semibold text-white disabled:opacity-50"
+            onClick={handleSearch}
+            disabled={isSearching}
+          >
+            {isSearching ? "..." : "Ir"}
+          </button>
+        </div>
+
         {showMap && (
           <div className="h-64 w-full overflow-hidden rounded-2xl border border-gray-300">
             <MapContainer
