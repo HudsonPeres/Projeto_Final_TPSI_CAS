@@ -1,6 +1,6 @@
-# 🇵🇹 Viva Portugal – Plataforma de Turismo Rural
+# Viva Portugal – Plataforma de Turismo Rural
 
-## 🌟 Visão Geral do Projeto
+## Visão Geral do Projeto
 
 O projeto **Viva Portugal!** é uma plataforma inovadora, desenvolvida para revitalizar e promover o turismo rural em Portugal. Através de uma aplicação web e mobile, a plataforma conecta anfitriões que desejam partilhar experiências autênticas (como vindimas, passeios pela natureza, produção de azeite, entre outras) com pessoas que procuram vivências únicas e imersivas no ambiente rural português.
 
@@ -12,7 +12,7 @@ O principal objetivo do Viva Portugal! é facilitar a interação entre pessoas 
 - **Enriquecer Hóspedes**: Proporcionar acesso fácil a uma vasta gama de atividades de turismo rural, promovendo o conhecimento e a valorização da cultura e paisagem portuguesa.
 - **Inovação Tecnológica**: Integrar funcionalidades avançadas como autenticação segura (OTP, Google OAuth), chat em tempo real, avaliações, check-in/out com QR code, e um chatbot inteligente (MarIA) alimentado por IA para suporte e interação.
 
-## 🧱 Arquitetura do Sistema
+## Arquitetura do Sistema
 
 A arquitetura do projeto Viva Portugal é modular e distribuída, composta por três componentes principais que interagem para oferecer uma experiência completa e integrada:
 
@@ -41,11 +41,11 @@ PROJETO_FINAL_TPSI_CAS/
   - Foca-se na experiência do utilizador em movimento, com funcionalidades como geolocalização (`expo-location`), leitura de QR codes (`expo-camera`) para check-in/out, e navegação otimizada.
   - Permite aos utilizadores acederem a todas as funcionalidades principais da plataforma, incluindo a reserva de experiências, chat e interação com o chatbot.
 
-## ⚙️ Tecnologias e Dependências
+## Tecnologias e Dependências
 
 O projeto Viva Portugal emprega um conjunto robusto de tecnologias modernas para garantir desempenho, escalabilidade e uma experiência de utilizador rica.
 
-### 🔧 Backend
+### Backend
 
 | Dependência             | Versão (aproximada) | Finalidade                                    |
 | :---------------------- | :------------------ | :-------------------------------------------- |
@@ -75,7 +75,7 @@ npm install          # Instala todas as dependências do backend
 npm start            # Inicia o servidor da API RESTful
 ```
 
-### 🌐 Frontend Web
+### Frontend Web
 
 | Dependência           | Versão  | Finalidade                                        |
 | :-------------------- | :------ | :------------------------------------------------ |
@@ -108,7 +108,7 @@ npm run build        # Compila a aplicação para produção
 npm run preview      # Pré-visualiza a build de produção
 ```
 
-### 📱 App Mobile (React Native / Expo)
+### App Mobile (React Native / Expo)
 
 | Dependência                               | Versão (final) | Finalidade                                           |
 | :---------------------------------------- | :------------- | :--------------------------------------------------- |
@@ -203,7 +203,7 @@ Adicione o seguinte bloco `extra` ao ficheiro `app.json` no diretório `mobile/`
 }
 ```
 
-## 🚀 Como Executar o Projeto
+## Como Executar o Projeto
 
 ### Pré-requisitos
 
@@ -253,7 +253,7 @@ Siga os passos abaixo para configurar e iniciar cada componente do projeto:
 
 > **Nota Importante**: O IP do computador que executa o backend deve estar acessível na mesma rede Wi-Fi que o dispositivo móvel. Se o IP da sua máquina mudar, é necessário atualizar a variável `API_URL` nos ficheiros `.env` e `app.json` do módulo mobile para garantir a comunicação correta com a API.
 
-## 📂 Estrutura Detalhada do Projeto
+## Estrutura Detalhada do Projeto
 
 ### Backend (`back-end/`)
 
@@ -305,11 +305,11 @@ mobile/
 └── App.js              # Ponto de entrada principal da aplicação móvel
 ```
 
-## ✅ Funcionalidades Chave
+## Funcionalidades Chave
 
 O projeto Viva Portugal oferece um conjunto abrangente de funcionalidades, desenhadas para otimizar a experiência de anfitriões e hóspedes:
 
-### 🔐 Autenticação e Gestão de Conta
+### Autenticação e Gestão de Conta
 
 - **Registo e Login Seguro**: Implementação de registo, login e recuperação de password utilizando OTP (One-Time Password) enviado por email, com validade de 10 minutos, garantindo um processo seguro e eficiente.
 - **Login Social Integrado**: Suporte para login com Google (via Passport.js para web e `expo-auth-session` para mobile), facilitando o acesso dos utilizadores.
@@ -318,7 +318,7 @@ O projeto Viva Portugal oferece um conjunto abrangente de funcionalidades, desen
 - **Segurança da Conta Aprimorada**: Alteração de email e password com validação adicional via OTP.
 - **Logout Eficiente**: Funcionalidade de logout que garante a remoção segura do token de sessão.
 
-### 🏡 Gestão de Anúncios (Experiências)
+### Gestão de Anúncios (Experiências)
 
 - **CRUD Completo**: Operações de criação, listagem, edição e eliminação de anúncios de experiências rurais.
 - **Upload de Imagens para AWS S3**: Gestão robusta de fotos de experiências com upload direto para o AWS S3, garantindo escalabilidade e fiabilidade.
@@ -328,7 +328,7 @@ O projeto Viva Portugal oferece um conjunto abrangente de funcionalidades, desen
 - **Mapas Interativos**: Mapas integrados nos formulários de criação/edição (web com Leaflet, mobile com `react-native-maps`) e na visualização detalhada do anúncio, melhorando a usabilidade e a descoberta.
 - **Informações do Anfitrião**: Exibição clara do nome do anfitrião, avaliação média e total de avaliações, promovendo a transparência.
 
-### 📅 Sistema de Reservas
+###  Sistema de Reservas
 
 - **Criação de Reservas Inteligente**: Processo de criação de reservas com validação de conflitos de datas e cálculo automático de noites/total, simplificando a gestão para anfitriões.
 - **Confirmação e Comprovativo Digital**: Geração de um código de reserva único e envio de email com comprovativo em PDF (inclui QR code), garantindo um registo formal da reserva.
@@ -337,39 +337,39 @@ O projeto Viva Portugal oferece um conjunto abrangente de funcionalidades, desen
 - **Cancelamento Flexível**: Opções de cancelamento pelo hóspede (com regra de 48h antes da experiência) e pelo anfitrião, oferecendo flexibilidade.
 - **Check-in/out com QR Code**: Funcionalidade de check-in/out via leitura de QR code (câmara) na aplicação móvel, agilizando o processo no local.
 
-### 💬 Sistema de Chat
+###  Sistema de Chat
 
 - **Comunicação Direta e Eficaz**: Sistema de chat em tempo real entre hóspedes e anfitriões, iniciado através do botão “Dúvidas? Me contacte” no detalhe da experiência.
 - **Notificações de Mensagens**: Lista de conversas com badge de mensagens não lidas, garantindo que nenhuma comunicação importante seja perdida.
 - **Mensagens de Sistema Automatizadas**: Envio automático de mensagens de sistema para eventos como confirmação de reserva ou cancelamento, mantendo todos informados.
 - **Atualização em Tempo Real (Mobile)**: Polling automático a cada 5 segundos na aplicação móvel para verificar novas mensagens e manter a conversa atualizada, proporcionando uma experiência fluida.
 
-### ⭐ Sistema de Avaliações
+### Sistema de Avaliações
 
 - **Avaliação Dupla e Justa**: Hóspedes avaliam a experiência e o anfitrião; anfitriões avaliam o hóspede, promovendo um feedback equilibrado.
 - **Prazo de Avaliação Definido**: Prazo de 7 dias após o check-out para submissão de avaliações, incentivando a participação.
 - **Exibição Transparente**: Avaliações exibidas no detalhe do lugar e no perfil do utilizador, aumentando a confiança na plataforma.
 - **Média de Avaliações**: Cálculo e exibição da média de avaliações para experiências e utilizadores.
 
-### 🤖 Chatbot MarIA (Integração Gemini)
+### Chatbot MarIA (Integração Gemini)
 
 - **Assistente Virtual Inteligente**: Chatbot 24/7 especializado em turismo rural português, oferecendo suporte e informações aos utilizadores.
 - **Tecnologia Avançada**: Utiliza o modelo `gemini-2.5-flash-lite` via API Gemini, garantindo respostas rápidas e relevantes.
 - **Acessibilidade Universal**: Contexto global com `ChatbotContext` e botão flutuante disponível em todas as áreas autenticadas da plataforma.
 - **Histórico de Conversa Persistente**: Manutenção do histórico da conversa durante a sessão, permitindo interações contínuas e contextuais.
 
-### 📍 Check-in / Check-out (Mobile)
+### Check-in / Check-out (Mobile)
 
 - **Ecrã Dedicado e Otimizado**: Ecrã específico para check-in/out com leitura de QR code (câmara) ou inserção manual do código de reserva.
 - **Confirmação Visual Instantânea**: Confirmação visual da reserva e ações de check-in/out, proporcionando clareza e segurança.
 
-### 🛠️ Suporte e Administração
+### Suporte e Administração
 
 - **Formulário de Demanda**: Formulário de contacto para suporte disponível nas aplicações web e mobile, facilitando a comunicação com a equipa de apoio.
 - **Painéis de Administração Robustos**: Painéis dedicados para administradores, superadministradores e equipa de suporte, permitindo a gestão eficiente da plataforma.
 - **Gestão Completa de Recursos**: Gestão de utilizadores, anúncios, reservas e auditoria, garantindo o controlo total sobre as operações.
 
-### 🌙 Outras Funcionalidades
+### Outras Funcionalidades
 
 - **Modo Escuro (Web)**: Implementação de modo escuro na aplicação web com toggle, oferecendo personalização da interface.
 - **Responsividade Total**: Design totalmente responsivo para web e mobile, garantindo uma experiência consistente em qualquer dispositivo.
@@ -377,17 +377,17 @@ O projeto Viva Portugal oferece um conjunto abrangente de funcionalidades, desen
 - **Formatação de Preço Dinâmica**: Formatação condicional de preço (diária/atividade) para maior clareza.
 - **Reset de Datas Automático**: Reset automático da seleção de datas após a conclusão de uma reserva, otimizando o fluxo do utilizador.
 
-## 🧪 Testes e Qualidade
+## Testes e Qualidade
 
 Foram realizados testes manuais exaustivos em ambas as plataformas (web e mobile) para garantir a estabilidade, funcionalidade e usabilidade do sistema.
 
-## 📌 Notas Importantes para Desenvolvimento e Implantação
+## Notas Importantes para Desenvolvimento e Implantação
 
 - **Segurança das Variáveis de Ambiente**: As variáveis de ambiente contêm informações sensíveis e **nunca** devem ser commitadas para o controlo de versão. Certifique-se de que o ficheiro `.env` está devidamente incluído no `.gitignore` de cada módulo.
 - **Configuração de Rede para Mobile**: O IP do computador que executa o backend deve estar acessível na mesma rede Wi-Fi que o dispositivo móvel. É fundamental atualizar a variável `API_URL` nos ficheiros `.env` e `app.json` do módulo mobile sempre que a configuração de rede mudar.
 - **Permissões de Dispositivo**: Para utilizar funcionalidades como a câmara (para check-in/out) e a geolocalização (para mapas interativos na criação de anúncios) na aplicação móvel, é necessário que o utilizador conceda as permissões solicitadas pelo dispositivo.
 
-## 👥 Créditos
+## Créditos
 
 Este projeto foi desenvolvido no âmbito do curso TPSI. Agradecemos a todos os envolvidos na sua conceção e implementação.
 
